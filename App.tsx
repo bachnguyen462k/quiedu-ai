@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
@@ -12,7 +13,8 @@ import AiTextbookCreator from './components/AiTextbookCreator';
 import SettingsView from './components/SettingsView';
 import UserTour from './components/UserTour';
 import { StudySet, ViewState, User, AiGenerationRecord, Review } from './types';
-import { BookOpen, GraduationCap } from 'lucide-react';
+import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { AppProvider, useApp } from './contexts/AppContext';
 
 // Mock data
 const INITIAL_SETS: StudySet[] = [
@@ -74,34 +76,41 @@ const INITIAL_SETS: StudySet[] = [
   }
 ];
 
-const App: React.FC = () => {
+// Inner App Component to access Context
+const AppContent: React.FC = () => {
   const [view, setView] = useState<ViewState>('LANDING'); 
   const [sets, setSets] = useState<StudySet[]>(INITIAL_SETS);
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [aiHistory, setAiHistory] = useState<AiGenerationRecord[]>([]);
   const [runTour, setRunTour] = useState(false);
+  
+  const { addNotification } = useApp();
 
   const activeSet = sets.find(s => s.id === activeSetId);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     setView('DASHBOARD');
+    addNotification(`Chào mừng ${user.name} đã quay trở lại!`, 'success');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setView('LANDING');
+    addNotification('Đã đăng xuất thành công.', 'info');
   };
 
   const handleUpdateUser = (updatedUser: User) => {
     setCurrentUser(updatedUser);
+    addNotification('Cập nhật thông tin thành công!', 'success');
   };
 
   const handleSaveSet = (newSet: StudySet) => {
     const setWithAuthor = { ...newSet, author: currentUser?.name || 'Bạn' };
     setSets([setWithAuthor, ...sets]);
     setView('DASHBOARD');
+    addNotification('Đã tạo học phần mới thành công!', 'success');
   };
 
   const handleAddToAiHistory = (record: AiGenerationRecord) => {
@@ -111,6 +120,15 @@ const App: React.FC = () => {
   const handleSelectSet = (set: StudySet) => {
     setActiveSetId(set.id);
     setView('SET_DETAILS');
+  };
+
+  const handleSelectHistory = (record: AiGenerationRecord) => {
+      // Logic to view history: Switch to AI_CREATOR view (it handles history display internally via props, 
+      // but simpler here we just navigate to it. A real app would pass the ID or selected record prop)
+      // For this demo, we can just switch view, and let user pick from history tab, OR modify AiTextbookCreator to accept a default.
+      // Since AiTextbookCreator manages its own active record, we'll just navigate to the tab for now.
+      setView('AI_CREATOR');
+      addNotification(`Đã mở tài liệu: ${record.fileName}`, 'info');
   };
 
   const handleAddReview = (setId: string, review: Review) => {
@@ -123,6 +141,7 @@ const App: React.FC = () => {
         }
         return s;
     }));
+    addNotification('Cảm ơn đánh giá của bạn!', 'success');
   };
 
   const handleNavigation = (newView: ViewState) => {
@@ -177,7 +196,6 @@ const App: React.FC = () => {
            <AiTextbookCreator 
               onSaveToLibrary={(set) => {
                   handleSaveSet(set);
-                  alert("Đã lưu học phần vào thư viện thành công!");
               }}
               history={aiHistory}
               onAddToHistory={handleAddToAiHistory}
@@ -210,18 +228,18 @@ const App: React.FC = () => {
         return (
           <div className="pb-20">
              {/* Sub-header for mode selection */}
-             <div className="bg-white border-b border-gray-200 shadow-sm mb-6 sticky top-0 z-30">
+             <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm mb-6 sticky top-0 z-30 transition-colors">
                 <div className="max-w-4xl mx-auto px-4 py-3 flex gap-4 overflow-x-auto">
                     <button 
                         onClick={() => setView('STUDY')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${view === 'STUDY' ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${view === 'STUDY' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                     >
                         <BookOpen size={18} />
                         Thẻ ghi nhớ
                     </button>
                     <button 
                         onClick={() => setView('QUIZ')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${view === 'QUIZ' ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors whitespace-nowrap ${view === 'QUIZ' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                     >
                         <GraduationCap size={18} />
                         Kiểm tra
@@ -251,7 +269,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300 overflow-hidden">
       <Sidebar 
         currentView={view} 
         currentUser={currentUser}
@@ -259,9 +277,17 @@ const App: React.FC = () => {
         onLogout={handleLogout}
         onStartTour={() => setRunTour(true)}
       />
-      <main className="flex-1 overflow-y-auto h-screen relative">
-        {renderMainContent()}
-      </main>
+      <div className="flex-1 flex flex-col min-w-0">
+          <Header 
+            sets={sets} 
+            history={aiHistory} 
+            onSelectSet={handleSelectSet}
+            onSelectHistory={handleSelectHistory}
+          />
+          <main className="flex-1 overflow-y-auto relative scroll-smooth">
+            {renderMainContent()}
+          </main>
+      </div>
       
       {/* User Guide Tour */}
       <UserTour 
@@ -270,6 +296,46 @@ const App: React.FC = () => {
         onStop={() => setRunTour(false)}
       />
     </div>
+  );
+};
+
+// Toast Container Component
+const NotificationContainer = () => {
+  const { notifications, removeNotification } = useApp();
+
+  return (
+    <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+      {notifications.map((notif) => (
+        <div 
+          key={notif.id} 
+          className="pointer-events-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 p-4 flex items-start gap-3 min-w-[300px] animate-slide-in transition-all"
+          style={{
+             borderColor: notif.type === 'success' ? '#10B981' : notif.type === 'error' ? '#EF4444' : notif.type === 'warning' ? '#F59E0B' : '#3B82F6'
+          }}
+        >
+          {notif.type === 'success' && <CheckCircle size={20} className="text-green-500 shrink-0" />}
+          {notif.type === 'error' && <AlertCircle size={20} className="text-red-500 shrink-0" />}
+          {notif.type === 'warning' && <AlertTriangle size={20} className="text-yellow-500 shrink-0" />}
+          {notif.type === 'info' && <Info size={20} className="text-blue-500 shrink-0" />}
+          
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{notif.message}</p>
+          </div>
+          <button onClick={() => removeNotification(notif.id)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+            <X size={16} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AppProvider>
+      <AppContent />
+      <NotificationContainer />
+    </AppProvider>
   );
 };
 

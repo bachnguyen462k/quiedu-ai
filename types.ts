@@ -132,3 +132,14 @@ export interface AiGenerationRecord {
   fileName: string; // Name of the uploaded file
   result: TextbookAnalysisResult;
 }
+
+// --- New Types for Notifications ---
+export type NotificationType = 'success' | 'error' | 'info' | 'warning';
+
+export interface Notification {
+  id: string;
+  message: string;
+  type: NotificationType;
+}
+
+export type ThemeMode = 'light' | 'dark';

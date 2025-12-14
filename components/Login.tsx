@@ -32,8 +32,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="max-w-4xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4 transition-colors">
+      <div className="max-w-4xl w-full bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row transition-colors">
         
         {/* Left Side: Branding */}
         <div className="md:w-1/2 bg-indigo-600 p-12 text-white flex flex-col justify-between relative overflow-hidden">
@@ -64,16 +64,16 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
 
         {/* Right Side: Form */}
         <div className="md:w-1/2 p-12 flex flex-col justify-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Đăng nhập</h3>
-            <p className="text-gray-500 mb-8">Chọn vai trò của bạn để tiếp tục</p>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Đăng nhập</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-8">Chọn vai trò của bạn để tiếp tục</p>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
                 <button 
                     onClick={() => setSelectedRole('STUDENT')}
                     className={`p-4 rounded-xl border-2 flex flex-col items-center gap-3 transition-all ${
                         selectedRole === 'STUDENT' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-200 hover:border-indigo-200 text-gray-500'
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
+                        : 'border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-500 text-gray-500 dark:text-gray-400'
                     }`}
                 >
                     <GraduationCap size={32} />
@@ -83,8 +83,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
                     onClick={() => setSelectedRole('TEACHER')}
                     className={`p-4 rounded-xl border-2 flex flex-col items-center gap-3 transition-all ${
                         selectedRole === 'TEACHER' 
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                        : 'border-gray-200 hover:border-indigo-200 text-gray-500'
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
+                        : 'border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-500 text-gray-500 dark:text-gray-400'
                     }`}
                 >
                     <School size={32} />
@@ -94,19 +94,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
 
             <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email / Tên đăng nhập</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email / Tên đăng nhập</label>
                     <input 
                         type="email" 
                         defaultValue={selectedRole === 'TEACHER' ? 'lan.gv@schools.edu' : 'nam.hs@schools.edu'}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mật khẩu</label>
                     <input 
                         type="password" 
                         defaultValue="password123"
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                     />
                 </div>
 
@@ -118,7 +118,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
                 </button>
             </form>
 
-            <button onClick={onBack} className="mt-6 text-center text-sm text-gray-500 hover:text-indigo-600">
+            <button onClick={onBack} className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">
                 Quay lại trang chủ
             </button>
         </div>

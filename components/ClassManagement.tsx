@@ -276,39 +276,39 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
     if (selectedClass) {
         // Detailed Class View
         return (
-            <div className="max-w-6xl mx-auto px-6 py-8 pb-20">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20 animate-fade-in">
                 <button 
                     onClick={() => {
                         setSelectedClassId(null);
                         setSelectedAssignmentId(null);
                         setActiveTab('OVERVIEW');
                     }}
-                    className="mb-4 text-gray-500 hover:text-indigo-600 flex items-center gap-2 text-sm font-medium"
+                    className="mb-4 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 flex items-center gap-2 text-sm font-medium transition-colors"
                 >
                     &larr; Quay lại danh sách lớp
                 </button>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 transition-colors">
                     <div className="h-32 bg-gradient-to-r from-indigo-600 to-purple-600 p-8 flex flex-col justify-end">
                         <h1 className="text-3xl font-bold text-white">{selectedClass.name}</h1>
                         <p className="text-indigo-100">{selectedClass.description}</p>
                     </div>
-                    <div className="px-6 py-2 border-b border-gray-100 flex gap-6 overflow-x-auto">
+                    <div className="px-6 py-2 border-b border-gray-100 dark:border-gray-700 flex gap-6 overflow-x-auto">
                         <button 
                             onClick={() => { setActiveTab('OVERVIEW'); setSelectedAssignmentId(null); }}
-                            className={`py-3 px-2 border-b-2 font-medium text-sm transition-colors ${activeTab === 'OVERVIEW' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+                            className={`py-3 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'OVERVIEW' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                         >
                             Bài tập & Hoạt động
                         </button>
                         <button 
                              onClick={() => { setActiveTab('MEMBERS'); setSelectedAssignmentId(null); }}
-                             className={`py-3 px-2 border-b-2 font-medium text-sm transition-colors ${activeTab === 'MEMBERS' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+                             className={`py-3 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'MEMBERS' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                         >
                             Thành viên ({selectedClass.studentCount})
                         </button>
                         <button 
                              onClick={() => { setActiveTab('STATS'); setSelectedAssignmentId(null); }}
-                             className={`py-3 px-2 border-b-2 font-medium text-sm transition-colors ${activeTab === 'STATS' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+                             className={`py-3 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'STATS' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                         >
                             Bảng điểm & Thống kê
                         </button>
@@ -319,42 +319,42 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                 {activeTab === 'OVERVIEW' && (
                     <div>
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold text-gray-900">Bài tập đã giao</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Bài tập đã giao</h3>
                             <button 
                                 onClick={() => setIsAssignModalOpen(true)}
-                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 flex items-center gap-2"
+                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 flex items-center gap-2 transition-colors"
                             >
                                 <Plus size={16} /> Giao bài mới
                             </button>
                         </div>
                         
                         {selectedClass.assignments.length === 0 ? (
-                             <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                                <BookOpen className="mx-auto text-gray-300 mb-3" size={40} />
-                                <p className="text-gray-500">Chưa có bài tập nào được giao.</p>
+                             <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 transition-colors">
+                                <BookOpen className="mx-auto text-gray-300 dark:text-gray-600 mb-3" size={40} />
+                                <p className="text-gray-500 dark:text-gray-400">Chưa có bài tập nào được giao.</p>
                              </div>
                         ) : (
                             <div className="space-y-4">
                                 {selectedClass.assignments.map(assign => (
-                                    <div key={assign.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between hover:border-indigo-300 transition-colors">
+                                    <div key={assign.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors gap-4">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                            <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
                                                 <BookOpen size={20} />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                                                <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                                     {assign.studySetTitle}
                                                     {assign.attachmentName && <Paperclip size={14} className="text-gray-400" />}
                                                 </h4>
-                                                <p className="text-xs text-gray-500">Giao ngày: {new Date(assign.assignedAt).toLocaleDateString('vi-VN')}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">Giao ngày: {new Date(assign.assignedAt).toLocaleDateString('vi-VN')}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-6">
+                                        <div className="flex items-center gap-6 justify-end">
                                             <div className="text-right">
-                                                <div className="text-sm font-bold text-gray-900">{assign.results.length}/{selectedClass.studentCount}</div>
-                                                <div className="text-xs text-gray-500">Đã nộp</div>
+                                                <div className="text-sm font-bold text-gray-900 dark:text-white">{assign.results.length}/{selectedClass.studentCount}</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">Đã nộp</div>
                                             </div>
-                                            <button className="text-gray-400 hover:text-gray-900">
+                                            <button className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
                                                 <MoreVertical size={20} />
                                             </button>
                                         </div>
@@ -371,9 +371,9 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                         {/* Level 1: List of Assignments (Hierarchy) */}
                         {!selectedAssignmentId ? (
                              <div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-6">Chọn bài kiểm tra để xem thống kê</h3>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Chọn bài kiểm tra để xem thống kê</h3>
                                 {selectedClass.assignments.length === 0 ? (
-                                    <div className="text-center text-gray-500 py-10">Chưa có dữ liệu thống kê.</div>
+                                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">Chưa có dữ liệu thống kê.</div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {selectedClass.assignments.map(assign => {
@@ -382,25 +382,25 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                 <div 
                                                     key={assign.id}
                                                     onClick={() => setSelectedAssignmentId(assign.id)}
-                                                    className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 cursor-pointer transition-all group"
+                                                    className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500 cursor-pointer transition-all group"
                                                 >
                                                     <div className="flex justify-between items-start mb-4">
-                                                        <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                        <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                                                             <BarChart3 size={20} />
                                                         </div>
-                                                        <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                                        <span className="text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">
                                                             {new Date(assign.assignedAt).toLocaleDateString('vi-VN')}
                                                         </span>
                                                     </div>
-                                                    <h4 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-indigo-600">{assign.studySetTitle}</h4>
-                                                    <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
+                                                    <h4 className="font-bold text-gray-900 dark:text-white text-lg mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{assign.studySetTitle}</h4>
+                                                    <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                                                         <div>
-                                                            <p className="text-xs text-gray-500">Đã nộp</p>
-                                                            <p className="font-bold text-gray-900">{assign.results.length}/{selectedClass.studentCount}</p>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400">Đã nộp</p>
+                                                            <p className="font-bold text-gray-900 dark:text-white">{assign.results.length}/{selectedClass.studentCount}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-gray-500">Điểm TB</p>
-                                                            <p className={`font-bold ${stats.avg >= 80 ? 'text-green-600' : stats.avg >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400">Điểm TB</p>
+                                                            <p className={`font-bold ${stats.avg >= 80 ? 'text-green-600 dark:text-green-400' : stats.avg >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
                                                                 {stats.avg}/100
                                                             </p>
                                                         </div>
@@ -423,43 +423,43 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                     <div className="animate-fade-in">
                                         <button 
                                             onClick={() => { setSelectedAssignmentId(null); setResultsPage(1); }}
-                                            className="mb-4 text-indigo-600 hover:text-indigo-800 flex items-center gap-1 text-sm font-bold"
+                                            className="mb-4 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 text-sm font-bold transition-colors"
                                         >
                                             <ArrowLeft size={16} /> Quay lại danh sách
                                         </button>
 
                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                                             <div>
-                                                <h2 className="text-2xl font-bold text-gray-900">{selectedAssignment.studySetTitle}</h2>
-                                                <p className="text-gray-500 text-sm">Thống kê chi tiết kết quả làm bài của học sinh</p>
+                                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedAssignment.studySetTitle}</h2>
+                                                <p className="text-gray-500 dark:text-gray-400 text-sm">Thống kê chi tiết kết quả làm bài của học sinh</p>
                                             </div>
                                             <div className="flex gap-2">
-                                                 <div className="bg-white border px-4 py-2 rounded-lg text-center shadow-sm">
-                                                    <div className="text-xs text-gray-500 uppercase font-bold">Điểm TB</div>
-                                                    <div className="text-xl font-bold text-indigo-600">{stats.avg}</div>
+                                                 <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 px-4 py-2 rounded-lg text-center shadow-sm">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Điểm TB</div>
+                                                    <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{stats.avg}</div>
                                                  </div>
-                                                 <div className="bg-white border px-4 py-2 rounded-lg text-center shadow-sm">
-                                                    <div className="text-xs text-gray-500 uppercase font-bold">Cao nhất</div>
-                                                    <div className="text-xl font-bold text-green-600">{stats.max}</div>
+                                                 <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 px-4 py-2 rounded-lg text-center shadow-sm">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Cao nhất</div>
+                                                    <div className="text-xl font-bold text-green-600 dark:text-green-400">{stats.max}</div>
                                                  </div>
-                                                 <div className="bg-white border px-4 py-2 rounded-lg text-center shadow-sm">
-                                                    <div className="text-xs text-gray-500 uppercase font-bold">Thấp nhất</div>
-                                                    <div className="text-xl font-bold text-red-600">{stats.min}</div>
+                                                 <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 px-4 py-2 rounded-lg text-center shadow-sm">
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Thấp nhất</div>
+                                                    <div className="text-xl font-bold text-red-600 dark:text-red-400">{stats.min}</div>
                                                  </div>
                                             </div>
                                         </div>
 
                                         {/* Chart Section */}
-                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
-                                            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-8 transition-colors">
+                                            <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                                 <BarChart3 size={20} className="text-gray-400" /> Biểu đồ phân bổ điểm số
                                             </h4>
                                             <div className="h-64 w-full">
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <BarChart data={stats.distribution}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} dy={10} />
-                                                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#6B7280', fontSize: 12}} />
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" strokeOpacity={0.3} />
+                                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 12}} dy={10} />
+                                                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 12}} />
                                                         <Tooltip 
                                                             cursor={{fill: 'transparent'}}
                                                             contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
@@ -475,65 +475,65 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                         </div>
 
                                         {/* Result Table */}
-                                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                                                <h4 className="font-bold text-gray-800">Danh sách học sinh ({selectedAssignment.results.length} đã nộp)</h4>
+                                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+                                            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
+                                                <h4 className="font-bold text-gray-800 dark:text-white">Danh sách học sinh ({selectedAssignment.results.length} đã nộp)</h4>
                                             </div>
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-sm text-left">
-                                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                                    <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700/50">
                                                         <tr>
-                                                            <th className="px-6 py-3">Học sinh</th>
-                                                            <th className="px-6 py-3">Điểm số</th>
-                                                            <th className="px-6 py-3">Trạng thái</th>
-                                                            <th className="px-6 py-3">Thời gian nộp</th>
-                                                            <th className="px-6 py-3">Chi tiết</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">Học sinh</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">Điểm số</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">Trạng thái</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">Thời gian nộp</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">Chi tiết</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody>
+                                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                                                         {currentResults.length > 0 ? (
                                                             currentResults.map((res, idx) => (
                                                                 <tr 
                                                                     key={idx} 
                                                                     onClick={() => handleViewStudentResult(res)}
-                                                                    className="bg-white border-b hover:bg-indigo-50 cursor-pointer transition-colors group"
+                                                                    className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors group"
                                                                 >
-                                                                    <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-3">
-                                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+                                                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white flex items-center gap-3 whitespace-nowrap">
+                                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-700 dark:text-indigo-400 font-bold text-xs">
                                                                             {res.studentName.charAt(0)}
                                                                         </div>
                                                                         {res.studentName}
                                                                         {(resultsPage - 1) * ITEMS_PER_PAGE + idx === 0 && <Trophy size={16} className="text-yellow-500" />}
                                                                     </td>
-                                                                    <td className="px-6 py-4">
+                                                                    <td className="px-6 py-4 whitespace-nowrap">
                                                                         {res.score === 0 && res.submissionUrl ? (
-                                                                           <span className="px-2 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">Chờ chấm</span>
+                                                                           <span className="px-2 py-1 rounded-full text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">Chờ chấm</span>
                                                                         ) : (
                                                                             <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                                                                res.score >= 85 ? 'bg-green-100 text-green-700' : 
-                                                                                res.score >= 70 ? 'bg-blue-100 text-blue-700' :
-                                                                                res.score >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                                                                res.score >= 85 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 
+                                                                                res.score >= 70 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                                                                                res.score >= 50 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                                                                             }`}>
                                                                                 {res.score}/100
                                                                             </span>
                                                                         )}
                                                                     </td>
-                                                                    <td className="px-6 py-4 text-gray-600">
+                                                                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                                                                         {res.submissionUrl ? (
-                                                                            <span className="flex items-center gap-1 text-indigo-600"><FileText size={14} /> File đính kèm</span>
+                                                                            <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><FileText size={14} /> File đính kèm</span>
                                                                         ) : (
                                                                             `${Math.round((res.score / 100) * res.totalQuestions)}/${res.totalQuestions} câu đúng`
                                                                         )}
                                                                     </td>
-                                                                    <td className="px-6 py-4 text-gray-500">{new Date(res.completedAt).toLocaleString('vi-VN')}</td>
-                                                                    <td className="px-6 py-4 text-gray-400 group-hover:text-indigo-600">
+                                                                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(res.completedAt).toLocaleString('vi-VN')}</td>
+                                                                    <td className="px-6 py-4 text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                                                                         <Eye size={18} />
                                                                     </td>
                                                                 </tr>
                                                             ))
                                                         ) : (
                                                             <tr>
-                                                                <td colSpan={5} className="px-6 py-8 text-center text-gray-500 italic">Chưa có học sinh nào nộp bài</td>
+                                                                <td colSpan={5} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400 italic">Chưa có học sinh nào nộp bài</td>
                                                             </tr>
                                                         )}
                                                     </tbody>
@@ -542,26 +542,26 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                             
                                             {/* Pagination Controls */}
                                             {sortedResults.length > ITEMS_PER_PAGE && (
-                                                <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                                                <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 sm:px-6">
                                                     <div className="flex flex-1 justify-between sm:hidden">
                                                         <button 
                                                             onClick={() => setResultsPage(Math.max(1, resultsPage - 1))}
                                                             disabled={resultsPage === 1}
-                                                            className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                                            className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
                                                         >
                                                             Trước
                                                         </button>
                                                         <button 
                                                             onClick={() => setResultsPage(Math.min(totalPages, resultsPage + 1))}
                                                             disabled={resultsPage === totalPages}
-                                                            className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                                            className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
                                                         >
                                                             Sau
                                                         </button>
                                                     </div>
                                                     <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                                                         <div>
-                                                            <p className="text-sm text-gray-700">
+                                                            <p className="text-sm text-gray-700 dark:text-gray-300">
                                                                 Hiển thị <span className="font-medium">{(resultsPage - 1) * ITEMS_PER_PAGE + 1}</span> đến <span className="font-medium">{Math.min(resultsPage * ITEMS_PER_PAGE, sortedResults.length)}</span> trong số <span className="font-medium">{sortedResults.length}</span> kết quả
                                                             </p>
                                                         </div>
@@ -570,7 +570,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                                 <button 
                                                                     onClick={() => setResultsPage(Math.max(1, resultsPage - 1))}
                                                                     disabled={resultsPage === 1}
-                                                                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                                                                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                                                                 >
                                                                     <span className="sr-only">Trước</span>
                                                                     <ChevronLeft className="h-5 w-5" aria-hidden="true" />
@@ -583,7 +583,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                                         className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
                                                                             resultsPage === i + 1 
                                                                                 ? 'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600' 
-                                                                                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                                                                : 'text-gray-900 dark:text-gray-200 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0'
                                                                         }`}
                                                                     >
                                                                         {i + 1}
@@ -593,7 +593,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                                 <button 
                                                                     onClick={() => setResultsPage(Math.min(totalPages, resultsPage + 1))}
                                                                     disabled={resultsPage === totalPages}
-                                                                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                                                                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                                                                 >
                                                                     <span className="sr-only">Sau</span>
                                                                     <ChevronRight className="h-5 w-5" aria-hidden="true" />
@@ -613,34 +613,34 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                 
                 {/* --- TAB: MEMBERS --- */}
                 {activeTab === 'MEMBERS' && (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                        <Users className="mx-auto text-gray-300 mb-3" size={40} />
-                        <p className="text-gray-500 mb-4">Danh sách thành viên lớp học</p>
-                        <button className="text-indigo-600 font-bold hover:underline">Thêm học sinh</button>
+                    <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 transition-colors">
+                        <Users className="mx-auto text-gray-300 dark:text-gray-600 mb-3" size={40} />
+                        <p className="text-gray-500 dark:text-gray-400 mb-4">Danh sách thành viên lớp học</p>
+                        <button className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Thêm học sinh</button>
                     </div>
                 )}
 
                 {/* Modal View Student Result Detail */}
                 {viewingStudentResult && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl w-full max-w-4xl p-6 max-h-[90vh] flex flex-col">
-                            <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-4xl p-6 max-h-[90vh] flex flex-col transition-colors animate-fade-in">
+                            <div className="flex justify-between items-start mb-6 border-b border-gray-100 dark:border-gray-700 pb-4">
                                 <div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-1">{viewingStudentResult.studentName}</h3>
-                                    <p className="text-sm text-gray-500">
-                                        Điểm: <span className="font-bold text-indigo-600">{viewingStudentResult.score}/100</span>
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{viewingStudentResult.studentName}</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        Điểm: <span className="font-bold text-indigo-600 dark:text-indigo-400">{viewingStudentResult.score}/100</span>
                                     </p>
                                 </div>
-                                <button onClick={() => setViewingStudentResult(null)} className="text-gray-400 hover:text-gray-900">
+                                <button onClick={() => setViewingStudentResult(null)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
                                     <X size={24} />
                                 </button>
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto pr-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="flex-1 overflow-y-auto pr-2 grid grid-cols-1 md:grid-cols-2 gap-6 custom-scrollbar">
                                 {/* Left: Answer List / File View */}
                                 <div>
                                     {viewingStudentResult.submissionUrl ? (
-                                        <div className="bg-gray-100 rounded-lg p-4 flex flex-col items-center justify-center min-h-[300px]">
+                                        <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 flex flex-col items-center justify-center min-h-[300px]">
                                             <img 
                                                 src={viewingStudentResult.submissionUrl} 
                                                 alt="Student Submission" 
@@ -649,7 +649,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                             <a 
                                                 href={viewingStudentResult.submissionUrl} 
                                                 download="bai_lam_hoc_sinh.png"
-                                                className="text-indigo-600 text-sm font-medium hover:underline flex items-center gap-1"
+                                                className="text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:underline flex items-center gap-1"
                                             >
                                                 <Download size={14} /> Tải ảnh xuống
                                             </a>
@@ -657,10 +657,10 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                     ) : (
                                         <div className="space-y-4">
                                             {viewingStudentResult.details?.map((detail, idx) => (
-                                                <div key={idx} className={`p-4 rounded-lg border-l-4 ${detail.isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
-                                                    <p className="font-bold text-gray-800 mb-2">Câu {idx + 1}: {detail.questionTerm}</p>
+                                                <div key={idx} className={`p-4 rounded-lg border-l-4 ${detail.isCorrect ? 'bg-green-50 dark:bg-green-900/20 border-green-500' : 'bg-red-50 dark:bg-red-900/20 border-red-500'}`}>
+                                                    <p className="font-bold text-gray-800 dark:text-gray-100 mb-2">Câu {idx + 1}: {detail.questionTerm}</p>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                                                        <div className={detail.isCorrect ? 'text-green-700' : 'text-red-700'}>
+                                                        <div className={detail.isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
                                                             <span className="font-semibold block text-xs uppercase opacity-70 mb-1">Học sinh chọn:</span>
                                                             <div className="flex items-center gap-2">
                                                                 {detail.isCorrect ? <Check size={16} /> : <X size={16} />}
@@ -668,7 +668,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                             </div>
                                                         </div>
                                                         {!detail.isCorrect && (
-                                                            <div className="text-green-700">
+                                                            <div className="text-green-700 dark:text-green-400">
                                                                 <span className="font-semibold block text-xs uppercase opacity-70 mb-1">Đáp án đúng:</span>
                                                                 <div className="flex items-center gap-2">
                                                                     <Check size={16} />
@@ -685,26 +685,26 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
 
                                 {/* Right: AI Grading / Stats */}
                                 <div className="space-y-4">
-                                     <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                                         <h4 className="font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                                     <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                                         <h4 className="font-bold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2">
                                              <Sparkles size={18} /> Trợ lý AI
                                          </h4>
                                          {viewingStudentResult.submissionUrl && (
                                              <button 
                                                 onClick={handleTriggerAIGrading}
                                                 disabled={isGrading}
-                                                className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 mb-4"
+                                                className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 mb-4 transition-colors"
                                              >
                                                 {isGrading ? 'Đang phân tích...' : 'Chấm bài ngay'}
                                              </button>
                                          )}
                                          
                                          {aiFeedback ? (
-                                             <div className="text-sm text-gray-700 prose prose-sm max-w-none bg-white p-3 rounded-lg border border-gray-200">
+                                             <div className="text-sm text-gray-700 dark:text-gray-200 prose prose-sm max-w-none bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                                                  <pre className="whitespace-pre-wrap font-sans">{aiFeedback}</pre>
                                              </div>
                                          ) : (
-                                            <p className="text-sm text-gray-500">
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">
                                                 {viewingStudentResult.submissionUrl 
                                                     ? "Nhấn nút để AI phân tích bài làm của học sinh." 
                                                     : "AI chỉ hỗ trợ chấm bài tự luận qua hình ảnh."}
@@ -714,10 +714,10 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                 </div>
                             </div>
                             
-                            <div className="pt-4 mt-4 border-t border-gray-100 text-right">
+                            <div className="pt-4 mt-4 border-t border-gray-100 dark:border-gray-700 text-right">
                                 <button 
                                     onClick={() => setViewingStudentResult(null)}
-                                    className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
+                                    className="px-6 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-medium transition-colors"
                                 >
                                     Đóng
                                 </button>
@@ -728,24 +728,24 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
 
                 {/* Modal Assign Set */}
                 {isAssignModalOpen && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl w-full max-w-lg p-6 max-h-[80vh] flex flex-col">
-                            <h3 className="text-lg font-bold mb-4">Giao bài tập cho lớp</h3>
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 max-h-[80vh] flex flex-col transition-colors animate-fade-in">
+                            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Giao bài tập cho lớp</h3>
                             
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Đính kèm tài liệu (PDF, Ảnh)</label>
-                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition-colors relative">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Đính kèm tài liệu (PDF, Ảnh)</label>
+                                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative">
                                     <input 
                                         type="file" 
                                         onChange={handleTeacherFileChange}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                     />
                                     {teacherAttachment ? (
-                                        <div className="flex items-center justify-center gap-2 text-indigo-600 font-medium">
+                                        <div className="flex items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium">
                                             <FileText size={20} /> {teacherAttachment.name}
                                         </div>
                                     ) : (
-                                        <div className="text-gray-500">
+                                        <div className="text-gray-500 dark:text-gray-400">
                                             <Upload size={24} className="mx-auto mb-2 text-gray-400" />
                                             <span className="text-sm">Nhấn để tải lên</span>
                                         </div>
@@ -753,22 +753,22 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto space-y-2 mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Chọn học phần</label>
+                            <div className="flex-1 overflow-y-auto space-y-2 mb-4 custom-scrollbar">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chọn học phần</label>
                                 {sets.map(set => (
                                     <button 
                                         key={set.id}
                                         onClick={() => handleAssignSet(set.id, set.title)}
-                                        className="w-full text-left p-3 rounded-lg hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 transition-all flex items-center justify-between group"
+                                        className="w-full text-left p-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-500 transition-all flex items-center justify-between group"
                                     >
-                                        <span className="font-medium text-gray-700 group-hover:text-indigo-700">{set.title}</span>
-                                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">{set.cards.length} câu</span>
+                                        <span className="font-medium text-gray-700 dark:text-gray-200 group-hover:text-indigo-700 dark:group-hover:text-indigo-400">{set.title}</span>
+                                        <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{set.cards.length} câu</span>
                                     </button>
                                 ))}
                             </div>
                             <button 
                                 onClick={() => setIsAssignModalOpen(false)}
-                                className="w-full py-2 text-gray-500 hover:bg-gray-100 rounded-lg font-medium"
+                                className="w-full py-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
                             >
                                 Hủy bỏ
                             </button>
@@ -781,17 +781,17 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
 
     // List of Classes
     return (
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20 animate-fade-in">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Quản lý lớp học</h1>
-                    <p className="text-gray-500 text-sm mt-1">Tạo lớp, giao bài và theo dõi tiến độ của học sinh.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Quản lý lớp học</h1>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Tạo lớp, giao bài và theo dõi tiến độ của học sinh.</p>
                 </div>
                 <button 
                     onClick={handleCreateClass}
-                    className="bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-indigo-700 flex items-center gap-2 shadow-sm"
+                    className="bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-indigo-700 flex items-center gap-2 shadow-sm transition-colors"
                 >
-                    <Plus size={18} /> Tạo lớp mới
+                    <Plus size={18} /> <span className="hidden sm:inline">Tạo lớp mới</span><span className="sm:hidden">Thêm</span>
                 </button>
             </div>
 
@@ -800,22 +800,22 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                     <div 
                         key={cls.id}
                         onClick={() => setSelectedClassId(cls.id)}
-                        className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:border-indigo-300 hover:shadow-md cursor-pointer transition-all group"
+                        className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all group"
                     >
                         <div className="flex items-start justify-between mb-4">
-                            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                                 <Users size={24} />
                             </div>
-                            <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">
+                            <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-2 py-1 rounded">
                                 {cls.studentCount} HS
                             </span>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">{cls.name}</h3>
-                        <p className="text-gray-500 text-sm line-clamp-2 mb-4">{cls.description}</p>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{cls.name}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mb-4">{cls.description}</p>
                         
-                        <div className="border-t border-gray-100 pt-4 flex items-center justify-between text-sm text-gray-500">
+                        <div className="border-t border-gray-100 dark:border-gray-700 pt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                              <span className="flex items-center gap-1"><BookOpen size={14} /> {cls.assignments.length} bài tập</span>
-                             <span className="flex items-center gap-1 text-indigo-600 font-medium group-hover:underline">Chi tiết <ChevronRight size={14} /></span>
+                             <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-medium group-hover:underline">Chi tiết <ChevronRight size={14} /></span>
                         </div>
                     </div>
                 ))}
@@ -826,61 +826,61 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
 
   // --- View: Student Dashboard (Simplified) ---
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Lớp học của tôi</h1>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20 animate-fade-in">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Lớp học của tôi</h1>
         
         {classes.length > 0 ? (
              <div className="grid grid-cols-1 gap-4">
                 {classes.map(cls => (
-                    <div key={cls.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div key={cls.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400">
                                     <Users size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-gray-900">{cls.name}</h3>
-                                    <p className="text-gray-500 text-sm">Giáo viên: Cô Thu Lan</p>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{cls.name}</h3>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">Giáo viên: Cô Thu Lan</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-3">
-                            <h4 className="font-bold text-gray-700 text-sm uppercase tracking-wide">Bài tập cần làm</h4>
+                            <h4 className="font-bold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">Bài tập cần làm</h4>
                             {cls.assignments.map(assign => {
                                 const submitted = assign.results.some(r => r.studentId === currentUser.id);
                                 return (
-                                <div key={assign.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <div key={assign.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700 gap-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded bg-white flex items-center justify-center text-indigo-600 shadow-sm">
+                                        <div className="w-8 h-8 rounded bg-white dark:bg-gray-700 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm shrink-0">
                                             <BookOpen size={16} />
                                         </div>
                                         <div>
-                                            <div className="font-bold text-gray-900 flex items-center gap-2">
+                                            <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                                 {assign.studySetTitle}
                                                 {assign.attachmentName && (
-                                                    <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                                    <span className="text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
                                                         <Paperclip size={10} /> {assign.attachmentName}
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-xs text-gray-500">Hạn chót: {new Date(assign.assignedAt + 86400000 * 7).toLocaleDateString('vi-VN')}</div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">Hạn chót: {new Date(assign.assignedAt + 86400000 * 7).toLocaleDateString('vi-VN')}</div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 w-full sm:w-auto">
                                         {submitted ? (
-                                            <span className="px-4 py-2 bg-green-100 text-green-700 font-bold rounded-lg text-sm flex items-center gap-1">
+                                            <span className="flex-1 sm:flex-none justify-center px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold rounded-lg text-sm flex items-center gap-1">
                                                 <Check size={16} /> Đã nộp
                                             </span>
                                         ) : (
                                             <>
                                                 <button 
                                                     onClick={() => setIsStudentSubmitting(assign.id)}
-                                                    className="px-3 py-2 border border-indigo-600 text-indigo-600 text-sm font-bold rounded-lg hover:bg-indigo-50 flex items-center gap-1"
+                                                    className="flex-1 sm:flex-none px-3 py-2 border border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 text-sm font-bold rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center justify-center gap-1 transition-colors"
                                                 >
                                                     <Upload size={16} /> Nộp file
                                                 </button>
-                                                <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700">
+                                                <button className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition-colors">
                                                     Làm bài
                                                 </button>
                                             </>
@@ -888,26 +888,26 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                     </div>
                                 </div>
                             )})}
-                            {cls.assignments.length === 0 && <p className="text-gray-400 text-sm italic">Không có bài tập nào.</p>}
+                            {cls.assignments.length === 0 && <p className="text-gray-400 dark:text-gray-500 text-sm italic">Không có bài tập nào.</p>}
                         </div>
                     </div>
                 ))}
              </div>
         ) : (
             <div className="text-center py-12">
-                <p className="text-gray-500">Bạn chưa tham gia lớp học nào.</p>
-                <button className="mt-4 text-indigo-600 font-bold hover:underline">Tham gia lớp học bằng mã</button>
+                <p className="text-gray-500 dark:text-gray-400">Bạn chưa tham gia lớp học nào.</p>
+                <button className="mt-4 text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Tham gia lớp học bằng mã</button>
             </div>
         )}
 
         {/* Student Submission Modal */}
         {isStudentSubmitting && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl w-full max-w-md p-6">
-                    <h3 className="text-lg font-bold mb-4">Nộp bài làm</h3>
-                    <p className="text-gray-500 text-sm mb-4">Tải lên ảnh chụp vở bài tập hoặc file PDF.</p>
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 transition-colors animate-fade-in">
+                    <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Nộp bài làm</h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Tải lên ảnh chụp vở bài tập hoặc file PDF.</p>
                     
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors relative mb-6">
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative mb-6">
                         <input 
                             type="file" 
                             onChange={handleStudentFileChange}
@@ -915,13 +915,13 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
                         {studentSubmission ? (
-                            <div className="flex flex-col items-center justify-center gap-2 text-indigo-600 font-medium">
+                            <div className="flex flex-col items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium">
                                 <FileText size={32} /> 
                                 <span>{studentSubmission.name}</span>
-                                <span className="text-xs text-green-600">Đã sẵn sàng nộp</span>
+                                <span className="text-xs text-green-600 dark:text-green-400">Đã sẵn sàng nộp</span>
                             </div>
                         ) : (
-                            <div className="text-gray-500">
+                            <div className="text-gray-500 dark:text-gray-400">
                                 <Upload size={32} className="mx-auto mb-2 text-gray-400" />
                                 <span className="font-medium">Nhấn để tải lên file</span>
                             </div>
@@ -931,14 +931,14 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                     <div className="flex gap-3">
                         <button 
                             onClick={() => { setIsStudentSubmitting(null); setStudentSubmission(null); }}
-                            className="flex-1 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+                            className="flex-1 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
                         >
                             Hủy
                         </button>
                         <button 
                             onClick={handleSubmitAssignment}
                             disabled={!studentSubmission}
-                            className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             Nộp bài
                         </button>
