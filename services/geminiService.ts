@@ -3,6 +3,21 @@ import { Flashcard, TextbookAnalysisResult } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+const cleanJson = (text: string) => {
+  // Remove markdown code blocks if present
+  let cleaned = text.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+
+  // Extract the JSON object if there's surrounding text
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+  
+  return cleaned.trim();
+};
+
 // Generate a study set based on a topic
 export const generateStudySetWithAI = async (topic: string, count: number = 10): Promise<{ title: string; description: string; cards: Omit<Flashcard, 'id'>[] }> => {
   try {
@@ -37,18 +52,22 @@ export const generateStudySetWithAI = async (topic: string, count: number = 10):
     const text = response.text;
     if (!text) throw new Error("No response from AI");
     
-    return JSON.parse(text);
+    return JSON.parse(cleanJson(text));
   } catch (error) {
     console.error("Error generating study set:", error);
     throw error;
   }
 };
 
-// Analyze student submission (image) for grading
-export const gradeSubmissionWithAI = async (base64Image: string, assignmentTitle: string): Promise<string> => {
+// Analyze student submission (image/pdf) for grading
+export const gradeSubmissionWithAI = async (base64File: string, assignmentTitle: string): Promise<string> => {
   try {
-    // Remove data:image/png;base64, prefix if present
-    const base64Data = base64Image.split(',')[1] || base64Image;
+    // Extract mime type dynamically
+    const mimeTypeMatch = base64File.match(/^data:([^;]+);base64,/);
+    const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/jpeg';
+    
+    // Remove data prefix if present
+    const base64Data = base64File.replace(/^data:([^;]+);base64,/, '');
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -56,12 +75,12 @@ export const gradeSubmissionWithAI = async (base64Image: string, assignmentTitle
         parts: [
           {
             inlineData: {
-              mimeType: 'image/jpeg', // Assuming jpeg/png for simplicity
+              mimeType: mimeType,
               data: base64Data
             }
           },
           {
-            text: `Bạn là trợ lý giáo viên. Hãy phân tích hình ảnh bài làm của học sinh cho bài tập chủ đề: "${assignmentTitle}". 
+            text: `Bạn là trợ lý giáo viên. Hãy phân tích bài làm của học sinh (được cung cấp dưới dạng file) cho bài tập chủ đề: "${assignmentTitle}". 
             
             Nhiệm vụ:
             1. Đọc và trích xuất nội dung chính mà học sinh đã viết.
@@ -81,68 +100,81 @@ export const gradeSubmissionWithAI = async (base64Image: string, assignmentTitle
   }
 };
 
-// Analyze Textbook/File content
-export const analyzeTextbookWithAI = async (base64Image: string): Promise<TextbookAnalysisResult> => {
+// Analyze Textbook/File content (PDF/Image)
+export const analyzeTextbookWithAI = async (base64File: string): Promise<TextbookAnalysisResult> => {
     try {
-        const base64Data = base64Image.split(',')[1] || base64Image;
+        // Extract mime type dynamically
+        const mimeTypeMatch = base64File.match(/^data:([^;]+);base64,/);
+        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/pdf'; // Default to PDF if generic
 
+        // Remove data header
+        const base64Data = base64File.replace(/^data:([^;]+);base64,/, '');
+
+        // We use a simplified approach without strict responseSchema for the PDF analysis
+        // because huge documents can cause schema validation to truncate or fail.
+        // Instead, we force JSON via mimeType and prompt engineering.
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: {
                 parts: [
                     {
                         inlineData: {
-                            mimeType: 'image/jpeg',
+                            mimeType: mimeType,
                             data: base64Data
                         }
                     },
                     {
-                        text: `Hãy đóng vai một trợ lý giáo viên chuyên nghiệp. Nhiệm vụ của bạn là phân tích trang sách giáo khoa/tài liệu này và trích xuất thông tin để soạn bài giảng.
+                        text: `Bạn là chuyên gia giáo dục. Hãy phân tích tài liệu đính kèm và tạo nội dung ôn tập.
+
+                        YÊU CẦU:
+                        1. Tóm tắt nội dung chính của tài liệu (ngắn gọn).
+                        2. Trích xuất TỐI ĐA 3 chủ đề (Topics) quan trọng nhất.
+                        3. Với mỗi chủ đề, tạo 10 câu hỏi trắc nghiệm (QUIZ) và 5 câu hỏi tự luận (ESSAY).
                         
-                        Yêu cầu đầu ra (JSON):
-                        1. lessonTitle: Tên bài học.
-                        2. summary: Tóm tắt nội dung chính (khoảng 2-3 câu).
-                        3. difficultyLevel: Đánh giá độ khó (Dễ, Trung bình, Khó, Rất khó).
-                        4. difficultyReasoning: Giải thích ngắn gọn tại sao lại đánh giá độ khó như vậy (dựa trên từ vựng, độ phức tạp kiến thức).
-                        5. keyPoints: Danh sách các ý chính/kiến thức trọng tâm (array of strings).
-                        6. examples: Danh sách các ví dụ minh họa có trong bài hoặc ví dụ tương tự (array of strings).
-                        7. generatedQuestions: Tạo ra 5 câu hỏi trắc nghiệm (quiz) dựa trên nội dung này để kiểm tra học sinh. Mỗi câu hỏi cần có: question, options (4 lựa chọn), correctAnswer, và explanation (giải thích).`
+                        TRẢ VỀ JSON DUY NHẤT (Không Markdown) theo mẫu:
+                        {
+                          "subject": "Tên môn học",
+                          "grade": "Lớp",
+                          "overallSummary": "Tóm tắt chung",
+                          "topics": [
+                            {
+                              "topicName": "Tên chủ đề",
+                              "summary": "Tóm tắt chủ đề (ngắn)",
+                              "keyPoints": ["Ý chính 1", "Ý chính 2"],
+                              "formulas": ["Công thức nếu có"],
+                              "questions": [
+                                {
+                                  "type": "QUIZ",
+                                  "difficulty": "Thông hiểu",
+                                  "question": "Nội dung câu hỏi",
+                                  "options": ["A. Đáp án 1", "B. Đáp án 2", "C. Đáp án 3", "D. Đáp án 4"],
+                                  "correctAnswer": "A. Đáp án 1",
+                                  "solutionGuide": "Hướng dẫn giải ngắn gọn",
+                                  "knowledgeApplied": "Kiến thức áp dụng"
+                                }
+                              ]
+                            }
+                          ]
+                        }`
                     }
                 ]
             },
             config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        lessonTitle: { type: Type.STRING },
-                        summary: { type: Type.STRING },
-                        difficultyLevel: { type: Type.STRING, enum: ["Dễ", "Trung bình", "Khó", "Rất khó"] },
-                        difficultyReasoning: { type: Type.STRING },
-                        keyPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
-                        examples: { type: Type.ARRAY, items: { type: Type.STRING } },
-                        generatedQuestions: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    question: { type: Type.STRING },
-                                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
-                                    correctAnswer: { type: Type.STRING },
-                                    explanation: { type: Type.STRING }
-                                },
-                                required: ["question", "options", "correctAnswer", "explanation"]
-                            }
-                        }
-                    },
-                    required: ["lessonTitle", "summary", "difficultyLevel", "difficultyReasoning", "keyPoints", "examples", "generatedQuestions"]
-                }
+                // responseSchema is removed to prevent truncation errors on large inputs
+                responseMimeType: "application/json"
             }
         });
 
         const text = response.text;
         if (!text) throw new Error("No response from AI");
-        return JSON.parse(text);
+        
+        try {
+            return JSON.parse(cleanJson(text));
+        } catch (e) {
+            console.error("Failed to parse JSON:", e);
+            console.log("Raw Text:", text);
+            throw new Error("Dữ liệu trả về bị lỗi. Vui lòng thử lại với file nhỏ hơn hoặc rõ nét hơn.");
+        }
 
     } catch (error) {
         console.error("Error analyzing textbook:", error);

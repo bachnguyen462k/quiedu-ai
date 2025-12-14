@@ -85,17 +85,31 @@ export interface ClassGroup {
 
 // --- AI Textbook Parser Types ---
 
-export interface TextbookAnalysisResult {
-  lessonTitle: string;
+export type QuestionDifficulty = 'Nhận biết' | 'Thông hiểu' | 'Vận dụng' | 'Vận dụng cao';
+
+export interface AIQuestion {
+  type: 'QUIZ' | 'ESSAY';
+  difficulty: QuestionDifficulty;
+  question: string;
+  // For Quiz
+  options?: string[];
+  correctAnswer?: string;
+  // For Essay & Teacher Guide
+  solutionGuide: string; // Step-by-step guide or final answer
+  knowledgeApplied: string; // Specific formula or concept used (e.g. "Hằng đẳng thức số 1")
+}
+
+export interface AITopic {
+  topicName: string; // e.g., "Bài 1: Căn bậc hai"
   summary: string;
-  difficultyLevel: 'Dễ' | 'Trung bình' | 'Khó' | 'Rất khó';
-  difficultyReasoning: string;
-  keyPoints: string[];
-  examples: string[];
-  generatedQuestions: {
-    question: string;
-    options: string[];
-    correctAnswer: string;
-    explanation: string;
-  }[];
+  keyPoints: string[]; // Bullet points of theory
+  formulas: string[]; // Mathematical formulas or key rules identified
+  questions: AIQuestion[]; // Sorted from Easy to Hard
+}
+
+export interface TextbookAnalysisResult {
+  subject: string; // Detected subject
+  grade: string;   // Detected grade level
+  overallSummary: string; // Summary of the whole file
+  topics: AITopic[]; // List of extracted lessons/topics
 }
