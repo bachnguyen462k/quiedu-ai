@@ -30,6 +30,7 @@ export interface StudySet {
   averageScore?: number; // Academic score (percentage)
   cards: Flashcard[];
   reviews?: Review[]; // User ratings
+  isFavorite?: boolean; // New: Track if the current user favorited this set
   
   // New Metadata Fields
   privacy: PrivacyStatus;

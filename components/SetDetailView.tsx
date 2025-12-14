@@ -1,15 +1,17 @@
+
 import React, { useState } from 'react';
 import { StudySet } from '../types';
-import { ArrowLeft, Clock, User, Play, BookOpen, BarChart3, Star, Calendar, Lock, Info, ShieldCheck, Share2, Link, QrCode, Copy, Check, MessageSquare, X } from 'lucide-react';
+import { ArrowLeft, Clock, User, Play, BookOpen, BarChart3, Star, Calendar, Lock, Info, ShieldCheck, Share2, Link, QrCode, Copy, Check, MessageSquare, X, Download, Heart } from 'lucide-react';
 
 interface SetDetailViewProps {
   set: StudySet;
   onBack: () => void;
   onStartFlashcard: () => void;
   onStartQuiz: () => void;
+  onToggleFavorite?: (setId: string) => void;
 }
 
-const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlashcard, onStartQuiz }) => {
+const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlashcard, onStartQuiz, onToggleFavorite }) => {
   const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
 
@@ -40,12 +42,29 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 relative animate-fade-in">
       {/* Back Button */}
-      <button 
-        onClick={onBack}
-        className="mb-6 flex items-center gap-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors font-medium"
-      >
-        <ArrowLeft size={20} /> Quay lại thư viện
-      </button>
+      <div className="flex justify-between items-center mb-6">
+        <button 
+            onClick={onBack}
+            className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors font-medium"
+        >
+            <ArrowLeft size={20} /> Quay lại thư viện
+        </button>
+
+        {/* Favorite Button on Detail View */}
+        {onToggleFavorite && (
+            <button
+                onClick={() => onToggleFavorite(set.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
+                    set.isFavorite 
+                    ? 'border-red-200 bg-red-50 text-red-600 dark:bg-red-900/20 dark:border-red-800' 
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+                }`}
+            >
+                <Heart size={18} fill={set.isFavorite ? "currentColor" : "none"} />
+                <span className="font-bold text-sm">{set.isFavorite ? 'Đã thích' : 'Yêu thích'}</span>
+            </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Info & Actions */}

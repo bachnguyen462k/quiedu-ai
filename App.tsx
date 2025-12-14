@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -40,7 +41,8 @@ const generateMockSets = (count: number): StudySet[] => {
         privacy: 'PUBLIC',
         subject: subjects[i % subjects.length],
         level: 'Lớp 12',
-        school: 'THPT Chu Văn An'
+        school: 'THPT Chu Văn An',
+        isFavorite: Math.random() > 0.8 // Randomly mark some as favorites
     }));
 };
 
@@ -68,7 +70,8 @@ const BASE_SETS: StudySet[] = [
     privacy: 'PUBLIC',
     subject: 'Tiếng Anh',
     level: 'Lớp 6',
-    topic: 'Family'
+    topic: 'Family',
+    isFavorite: true
   },
   {
     id: '2',
@@ -182,6 +185,22 @@ const AppContent: React.FC = () => {
     addNotification('Cảm ơn đánh giá của bạn!', 'success');
   };
 
+  // Toggle favorite status
+  const handleToggleFavorite = (setId: string) => {
+      setSets(prevSets => prevSets.map(s => 
+          s.id === setId ? { ...s, isFavorite: !s.isFavorite } : s
+      ));
+      
+      const set = sets.find(s => s.id === setId);
+      if (set) {
+          if (!set.isFavorite) {
+              addNotification('Đã thêm vào danh sách yêu thích ❤️', 'success');
+          } else {
+              addNotification('Đã xóa khỏi danh sách yêu thích', 'info');
+          }
+      }
+  };
+
   const handleNavigation = (newView: ViewState) => {
       setView(newView);
       if (newView !== 'STUDY' && newView !== 'QUIZ' && newView !== 'SET_DETAILS') {
@@ -215,19 +234,22 @@ const AppContent: React.FC = () => {
             sets={sets} 
             onCreateNew={() => setView('CREATE')}
             onSelectSet={handleSelectSet}
+            onToggleFavorite={handleToggleFavorite}
             isLibrary={false}
           />
         );
       case 'LIBRARY':
-        // Library displays ONLY the current user's sets (Personal View)
-        const mySets = sets.filter(s => s.author === currentUser.name);
+        // Library view now needs all sets to filter by "Favorites" which might include others' sets.
+        // We pass 'currentUser' so Dashboard can filter "My Sets".
         return (
           <Dashboard 
-            sets={mySets} 
+            sets={sets} 
             uploads={aiHistory}
+            currentUser={currentUser}
             onCreateNew={() => setView('CREATE')}
             onSelectSet={handleSelectSet}
             onSelectUpload={handleSelectHistory}
+            onToggleFavorite={handleToggleFavorite}
             isLibrary={true}
           />
         );
@@ -272,6 +294,7 @@ const AppContent: React.FC = () => {
                 onBack={() => setView('DASHBOARD')}
                 onStartFlashcard={() => setView('STUDY')}
                 onStartQuiz={() => setView('QUIZ')}
+                onToggleFavorite={handleToggleFavorite}
             />
         );
 

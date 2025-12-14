@@ -1,13 +1,16 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { StudySet, AiGenerationRecord } from '../types';
-import { Plus, Search, ArrowUpRight, Book, GraduationCap, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight } from 'lucide-react';
+import { StudySet, AiGenerationRecord, User } from '../types';
+import { Plus, Search, ArrowUpRight, Book, GraduationCap, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart } from 'lucide-react';
 
 interface DashboardProps {
   sets: StudySet[];
   uploads?: AiGenerationRecord[]; // Passed only in Library view
+  currentUser?: User | null; // Needed to filter "My Sets" in Library
   onCreateNew: () => void;
   onSelectSet: (set: StudySet) => void;
   onSelectUpload?: (record: AiGenerationRecord) => void;
+  onToggleFavorite: (setId: string) => void;
   isLibrary: boolean;
 }
 
@@ -15,14 +18,14 @@ const SUBJECTS = ['Tất cả', 'Toán', 'Vật Lý', 'Hóa Học', 'Sinh Học'
 const GRADES = ['Tất cả', 'Lớp 10', 'Lớp 11', 'Lớp 12', 'Đại học'];
 const ITEMS_PER_PAGE = 10;
 
-const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, onCreateNew, onSelectSet, onSelectUpload, isLibrary }) => {
+const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCreateNew, onSelectSet, onSelectUpload, onToggleFavorite, isLibrary }) => {
   const [filterSubject, setFilterSubject] = useState('Tất cả');
   const [filterGrade, setFilterGrade] = useState('Tất cả');
   const [sortBy, setSortBy] = useState<'POPULAR' | 'NEWEST'>('POPULAR');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Library Tabs State
-  const [libraryTab, setLibraryTab] = useState<'SETS' | 'FILES'>('SETS');
+  const [libraryTab, setLibraryTab] = useState<'SETS' | 'FAVORITES' | 'FILES'>('SETS');
 
   // Infinity Scroll State
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
@@ -37,7 +40,21 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, onCreateNew, onSel
 
   // Logic: Filter & Sort Main List (SETS)
   const filteredSets = useMemo(() => {
-    let result = sets.filter(s => {
+    let result = sets;
+
+    // 1. Library View specific filtering
+    if (isLibrary && currentUser) {
+        if (libraryTab === 'SETS') {
+            // Show only my sets
+            result = result.filter(s => s.author === currentUser.name);
+        } else if (libraryTab === 'FAVORITES') {
+            // Show only favorite sets (mine or others)
+            result = result.filter(s => s.isFavorite);
+        }
+    }
+
+    // 2. Apply Search & Filters
+    result = result.filter(s => {
         const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                               s.description.toLowerCase().includes(searchQuery.toLowerCase());
         
@@ -55,7 +72,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, onCreateNew, onSel
     }
 
     return result;
-  }, [sets, searchQuery, filterSubject, filterGrade, sortBy]);
+  }, [sets, searchQuery, filterSubject, filterGrade, sortBy, isLibrary, libraryTab, currentUser]);
 
   // Logic: Filter Uploads (FILES)
   const filteredUploads = useMemo(() => {
@@ -134,15 +151,27 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, onCreateNew, onSel
                         
                         <div className="relative z-10 flex flex-col h-full justify-between">
                             <div>
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide ${
-                                        idx === 0 ? 'bg-white/20 text-white' : 'bg-orange-100 text-orange-700'
-                                    }`}>
-                                        HOT
-                                    </span>
-                                    <span className={`text-xs font-medium flex items-center gap-1 ${idx === 0 ? 'text-indigo-100' : 'text-gray-500 dark:text-gray-400'}`}>
-                                        <Play size={10} /> {set.plays}
-                                    </span>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide ${
+                                            idx === 0 ? 'bg-white/20 text-white' : 'bg-orange-100 text-orange-700'
+                                        }`}>
+                                            HOT
+                                        </span>
+                                        <span className={`text-xs font-medium flex items-center gap-1 ${idx === 0 ? 'text-indigo-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                                            <Play size={10} /> {set.plays}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }}
+                                        className={`p-1.5 rounded-full transition-all hover:bg-white/20 ${
+                                            set.isFavorite 
+                                            ? (idx === 0 ? 'text-white fill-white' : 'text-red-500 fill-red-500') 
+                                            : (idx === 0 ? 'text-indigo-200' : 'text-gray-400')
+                                        }`}
+                                    >
+                                        <Heart size={18} fill={set.isFavorite ? "currentColor" : "none"} />
+                                    </button>
                                 </div>
                                 <h3 className={`text-lg font-bold mb-2 line-clamp-2 ${idx === 0 ? 'text-white' : 'text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400'}`}>
                                     {set.title}
@@ -179,9 +208,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, onCreateNew, onSel
                    </h1>
                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                         {isLibrary 
-                            ? (libraryTab === 'SETS' 
-                                ? `Danh sách ${filteredSets.length} học phần do bạn tạo ra`
-                                : `Danh sách ${filteredUploads.length} tài liệu đã tải lên`
+                            ? (libraryTab === 'FILES' 
+                                ? `Danh sách ${filteredUploads.length} tài liệu đã tải lên`
+                                : `Danh sách ${filteredSets.length} học phần`
                               )
                             : 'Học phần nổi bật từ cộng đồng giáo viên và học sinh'
                         }
@@ -197,20 +226,30 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, onCreateNew, onSel
 
             {/* LIBRARY TABS (Only Visible in Library Mode) */}
             {isLibrary && (
-                <div className="border-b border-gray-200 dark:border-gray-700 flex gap-6">
+                <div className="border-b border-gray-200 dark:border-gray-700 flex gap-6 overflow-x-auto">
                     <button 
                         onClick={() => setLibraryTab('SETS')}
-                        className={`py-3 px-2 border-b-2 font-bold text-sm transition-colors flex items-center gap-2 ${
+                        className={`py-3 px-2 border-b-2 font-bold text-sm transition-colors flex items-center gap-2 whitespace-nowrap ${
                             libraryTab === 'SETS' 
                             ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
                             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                        <Book size={18} /> Học phần
+                        <Book size={18} /> Học phần của tôi
+                    </button>
+                    <button 
+                        onClick={() => setLibraryTab('FAVORITES')}
+                        className={`py-3 px-2 border-b-2 font-bold text-sm transition-colors flex items-center gap-2 whitespace-nowrap ${
+                            libraryTab === 'FAVORITES' 
+                            ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
+                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                        }`}
+                    >
+                        <Heart size={18} /> Đã thích
                     </button>
                     <button 
                         onClick={() => setLibraryTab('FILES')}
-                        className={`py-3 px-2 border-b-2 font-bold text-sm transition-colors flex items-center gap-2 ${
+                        className={`py-3 px-2 border-b-2 font-bold text-sm transition-colors flex items-center gap-2 whitespace-nowrap ${
                             libraryTab === 'FILES' 
                             ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' 
                             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -340,7 +379,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, onCreateNew, onSel
                     <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 border-dashed transition-colors">
                         <Search size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Không tìm thấy kết quả</h3>
-                        <p className="text-gray-500 dark:text-gray-400 mb-6">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
+                        <p className="text-gray-500 dark:text-gray-400 mb-6">
+                            {libraryTab === 'FAVORITES' ? 'Bạn chưa thêm học phần nào vào danh sách yêu thích.' : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.'}
+                        </p>
                         <button 
                             onClick={() => {setFilterSubject('Tất cả'); setFilterGrade('Tất cả'); setSearchQuery('');}}
                             className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
@@ -354,20 +395,29 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, onCreateNew, onSel
                         <div 
                         key={set.id}
                         onClick={() => onSelectSet(set)}
-                        className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-500 cursor-pointer transition-all duration-300 flex flex-col h-full"
+                        className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-xl border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-500 cursor-pointer transition-all duration-300 flex flex-col h-full relative"
                         >
+                        {/* Favorite Button on Card */}
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }}
+                            className={`absolute top-4 right-4 p-2 rounded-full z-10 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${set.isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-400'}`}
+                            title={set.isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+                        >
+                            <Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} />
+                        </button>
+
                         <div className="p-5 flex-1">
                             <div className="flex justify-between items-start mb-3">
                                 <div className="inline-flex items-center px-2 py-1 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold uppercase tracking-wide">
                                     {set.cards.length} thuật ngữ
                                 </div>
                                 {/* Auto-detect subject badge based on title (Mock logic) */}
-                                {set.title.includes('Anh') && <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-bold px-2 py-1 rounded-md">Tiếng Anh</span>}
-                                {set.title.includes('Sử') && <span className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-[10px] font-bold px-2 py-1 rounded-md">Lịch Sử</span>}
-                                {set.title.includes('Hóa') && <span className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold px-2 py-1 rounded-md">Hóa Học</span>}
+                                {set.title.includes('Anh') && <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-bold px-2 py-1 rounded-md mr-8">Tiếng Anh</span>}
+                                {set.title.includes('Sử') && <span className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-[10px] font-bold px-2 py-1 rounded-md mr-8">Lịch Sử</span>}
+                                {set.title.includes('Hóa') && <span className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold px-2 py-1 rounded-md mr-8">Hóa Học</span>}
                             </div>
                             
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 mb-2 leading-tight">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 mb-2 leading-tight pr-6">
                                 {set.title}
                             </h3>
                             <p className="text-gray-500 dark:text-gray-400 text-xs mb-4 line-clamp-2">{set.description}</p>
