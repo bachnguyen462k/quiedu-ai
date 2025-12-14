@@ -3,7 +3,13 @@ import { Flashcard, TextbookAnalysisResult } from "../types";
 // @ts-ignore
 import mammoth from "mammoth";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Validate API Key
+const apiKey = process.env.API_KEY;
+if (!apiKey || (apiKey.startsWith("AIzaSy") && apiKey.length < 30)) {
+    console.warn("Warning: API Key is missing or appears to be a placeholder.");
+}
+
+const ai = new GoogleGenAI({ apiKey: apiKey || '' });
 
 const cleanJson = (text: string) => {
   // Remove markdown code blocks if present
@@ -71,8 +77,11 @@ export const generateStudySetWithAI = async (topic: string, count: number = 10):
     if (!text) throw new Error("No response from AI");
     
     return JSON.parse(cleanJson(text));
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating study set:", error);
+    if (error.toString().includes("400") || error.toString().includes("API key")) {
+         throw new Error("Lỗi API Key: Vui lòng kiểm tra lại cấu hình key trong file .env hoặc Vercel. (Nhớ restart server sau khi sửa .env)");
+    }
     throw error;
   }
 };
@@ -165,8 +174,11 @@ export const generateStudySetFromFile = async (base64File: string, fileName: str
     if (!text) throw new Error("No response from AI");
     return JSON.parse(cleanJson(text));
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating from file:", error);
+    if (error.toString().includes("400") || error.toString().includes("API key")) {
+        throw new Error("Lỗi API Key: Vui lòng kiểm tra lại cấu hình key trong file .env hoặc Vercel.");
+    }
     throw error;
   }
 };
@@ -208,7 +220,7 @@ export const gradeSubmissionWithAI = async (base64File: string, assignmentTitle:
     return response.text || "Không thể phân tích bài làm.";
   } catch (error) {
     console.error("Error grading submission:", error);
-    return "Có lỗi xảy ra khi AI chấm bài. Vui lòng thử lại.";
+    return "Có lỗi xảy ra khi AI chấm bài. Vui lòng kiểm tra API Key.";
   }
 };
 
@@ -295,8 +307,11 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
             throw new Error("Dữ liệu trả về từ AI không đúng định dạng. Vui lòng thử lại hoặc dùng file nhỏ hơn.");
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error analyzing textbook:", error);
+        if (error.toString().includes("400") || error.toString().includes("API key")) {
+            throw new Error("Lỗi API Key: Vui lòng kiểm tra lại cấu hình key trong file .env hoặc Vercel.");
+        }
         throw error;
     }
 }

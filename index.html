@@ -11,7 +11,6 @@
         theme: {
           extend: {
             colors: {
-              // Custom colors for smoother dark mode if needed
               gray: {
                 850: '#1f2937', 
                 950: '#030712',
@@ -22,7 +21,6 @@
       }
     </script>
     <style>
-      /* Custom utility for 3D flip card effect */
       .perspective-1000 {
         perspective: 1000px;
       }
@@ -35,7 +33,6 @@
       .rotate-y-180 {
         transform: rotateY(180deg);
       }
-      /* Animation utilities */
       .animate-fade-in {
         animation: fadeIn 0.5s ease-out forwards;
       }
@@ -43,8 +40,6 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      
-      /* Toast Animation */
       .animate-slide-in {
         animation: slideIn 0.3s ease-out forwards;
       }
@@ -65,7 +60,7 @@
     "uuid": "https://esm.sh/uuid@^13.0.0",
     "vite": "https://esm.sh/vite@^7.2.7",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "mammoth": "https://esm.sh/mammoth@1.8.0"
+    "mammoth": "https://esm.sh/mammoth@^1.11.0"
   }
 }
 </script>

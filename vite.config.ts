@@ -7,17 +7,14 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     define: {
-      // Polyfill process.env for the Google GenAI SDK to work in the browser
-      'process.env': {
-        API_KEY: JSON.stringify(env.API_KEY)
-      }
+      // Explicitly define process.env.API_KEY to avoid overwriting the whole process.env object
+      'process.env.API_KEY': JSON.stringify(env.API_KEY)
     },
     build: {
-      chunkSizeWarningLimit: 1000, // Increase warning limit slightly
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
           manualChunks: {
-            // Split huge libraries into separate chunks
             'vendor-react': ['react', 'react-dom'],
             'vendor-ui': ['lucide-react', 'recharts'],
             'vendor-ai': ['@google/genai']
