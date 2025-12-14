@@ -47,21 +47,21 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
   }, [currentIndex, isFlipped, set.cards.length]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
       <div className="mb-6 flex items-center justify-between">
         <button 
           onClick={onBack}
-          className="text-gray-600 hover:text-indigo-600 flex items-center gap-2 font-medium transition-colors"
+          className="text-gray-600 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 flex items-center gap-2 font-medium transition-colors"
         >
           <ArrowLeft size={20} /> Quay lại
         </button>
-        <div className="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+        <div className="text-sm font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
           {currentIndex + 1} / {set.cards.length}
         </div>
       </div>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">{set.title}</h1>
-      <p className="text-gray-500 mb-8">{set.description}</p>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{set.title}</h1>
+      <p className="text-gray-500 dark:text-gray-400 mb-8">{set.description}</p>
 
       {/* Card Container */}
       <div className="flex flex-col items-center">
@@ -72,18 +72,18 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
           <div className={`relative w-full h-full text-center transition-all duration-500 transform-style-3d shadow-xl rounded-2xl ${isFlipped ? 'rotate-y-180' : ''}`}>
             
             {/* Front */}
-            <div className="absolute w-full h-full flex flex-col items-center justify-center p-8 bg-white rounded-2xl backface-hidden border-2 border-transparent hover:border-indigo-100">
-              <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-4 absolute top-6">Thuật ngữ</span>
-              <div className="text-3xl md:text-4xl font-medium text-gray-800 break-words max-w-full">
+            <div className="absolute w-full h-full flex flex-col items-center justify-center p-8 bg-white dark:bg-gray-800 rounded-2xl backface-hidden border-2 border-transparent hover:border-indigo-100 dark:hover:border-indigo-900 transition-colors">
+              <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-4 absolute top-6">Thuật ngữ</span>
+              <div className="text-3xl md:text-4xl font-medium text-gray-800 dark:text-gray-100 break-words max-w-full">
                 {currentCard.term}
               </div>
-              <div className="absolute bottom-6 text-gray-400 text-sm">Nhấn để lật</div>
+              <div className="absolute bottom-6 text-gray-400 dark:text-gray-500 text-sm">Nhấn để lật</div>
             </div>
 
             {/* Back */}
-            <div className="absolute w-full h-full flex flex-col items-center justify-center p-8 bg-indigo-50 rounded-2xl backface-hidden rotate-y-180 border-2 border-indigo-200">
-              <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-4 absolute top-6">Định nghĩa</span>
-              <div className="text-2xl md:text-3xl text-gray-800 break-words max-w-full">
+            <div className="absolute w-full h-full flex flex-col items-center justify-center p-8 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl backface-hidden rotate-y-180 border-2 border-indigo-200 dark:border-indigo-800 transition-colors">
+              <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-4 absolute top-6">Định nghĩa</span>
+              <div className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 break-words max-w-full">
                 {currentCard.definition}
               </div>
             </div>
@@ -97,8 +97,8 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
             disabled={currentIndex === 0}
             className={`p-4 rounded-full border-2 transition-all ${
               currentIndex === 0 
-                ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
-                : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50'
+                ? 'border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                : 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
             }`}
           >
             <ArrowLeft size={24} />
@@ -106,7 +106,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
 
           <button 
             onClick={() => { setIsFlipped(false); setCurrentIndex(0); }}
-            className="text-gray-500 hover:text-indigo-600 transition-colors p-2"
+            className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors p-2"
             title="Làm lại từ đầu"
           >
             <RotateCcw size={20} />
@@ -117,8 +117,8 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
             disabled={currentIndex === set.cards.length - 1}
             className={`p-4 rounded-full border-2 transition-all ${
               currentIndex === set.cards.length - 1
-                ? 'border-gray-200 text-gray-300 cursor-not-allowed' 
-                : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50'
+                ? 'border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed' 
+                : 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
             }`}
           >
             <ArrowRight size={24} />
@@ -128,14 +128,14 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
       
       {/* List view below */}
       <div className="mt-16">
-        <h3 className="text-xl font-bold mb-6 text-gray-800">Danh sách thuật ngữ trong học phần này ({set.cards.length})</h3>
+        <h3 className="text-xl font-bold mb-6 text-gray-800 dark:text-white">Danh sách thuật ngữ trong học phần này ({set.cards.length})</h3>
         <div className="grid gap-4">
           {set.cards.map((card, idx) => (
-            <div key={card.id} className={`p-4 bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-start ${idx === currentIndex ? 'ring-2 ring-indigo-500 bg-indigo-50' : ''}`}>
-              <div className="md:w-1/3 font-medium text-gray-800 border-b md:border-b-0 md:border-r border-gray-100 pb-2 md:pb-0 pr-4">
+            <div key={card.id} className={`p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4 items-start transition-colors ${idx === currentIndex ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : ''}`}>
+              <div className="md:w-1/3 font-medium text-gray-800 dark:text-gray-200 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700 pb-2 md:pb-0 pr-4">
                 {card.term}
               </div>
-              <div className="md:w-2/3 text-gray-600">
+              <div className="md:w-2/3 text-gray-600 dark:text-gray-400">
                 {card.definition}
               </div>
             </div>

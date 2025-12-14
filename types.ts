@@ -5,6 +5,7 @@ export interface Flashcard {
   definition: string;
   options?: string[]; // Optional: Store specific distractors for quiz mode
   explanation?: string; // New: Explanation for the correct answer
+  relatedLink?: string; // New: Link to external article/resource
 }
 
 export interface Review {
@@ -17,6 +18,8 @@ export interface Review {
   createdAt: number;
 }
 
+export type PrivacyStatus = 'PUBLIC' | 'PRIVATE';
+
 export interface StudySet {
   id: string;
   title: string;
@@ -27,6 +30,14 @@ export interface StudySet {
   averageScore?: number; // Academic score (percentage)
   cards: Flashcard[];
   reviews?: Review[]; // User ratings
+  
+  // New Metadata Fields
+  privacy: PrivacyStatus;
+  level?: string;      // e.g., "Lớp 12", "Đại học"
+  school?: string;     // e.g., "THPT Chuyên...", "Đại học Bách Khoa"
+  major?: string;      // e.g., "Công nghệ thông tin"
+  subject?: string;    // e.g., "Toán học", "Tiếng Anh"
+  topic?: string;      // e.g., "Hàm số", "Thì hiện tại đơn"
 }
 
 export interface QuizQuestion {
@@ -34,6 +45,7 @@ export interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswer: string;
+  relatedLink?: string; // New: Link to external article/resource
 }
 
 export type ViewState = 'LANDING' | 'LOGIN' | 'DASHBOARD' | 'LIBRARY' | 'CLASSES' | 'CREATE' | 'SET_DETAILS' | 'STUDY' | 'QUIZ' | 'AI_CREATOR' | 'SETTINGS';

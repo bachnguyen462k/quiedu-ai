@@ -15,9 +15,36 @@ import UserTour from './components/UserTour';
 import { StudySet, ViewState, User, AiGenerationRecord, Review } from './types';
 import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
+import { v4 as uuidv4 } from 'uuid';
 
-// Mock data
-const INITIAL_SETS: StudySet[] = [
+// Mock data generation function
+const generateMockSets = (count: number): StudySet[] => {
+    const subjects = ['Toán', 'Lý', 'Hóa', 'Sinh', 'Sử', 'Địa', 'Anh', 'GDCD'];
+    const authors = ['Cô Thu Lan', 'Thầy Hùng', 'Cô Mai', 'Bạn'];
+    
+    return Array.from({ length: count }).map((_, i) => ({
+        id: `mock-${i}`,
+        title: `${subjects[i % subjects.length]} 12 - Bài ôn tập số ${i + 1}`,
+        description: `Bộ câu hỏi ôn tập kiến thức trọng tâm chương ${i % 5 + 1}. Bao gồm các câu hỏi trắc nghiệm và tự luận.`,
+        author: authors[i % authors.length],
+        createdAt: Date.now() - Math.floor(Math.random() * 1000000000),
+        plays: Math.floor(Math.random() * 5000),
+        averageScore: 60 + Math.floor(Math.random() * 40),
+        cards: Array.from({ length: 5 }).map((_, j) => ({
+            id: `card-${i}-${j}`,
+            term: `Câu hỏi số ${j + 1} của bài ${i + 1}?`,
+            definition: `Đáp án đúng là lựa chọn A`,
+            options: ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D']
+        })),
+        reviews: [],
+        privacy: 'PUBLIC',
+        subject: subjects[i % subjects.length],
+        level: 'Lớp 12',
+        school: 'THPT Chu Văn An'
+    }));
+};
+
+const BASE_SETS: StudySet[] = [
   {
     id: '1',
     title: 'Từ vựng Tiếng Anh - Chủ đề Gia đình',
@@ -37,7 +64,11 @@ const INITIAL_SETS: StudySet[] = [
     reviews: [
         { id: 'r1', userId: 'u1', userName: 'Hải Đăng', rating: 5, comment: 'Bài học rất dễ hiểu, cảm ơn cô!', createdAt: Date.now() - 1000000 },
         { id: 'r2', userId: 'u2', userName: 'Minh Thư', rating: 4, comment: 'Một số từ hơi khó nhớ nhưng hình ảnh minh họa tốt.', createdAt: Date.now() - 500000 }
-    ]
+    ],
+    privacy: 'PUBLIC',
+    subject: 'Tiếng Anh',
+    level: 'Lớp 6',
+    topic: 'Family'
   },
   {
     id: '2',
@@ -56,7 +87,11 @@ const INITIAL_SETS: StudySet[] = [
     ],
     reviews: [
         { id: 'r3', userId: 'u3', userName: 'Tuấn Kiệt', rating: 5, comment: 'Kiến thức tổng hợp rất đầy đủ để ôn thi.', createdAt: Date.now() - 200000 }
-    ]
+    ],
+    privacy: 'PUBLIC',
+    subject: 'Hóa Học',
+    level: 'Lớp 10',
+    school: 'THPT Amsterdam'
   },
   {
     id: '3',
@@ -72,9 +107,16 @@ const INITIAL_SETS: StudySet[] = [
       { id: '3c', term: '23/8/1945', definition: 'Khởi nghĩa giành chính quyền ở Huế' },
       { id: '3d', term: '25/8/1945', definition: 'Khởi nghĩa giành chính quyền ở Sài Gòn' }
     ],
-    reviews: []
+    reviews: [],
+    privacy: 'PUBLIC',
+    subject: 'Lịch Sử',
+    level: 'Lớp 12',
+    topic: 'Lịch sử Việt Nam'
   }
 ];
+
+// Combine base sets with generated sets for testing infinity scroll
+const INITIAL_SETS = [...BASE_SETS, ...generateMockSets(50)];
 
 // Inner App Component to access Context
 const AppContent: React.FC = () => {
@@ -123,10 +165,6 @@ const AppContent: React.FC = () => {
   };
 
   const handleSelectHistory = (record: AiGenerationRecord) => {
-      // Logic to view history: Switch to AI_CREATOR view (it handles history display internally via props, 
-      // but simpler here we just navigate to it. A real app would pass the ID or selected record prop)
-      // For this demo, we can just switch view, and let user pick from history tab, OR modify AiTextbookCreator to accept a default.
-      // Since AiTextbookCreator manages its own active record, we'll just navigate to the tab for now.
       setView('AI_CREATOR');
       addNotification(`Đã mở tài liệu: ${record.fileName}`, 'info');
   };
@@ -171,12 +209,26 @@ const AppContent: React.FC = () => {
   const renderMainContent = () => {
     switch (view) {
       case 'DASHBOARD':
-      case 'LIBRARY':
+        // Dashboard displays ALL sets (Global/Community View)
         return (
           <Dashboard 
             sets={sets} 
             onCreateNew={() => setView('CREATE')}
             onSelectSet={handleSelectSet}
+            isLibrary={false}
+          />
+        );
+      case 'LIBRARY':
+        // Library displays ONLY the current user's sets (Personal View)
+        const mySets = sets.filter(s => s.author === currentUser.name);
+        return (
+          <Dashboard 
+            sets={mySets} 
+            uploads={aiHistory}
+            onCreateNew={() => setView('CREATE')}
+            onSelectSet={handleSelectSet}
+            onSelectUpload={handleSelectHistory}
+            isLibrary={true}
           />
         );
       
@@ -188,6 +240,7 @@ const AppContent: React.FC = () => {
           <CreateSet 
             onSave={handleSaveSet}
             onCancel={() => setView('DASHBOARD')}
+            onGoToAiTextbook={() => setView('AI_CREATOR')}
           />
         );
 
@@ -199,6 +252,7 @@ const AppContent: React.FC = () => {
               }}
               history={aiHistory}
               onAddToHistory={handleAddToAiHistory}
+              onBack={() => setView('CREATE')}
            />
         );
       

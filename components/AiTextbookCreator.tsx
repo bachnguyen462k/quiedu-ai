@@ -1,16 +1,64 @@
 import React, { useState } from 'react';
-import { Upload, Sparkles, FileText, CheckCircle, BookOpen, BrainCircuit, ChevronDown, ChevronUp, Save, Loader2, Book, Sigma, PenTool, Lightbulb, Layers, GraduationCap, FileType, Image as ImageIcon, History, Clock, ArrowRight, X, Trash2, Edit3, Plus } from 'lucide-react';
+import { Upload, Sparkles, FileText, CheckCircle, BookOpen, BrainCircuit, ChevronDown, ChevronUp, Save, Loader2, Book, Sigma, PenTool, Lightbulb, Layers, GraduationCap, FileType, Image as ImageIcon, History, Clock, ArrowRight, X, Trash2, Edit3, Plus, Check, List, Link, ArrowLeft, Globe, Lock, Building, Hash, Bookmark } from 'lucide-react';
 import { analyzeTextbookWithAI } from '../services/geminiService';
-import { TextbookAnalysisResult, StudySet, AiGenerationRecord, Flashcard } from '../types';
+import { TextbookAnalysisResult, StudySet, AiGenerationRecord, Flashcard, PrivacyStatus } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AiTextbookCreatorProps {
     onSaveToLibrary: (set: StudySet) => void;
     history: AiGenerationRecord[];
     onAddToHistory: (record: AiGenerationRecord) => void;
+    onBack: () => void;
 }
 
-const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, history, onAddToHistory }) => {
+const EDUCATION_LEVELS = [
+  'Trung học phổ thông',
+  'Đại học',
+  'Cao đẳng',
+  'Cao học',
+  'Trung cấp',
+  'Khác'
+];
+
+const SCHOOLS_BY_LEVEL: Record<string, string[]> = {
+  'Trung học phổ thông': [
+    'THPT Chuyên Hà Nội - Amsterdam',
+    'THPT Chu Văn An',
+    'THPT Lương Thế Vinh',
+    'THPT Nguyễn Huệ',
+    'THPT Lê Hồng Phong',
+    'THPT Chuyên Ngoại Ngữ',
+    'THPT Marie Curie'
+  ],
+  'Đại học': [
+    'Đại học Bách Khoa Hà Nội',
+    'Đại học Quốc Gia Hà Nội',
+    'Đại học Kinh Tế Quốc Dân',
+    'Đại học FPT',
+    'Đại học RMIT',
+    'Đại học Ngoại Thương',
+    'Học viện Công nghệ Bưu chính Viễn thông'
+  ],
+  'Cao đẳng': [
+    'Cao đẳng FPT Polytechnic',
+    'Cao đẳng Công nghệ cao Hà Nội',
+    'Cao đẳng Du lịch',
+    'Cao đẳng Y tế',
+    'Cao đẳng Kinh tế Kỹ thuật'
+  ],
+  'Cao học': [
+    'Học viện Khoa học xã hội',
+    'Viện Hàn lâm Khoa học xã hội Việt Nam',
+    'Đại học Quốc Gia - Khoa Sau Đại học'
+  ],
+  'Trung cấp': [
+    'Trung cấp Nghề',
+    'Trung cấp Y dược',
+    'Trung cấp Kinh tế'
+  ]
+};
+
+const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, history, onAddToHistory, onBack }) => {
     const [activeTab, setActiveTab] = useState<'CREATE' | 'HISTORY'>('CREATE');
     const [file, setFile] = useState<{name: string, data: string, type: string} | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -23,8 +71,24 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
     const [editingSet, setEditingSet] = useState<{
         title: string;
         description: string;
+        privacy: PrivacyStatus;
+        level: string;
+        school: string;
+        major: string;
+        subject: string;
+        topic: string;
         cards: Flashcard[];
-    }>({ title: '', description: '', cards: [] });
+    }>({ 
+        title: '', 
+        description: '', 
+        privacy: 'PUBLIC',
+        level: 'Trung học phổ thông',
+        school: '',
+        major: '',
+        subject: '',
+        topic: '',
+        cards: [] 
+    });
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -86,20 +150,150 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
         
         // Prepare initial data for editing
         const quizQuestions = currentTopic.questions.filter(q => q.type === 'QUIZ');
-        const initialCards = quizQuestions.map(q => ({
-            id: uuidv4(),
-            term: q.question,
-            // Clean up the answer: remove "A.", "B.", etc. prefix if present for cleaner Flashcards
-            definition: q.correctAnswer ? q.correctAnswer.replace(/^[A-Z][\.\)]\s*/, '') : "Xem đáp án chi tiết"
-        }));
+        
+        const initialCards: Flashcard[] = quizQuestions.map(q => {
+            // Clean up options (remove "A. ", "B. ")
+            const cleanOptions = q.options ? q.options.map(o => o.replace(/^[A-Z][\.\)]\s*/, '')) : [];
+            // Try to match the correct answer string to one of the options
+            const rawCorrect = q.correctAnswer || "";
+            // If the correct answer is like "A. Content", extract "Content"
+            const cleanCorrect = rawCorrect.replace(/^[A-Z][\.\)]\s*/, '');
+            
+            return {
+                id: uuidv4(),
+                term: q.question,
+                definition: cleanCorrect,
+                options: cleanOptions.length > 0 ? cleanOptions : [cleanCorrect, "", "", ""],
+                explanation: q.solutionGuide || "",
+                relatedLink: ""
+            };
+        });
 
         setEditingSet({
             title: currentTopic.topicName,
             description: `${currentTopic.summary}. Tổng hợp câu hỏi từ ${result.grade}.`,
+            privacy: 'PUBLIC',
+            level: 'Trung học phổ thông',
+            school: '',
+            major: '',
+            subject: result.subject || '',
+            topic: currentTopic.topicName,
             cards: initialCards
         });
 
         setShowSaveModal(true);
+    };
+
+    const handleLevelChangeInModal = (newLevel: string) => {
+        setEditingSet(prev => ({
+            ...prev,
+            level: newLevel,
+            school: '' // Reset school on level change
+        }));
+    };
+
+    // --- CARD EDITING HANDLERS ---
+    const handleCardTermChange = (id: string, value: string) => {
+        setEditingSet(prev => ({
+            ...prev,
+            cards: prev.cards.map(c => c.id === id ? { ...c, term: value } : c)
+        }));
+    };
+
+    const handleCardExplanationChange = (id: string, value: string) => {
+        setEditingSet(prev => ({
+            ...prev,
+            cards: prev.cards.map(c => c.id === id ? { ...c, explanation: value } : c)
+        }));
+    };
+
+    const handleCardLinkChange = (id: string, value: string) => {
+        setEditingSet(prev => ({
+            ...prev,
+            cards: prev.cards.map(c => c.id === id ? { ...c, relatedLink: value } : c)
+        }));
+    };
+
+    const handleCardOptionChange = (cardId: string, optionIndex: number, value: string) => {
+        setEditingSet(prev => ({
+            ...prev,
+            cards: prev.cards.map(c => {
+                if (c.id !== cardId) return c;
+                
+                const newOptions = [...(c.options || [])];
+                newOptions[optionIndex] = value;
+                
+                // If we are editing the option that is currently marked as correct, update the definition too
+                const isCurrentlyCorrect = c.definition === c.options?.[optionIndex];
+                
+                return { 
+                    ...c, 
+                    options: newOptions,
+                    definition: isCurrentlyCorrect ? value : c.definition 
+                };
+            })
+        }));
+    };
+
+    const handleSetCorrectAnswer = (cardId: string, optionValue: string) => {
+        setEditingSet(prev => ({
+            ...prev,
+            cards: prev.cards.map(c => c.id === cardId ? { ...c, definition: optionValue } : c)
+        }));
+    };
+
+    const handleAddOption = (cardId: string) => {
+        setEditingSet(prev => ({
+            ...prev,
+            cards: prev.cards.map(c => {
+                if (c.id !== cardId) return c;
+                return { ...c, options: [...(c.options || []), ''] };
+            })
+        }));
+    };
+
+    const handleRemoveOption = (cardId: string, optionIndex: number) => {
+        setEditingSet(prev => ({
+            ...prev,
+            cards: prev.cards.map(c => {
+                if (c.id !== cardId) return c;
+                const newOptions = [...(c.options || [])];
+                const removedValue = newOptions[optionIndex];
+                newOptions.splice(optionIndex, 1);
+                
+                // If removed option was correct, reset definition
+                let newDef = c.definition;
+                if (c.definition === removedValue) {
+                    newDef = newOptions.length > 0 ? newOptions[0] : '';
+                }
+
+                return { ...c, options: newOptions, definition: newDef };
+            })
+        }));
+    };
+
+    const handleRemoveCard = (cardId: string) => {
+        setEditingSet(prev => ({
+            ...prev,
+            cards: prev.cards.filter(c => c.id !== cardId)
+        }));
+    };
+
+    const handleAddNewCard = () => {
+        setEditingSet(prev => ({
+            ...prev,
+            cards: [
+                ...prev.cards, 
+                { 
+                    id: uuidv4(), 
+                    term: '', 
+                    definition: '', 
+                    options: ['', '', '', ''], 
+                    explanation: '',
+                    relatedLink: ''
+                }
+            ]
+        }));
     };
 
     const handleFinalSave = () => {
@@ -114,7 +308,13 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
             description: editingSet.description,
             author: 'AI Assistant', // Use generic author name
             createdAt: Date.now(),
-            cards: editingSet.cards
+            cards: editingSet.cards,
+            privacy: editingSet.privacy,
+            level: editingSet.level,
+            school: editingSet.school,
+            major: editingSet.major,
+            subject: editingSet.subject,
+            topic: editingSet.topic
         };
         
         onSaveToLibrary(newSet);
@@ -177,6 +377,14 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-20 animate-fade-in">
+            {/* Navigation Bar */}
+            <button 
+                onClick={onBack}
+                className="mb-6 flex items-center gap-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 font-medium transition-colors"
+            >
+                <ArrowLeft size={20} /> Quay lại
+            </button>
+
             <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -541,7 +749,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                     <Edit3 size={20} className="text-indigo-600 dark:text-indigo-400" /> Xem lại & Chỉnh sửa
                                 </h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Điều chỉnh nội dung trước khi lưu vào thư viện.</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Điều chỉnh nội dung câu hỏi trước khi lưu.</p>
                             </div>
                             <button onClick={() => setShowSaveModal(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
                                 <X size={24} />
@@ -570,6 +778,85 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                         className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-colors"
                                     />
                                 </div>
+
+                                {/* Metadata Fields */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Globe size={10} /> Quyền riêng tư</label>
+                                        <select 
+                                            value={editingSet.privacy}
+                                            onChange={(e) => setEditingSet({...editingSet, privacy: e.target.value as PrivacyStatus})}
+                                            className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            <option value="PUBLIC">Công khai</option>
+                                            <option value="PRIVATE">Riêng tư</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><GraduationCap size={10} /> Trình độ</label>
+                                        <select 
+                                            value={editingSet.level}
+                                            onChange={(e) => handleLevelChangeInModal(e.target.value)}
+                                            className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            {EDUCATION_LEVELS.map(lvl => (
+                                                <option key={lvl} value={lvl}>{lvl}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><BookOpen size={10} /> Môn học</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="VD: Toán, Lý..."
+                                            value={editingSet.subject}
+                                            onChange={(e) => setEditingSet({...editingSet, subject: e.target.value})}
+                                            className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Building size={10} /> Trường học</label>
+                                        <input 
+                                            type="text"
+                                            list="ai-school-options"
+                                            placeholder="Tên trường..."
+                                            value={editingSet.school}
+                                            onChange={(e) => setEditingSet({...editingSet, school: e.target.value})}
+                                            className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                        <datalist id="ai-school-options">
+                                            {(SCHOOLS_BY_LEVEL[editingSet.level] || []).map((s, idx) => (
+                                                <option key={idx} value={s} />
+                                            ))}
+                                        </datalist>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Bookmark size={10} /> Chuyên ngành</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="VD: CNTT..."
+                                            value={editingSet.major}
+                                            onChange={(e) => setEditingSet({...editingSet, major: e.target.value})}
+                                            className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Hash size={10} /> Chủ đề</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="VD: Hàm số..."
+                                            value={editingSet.topic}
+                                            onChange={(e) => setEditingSet({...editingSet, topic: e.target.value})}
+                                            className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Cards List */}
@@ -577,56 +864,121 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                 <div className="flex justify-between items-center">
                                     <h4 className="font-bold text-gray-800 dark:text-white">Danh sách câu hỏi ({editingSet.cards.length})</h4>
                                     <button 
-                                        onClick={() => setEditingSet({
-                                            ...editingSet,
-                                            cards: [...editingSet.cards, { id: uuidv4(), term: '', definition: '' }]
-                                        })}
+                                        onClick={handleAddNewCard}
                                         className="text-indigo-600 dark:text-indigo-400 text-sm font-bold flex items-center gap-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-3 py-1.5 rounded-lg transition-colors"
                                     >
-                                        <Plus size={16} /> Thêm thẻ
+                                        <Plus size={16} /> Thêm câu hỏi
                                     </button>
                                 </div>
 
                                 {editingSet.cards.map((card, idx) => (
-                                    <div key={card.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm group transition-colors">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="font-bold text-gray-400 text-sm">Câu {idx + 1}</span>
+                                    <div key={card.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm group transition-colors relative">
+                                        {/* Card Header & Controls */}
+                                        <div className="flex justify-between items-start mb-4">
+                                            <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded text-xs font-bold uppercase">
+                                                Câu {idx + 1}
+                                            </span>
                                             <button 
-                                                onClick={() => setEditingSet({
-                                                    ...editingSet,
-                                                    cards: editingSet.cards.filter(c => c.id !== card.id)
-                                                })}
-                                                className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                                onClick={() => handleRemoveCard(card.id)}
+                                                className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1"
+                                                title="Xóa câu hỏi"
                                             >
                                                 <Trash2 size={16} />
                                             </button>
                                         </div>
-                                        <div className="grid md:grid-cols-2 gap-4">
+
+                                        <div className="space-y-4">
+                                            {/* Term (Question) */}
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Câu hỏi / Thuật ngữ</label>
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 flex items-center gap-1">
+                                                    <BrainCircuit size={12} /> Câu hỏi
+                                                </label>
                                                 <textarea
                                                     rows={2}
                                                     value={card.term}
-                                                    onChange={(e) => {
-                                                        const newCards = [...editingSet.cards];
-                                                        newCards[idx].term = e.target.value;
-                                                        setEditingSet({...editingSet, cards: newCards});
-                                                    }}
-                                                    className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none resize-none text-sm font-medium text-gray-900 dark:text-white transition-colors"
+                                                    onChange={(e) => handleCardTermChange(card.id, e.target.value)}
+                                                    className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none resize-none text-base font-medium text-gray-900 dark:text-white transition-colors"
+                                                    placeholder="Nhập nội dung câu hỏi..."
                                                 />
                                             </div>
+
+                                            {/* Options Grid */}
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Đáp án / Định nghĩa</label>
-                                                <textarea
-                                                    rows={2}
-                                                    value={card.definition}
-                                                    onChange={(e) => {
-                                                        const newCards = [...editingSet.cards];
-                                                        newCards[idx].definition = e.target.value;
-                                                        setEditingSet({...editingSet, cards: newCards});
-                                                    }}
-                                                    className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-green-500 outline-none resize-none text-sm text-gray-700 dark:text-gray-200 transition-colors"
-                                                />
+                                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 flex items-center gap-1">
+                                                    <List size={12} /> Đáp án (Chọn đáp án đúng)
+                                                </label>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    {card.options?.map((option, optIdx) => {
+                                                        const isCorrect = card.definition === option && option !== '';
+                                                        return (
+                                                            <div key={optIdx} className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'}`}>
+                                                                {/* Radio Check */}
+                                                                <div 
+                                                                    onClick={() => handleSetCorrectAnswer(card.id, option)}
+                                                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer flex-shrink-0 transition-colors ${isCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 dark:border-gray-500 hover:border-green-400'}`}
+                                                                >
+                                                                    {isCorrect && <Check size={12} strokeWidth={4} />}
+                                                                </div>
+                                                                
+                                                                {/* Option Input */}
+                                                                <div className="flex-1">
+                                                                    <input 
+                                                                        type="text"
+                                                                        value={option}
+                                                                        onChange={(e) => handleCardOptionChange(card.id, optIdx, e.target.value)}
+                                                                        className="w-full bg-transparent outline-none text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400"
+                                                                        placeholder={`Lựa chọn ${optIdx + 1}`}
+                                                                    />
+                                                                </div>
+
+                                                                {/* Remove Option */}
+                                                                <button 
+                                                                    onClick={() => handleRemoveOption(card.id, optIdx)}
+                                                                    className="text-gray-300 hover:text-red-500 p-1"
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleAddOption(card.id)}
+                                                    className="mt-2 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:underline flex items-center gap-1"
+                                                >
+                                                    <Plus size={12} /> Thêm lựa chọn
+                                                </button>
+                                            </div>
+
+                                            {/* Explanation & Link */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {/* Explanation Field */}
+                                                <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
+                                                    <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 uppercase mb-1 flex items-center gap-1">
+                                                        <Lightbulb size={12} /> Giải thích
+                                                    </label>
+                                                    <textarea
+                                                        rows={2}
+                                                        value={card.explanation || ''}
+                                                        onChange={(e) => handleCardExplanationChange(card.id, e.target.value)}
+                                                        className="w-full bg-transparent border-none focus:ring-0 outline-none text-sm text-blue-900 dark:text-blue-200 placeholder-blue-300 resize-none p-0"
+                                                        placeholder="Giải thích cho đáp án đúng..."
+                                                    />
+                                                </div>
+
+                                                {/* Link Field */}
+                                                <div className="bg-gray-100 dark:bg-gray-700/30 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1 flex items-center gap-1">
+                                                        <Link size={12} /> Link tham khảo
+                                                    </label>
+                                                    <input 
+                                                        type="text"
+                                                        value={card.relatedLink || ''}
+                                                        onChange={(e) => handleCardLinkChange(card.id, e.target.value)}
+                                                        className="w-full bg-transparent border-none focus:ring-0 outline-none text-sm text-gray-800 dark:text-white placeholder-gray-400 p-0"
+                                                        placeholder="https://..."
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

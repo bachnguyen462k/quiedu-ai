@@ -27,9 +27,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
     { id: 'CLASSES', label: 'Lớp học', icon: Users, view: 'CLASSES' },
   ];
 
-  // Add AI Creator menu for ALL users (Students & Teachers)
-  menuItems.splice(1, 0, { id: 'AI_CREATOR', label: 'Soạn bài AI', icon: Sparkles, view: 'AI_CREATOR' });
-
   if (!currentUser) return null; // Should not happen in main layout
 
   return (
