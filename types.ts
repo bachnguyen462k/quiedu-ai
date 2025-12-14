@@ -5,6 +5,16 @@ export interface Flashcard {
   definition: string;
 }
 
+export interface Review {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  rating: number; // 1 to 5
+  comment: string;
+  createdAt: number;
+}
+
 export interface StudySet {
   id: string;
   title: string;
@@ -12,8 +22,9 @@ export interface StudySet {
   author: string;
   createdAt: number;
   plays?: number;
-  averageScore?: number;
+  averageScore?: number; // Academic score (percentage)
   cards: Flashcard[];
+  reviews?: Review[]; // User ratings
 }
 
 export interface QuizQuestion {

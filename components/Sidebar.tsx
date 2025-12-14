@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrainCircuit, LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, Sparkles, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
 import { ViewState, User } from '../types';
 
@@ -12,6 +12,13 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeView, onLogout, onStartTour }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Tự động thu gọn sidebar trên thiết bị di động/tablet khi tải trang
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+        setIsCollapsed(true);
+    }
+  }, []);
 
   const menuItems = [
     { id: 'DASHBOARD', label: 'Trang chủ', icon: LayoutDashboard, view: 'DASHBOARD' },

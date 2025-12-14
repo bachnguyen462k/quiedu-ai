@@ -11,7 +11,7 @@ import ClassManagement from './components/ClassManagement';
 import AiTextbookCreator from './components/AiTextbookCreator';
 import SettingsView from './components/SettingsView';
 import UserTour from './components/UserTour';
-import { StudySet, ViewState, User, AiGenerationRecord } from './types';
+import { StudySet, ViewState, User, AiGenerationRecord, Review } from './types';
 import { BookOpen, GraduationCap } from 'lucide-react';
 
 // Mock data
@@ -31,6 +31,10 @@ const INITIAL_SETS: StudySet[] = [
       { id: '1d', term: 'Sister', definition: 'Chị/em gái' },
       { id: '1e', term: 'Grandfather', definition: 'Ông' },
       { id: '1f', term: 'Grandmother', definition: 'Bà' }
+    ],
+    reviews: [
+        { id: 'r1', userId: 'u1', userName: 'Hải Đăng', rating: 5, comment: 'Bài học rất dễ hiểu, cảm ơn cô!', createdAt: Date.now() - 1000000 },
+        { id: 'r2', userId: 'u2', userName: 'Minh Thư', rating: 4, comment: 'Một số từ hơi khó nhớ nhưng hình ảnh minh họa tốt.', createdAt: Date.now() - 500000 }
     ]
   },
   {
@@ -47,6 +51,9 @@ const INITIAL_SETS: StudySet[] = [
       { id: '2c', term: 'Neutron', definition: 'Hạt không mang điện nằm trong hạt nhân' },
       { id: '2d', term: 'Số khối A', definition: 'Tổng số hạt proton và neutron (A = Z + N)' },
       { id: '2e', term: 'Nguyên tố hóa học', definition: 'Tập hợp các nguyên tử có cùng điện tích hạt nhân' }
+    ],
+    reviews: [
+        { id: 'r3', userId: 'u3', userName: 'Tuấn Kiệt', rating: 5, comment: 'Kiến thức tổng hợp rất đầy đủ để ôn thi.', createdAt: Date.now() - 200000 }
     ]
   },
   {
@@ -62,7 +69,8 @@ const INITIAL_SETS: StudySet[] = [
       { id: '3b', term: '2/9/1945', definition: 'Bác Hồ đọc Tuyên ngôn độc lập' },
       { id: '3c', term: '23/8/1945', definition: 'Khởi nghĩa giành chính quyền ở Huế' },
       { id: '3d', term: '25/8/1945', definition: 'Khởi nghĩa giành chính quyền ở Sài Gòn' }
-    ]
+    ],
+    reviews: []
   }
 ];
 
@@ -103,6 +111,18 @@ const App: React.FC = () => {
   const handleSelectSet = (set: StudySet) => {
     setActiveSetId(set.id);
     setView('SET_DETAILS');
+  };
+
+  const handleAddReview = (setId: string, review: Review) => {
+    setSets(prevSets => prevSets.map(s => {
+        if (s.id === setId) {
+            return {
+                ...s,
+                reviews: [review, ...(s.reviews || [])]
+            };
+        }
+        return s;
+    }));
   };
 
   const handleNavigation = (newView: ViewState) => {
@@ -217,7 +237,9 @@ const App: React.FC = () => {
              ) : (
                 <QuizView 
                     set={activeSet} 
+                    currentUser={currentUser}
                     onBack={() => setView('SET_DETAILS')} 
+                    onAddReview={handleAddReview}
                 />
              )}
           </div>
