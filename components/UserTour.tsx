@@ -36,19 +36,16 @@ const UserTour: React.FC<UserTourProps> = ({ currentUser, run, onStop }) => {
           content: 'Không gian lớp học trực tuyến. Quản lý danh sách lớp, giao bài tập và theo dõi tiến độ của học sinh.',
         },
         {
+          target: '#sidebar-ai_creator',
+          title: 'Soạn bài với AI ✨',
+          content: 'Tải lên tài liệu PDF/Sách/Ảnh, AI sẽ tự động phân tích và tạo bộ câu hỏi ôn tập cho bạn trong tích tắc. Rất hữu ích cho việc tự học!',
+        },
+        {
           target: '#sidebar-create',
           title: 'Tạo học phần',
           content: 'Công cụ tạo thẻ ghi nhớ (Flashcards) thủ công. Đơn giản và nhanh chóng.',
         },
       ];
-
-      if (currentUser?.role === 'TEACHER') {
-        baseSteps.splice(4, 0, {
-          target: '#sidebar-ai_creator',
-          title: 'Soạn bài với AI ✨',
-          content: 'Tính năng đặc biệt dành cho Giáo viên: Tải lên tài liệu PDF/Sách/Ảnh, AI sẽ tự động soạn giáo án và câu hỏi trắc nghiệm.',
-        });
-      }
       
       return baseSteps;
   };

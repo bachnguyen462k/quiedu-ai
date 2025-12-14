@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StudySet } from '../types';
-import { ArrowLeft, Clock, User, Play, BookOpen, BarChart3, Star, Calendar, Lock, Info, ShieldCheck, Share2, Link, QrCode, Copy, Check, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Clock, User, Play, BookOpen, BarChart3, Star, Calendar, Lock, Info, ShieldCheck, Share2, Link, QrCode, Copy, Check, MessageSquare, X } from 'lucide-react';
 
 interface SetDetailViewProps {
   set: StudySet;
@@ -11,6 +11,7 @@ interface SetDetailViewProps {
 
 const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlashcard, onStartQuiz }) => {
   const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   const formattedDate = new Date(set.createdAt).toLocaleDateString('vi-VN', {
     year: 'numeric',
@@ -28,6 +29,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
   const shareUrl = window.location.href; // In real app, this might be a specific slug
   const shareCode = `QZ-${set.id.toUpperCase()}-${new Date().getFullYear()}`; // Fake class code
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(shareUrl)}`;
+  const largeQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(shareUrl)}`;
 
   const handleCopy = (text: string, type: 'LINK' | 'CODE') => {
     navigator.clipboard.writeText(text);
@@ -249,13 +251,19 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                              <p className="text-[10px] text-center text-gray-400 mt-1 font-medium">Link bài học</p>
                          </div>
 
-                         {/* QR Code Box */}
+                         {/* QR Code Box - Click to expand */}
                          <div className="col-span-1 flex flex-col items-center">
-                             <div className="w-24 h-24 bg-white p-2 border border-gray-200 rounded-xl flex items-center justify-center shadow-sm">
+                             <div 
+                                onClick={() => setShowQrModal(true)}
+                                className="w-24 h-24 bg-white p-2 border border-gray-200 rounded-xl flex items-center justify-center shadow-sm cursor-zoom-in hover:border-indigo-400 hover:shadow-md transition-all group relative"
+                             >
                                  <img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
+                                 <div className="absolute inset-0 bg-black/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                     <QrCode size={20} className="text-indigo-600 drop-shadow-md" />
+                                 </div>
                              </div>
                              <p className="text-[10px] text-gray-400 mt-1 font-medium flex items-center gap-1">
-                                 <QrCode size={10} /> Quét mã
+                                 <QrCode size={10} /> Quét mã (Nhấn để phóng to)
                              </p>
                          </div>
                     </div>
@@ -264,6 +272,32 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
             </div>
         </div>
       </div>
+
+      {/* QR Code Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowQrModal(false)}>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full flex flex-col items-center relative transform transition-all scale-100" onClick={e => e.stopPropagation()}>
+                <button 
+                    onClick={() => setShowQrModal(false)}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                >
+                    <X size={24} />
+                </button>
+                
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Mã QR lớp học</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Quét mã để truy cập bài học trên điện thoại</p>
+                
+                <div className="bg-white p-3 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900 mb-6 shadow-inner">
+                    <img src={largeQrCodeUrl} alt="Large QR Code" className="w-64 h-64 object-contain" />
+                </div>
+                
+                <div className="w-full bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 text-center">
+                    <p className="text-xs text-indigo-500 dark:text-indigo-300 uppercase font-bold mb-1">Mã tham gia</p>
+                    <p className="text-2xl font-mono font-bold text-indigo-700 dark:text-indigo-400 tracking-wider select-all">{shareCode}</p>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

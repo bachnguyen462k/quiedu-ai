@@ -3,6 +3,8 @@ export interface Flashcard {
   id: string;
   term: string;
   definition: string;
+  options?: string[]; // Optional: Store specific distractors for quiz mode
+  explanation?: string; // New: Explanation for the correct answer
 }
 
 export interface Review {

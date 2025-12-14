@@ -112,7 +112,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
             id: uuidv4(),
             title: editingSet.title,
             description: editingSet.description,
-            author: 'Giáo viên (AI Assistant)',
+            author: 'AI Assistant', // Use generic author name
             createdAt: Date.now(),
             cards: editingSet.cards
         };
@@ -515,7 +515,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                                                 <GraduationCap size={60} className="text-blue-600 dark:text-blue-400" />
                                                             </div>
                                                             <h5 className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase mb-2 flex items-center gap-1 relative z-10">
-                                                                <Book size={14} /> Hướng dẫn giải (Giáo viên)
+                                                                <Book size={14} /> Hướng dẫn giải chi tiết
                                                             </h5>
                                                             <p className="text-sm text-blue-900 dark:text-blue-200 whitespace-pre-line leading-relaxed relative z-10">{q.solutionGuide}</p>
                                                         </div>
