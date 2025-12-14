@@ -1,3 +1,4 @@
+
 export interface Flashcard {
   id: string;
   term: string;
@@ -22,7 +23,7 @@ export interface QuizQuestion {
   correctAnswer: string;
 }
 
-export type ViewState = 'LANDING' | 'LOGIN' | 'DASHBOARD' | 'LIBRARY' | 'CLASSES' | 'CREATE' | 'SET_DETAILS' | 'STUDY' | 'QUIZ' | 'AI_CREATOR';
+export type ViewState = 'LANDING' | 'LOGIN' | 'DASHBOARD' | 'LIBRARY' | 'CLASSES' | 'CREATE' | 'SET_DETAILS' | 'STUDY' | 'QUIZ' | 'AI_CREATOR' | 'SETTINGS';
 
 export enum StudyMode {
   FLASHCARD = 'FLASHCARD',
@@ -112,4 +113,11 @@ export interface TextbookAnalysisResult {
   grade: string;   // Detected grade level
   overallSummary: string; // Summary of the whole file
   topics: AITopic[]; // List of extracted lessons/topics
+}
+
+export interface AiGenerationRecord {
+  id: string;
+  createdAt: number;
+  fileName: string; // Name of the uploaded file
+  result: TextbookAnalysisResult;
 }

@@ -1,35 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import ReactJoyride, { CallBackProps, STATUS, Step, Styles } from 'react-joyride';
 import { User } from '../types';
 
 interface UserTourProps {
   currentUser: User;
+  run: boolean;
+  onStop: () => void;
 }
 
-const UserTour: React.FC<UserTourProps> = ({ currentUser }) => {
-  const [run, setRun] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    // Check if user has already seen the tour
-    const hasSeenTour = localStorage.getItem(`tour_seen_${currentUser.id}`);
-    if (!hasSeenTour) {
-      // Small delay to ensure DOM is ready and prevent hydration mismatches
-      const timer = setTimeout(() => {
-          setRun(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [currentUser.id]);
-
+const UserTour: React.FC<UserTourProps> = ({ currentUser, run, onStop }) => {
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { status } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
 
     if (finishedStatuses.includes(status)) {
-      setRun(false);
-      localStorage.setItem(`tour_seen_${currentUser.id}`, 'true');
+      onStop();
     }
   };
 
@@ -113,8 +98,6 @@ const UserTour: React.FC<UserTourProps> = ({ currentUser }) => {
     }
   };
 
-  if (!mounted) return null;
-
   return (
     <ReactJoyride
       steps={steps}
@@ -124,6 +107,8 @@ const UserTour: React.FC<UserTourProps> = ({ currentUser }) => {
       showSkipButton
       styles={tourStyles}
       callback={handleJoyrideCallback}
+      scrollToFirstStep={true}
+      disableOverlayClose={true}
       locale={{
         back: 'Quay lại',
         close: 'Đóng',

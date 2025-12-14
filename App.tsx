@@ -9,8 +9,9 @@ import QuizView from './components/QuizView';
 import SetDetailView from './components/SetDetailView';
 import ClassManagement from './components/ClassManagement';
 import AiTextbookCreator from './components/AiTextbookCreator';
+import SettingsView from './components/SettingsView';
 import UserTour from './components/UserTour';
-import { StudySet, ViewState, User } from './types';
+import { StudySet, ViewState, User, AiGenerationRecord } from './types';
 import { BookOpen, GraduationCap } from 'lucide-react';
 
 // Mock data
@@ -70,6 +71,8 @@ const App: React.FC = () => {
   const [sets, setSets] = useState<StudySet[]>(INITIAL_SETS);
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [aiHistory, setAiHistory] = useState<AiGenerationRecord[]>([]);
+  const [runTour, setRunTour] = useState(false);
 
   const activeSet = sets.find(s => s.id === activeSetId);
 
@@ -83,10 +86,18 @@ const App: React.FC = () => {
     setView('LANDING');
   };
 
+  const handleUpdateUser = (updatedUser: User) => {
+    setCurrentUser(updatedUser);
+  };
+
   const handleSaveSet = (newSet: StudySet) => {
     const setWithAuthor = { ...newSet, author: currentUser?.name || 'Bạn' };
     setSets([setWithAuthor, ...sets]);
     setView('DASHBOARD');
+  };
+
+  const handleAddToAiHistory = (record: AiGenerationRecord) => {
+    setAiHistory([record, ...aiHistory]);
   };
 
   const handleSelectSet = (set: StudySet) => {
@@ -148,7 +159,17 @@ const App: React.FC = () => {
                   handleSaveSet(set);
                   alert("Đã lưu học phần vào thư viện thành công!");
               }}
+              history={aiHistory}
+              onAddToHistory={handleAddToAiHistory}
            />
+        );
+      
+      case 'SETTINGS':
+        return (
+            <SettingsView 
+                currentUser={currentUser}
+                onUpdateUser={handleUpdateUser}
+            />
         );
 
       case 'SET_DETAILS':
@@ -214,13 +235,18 @@ const App: React.FC = () => {
         currentUser={currentUser}
         onChangeView={handleNavigation}
         onLogout={handleLogout}
+        onStartTour={() => setRunTour(true)}
       />
       <main className="flex-1 overflow-y-auto h-screen relative">
         {renderMainContent()}
       </main>
       
       {/* User Guide Tour */}
-      <UserTour currentUser={currentUser} />
+      <UserTour 
+        currentUser={currentUser} 
+        run={runTour}
+        onStop={() => setRunTour(false)}
+      />
     </div>
   );
 };

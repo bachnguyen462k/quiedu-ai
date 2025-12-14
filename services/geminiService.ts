@@ -110,9 +110,7 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
         // Remove data header
         const base64Data = base64File.replace(/^data:([^;]+);base64,/, '');
 
-        // We use a simplified approach without strict responseSchema for the PDF analysis
-        // because huge documents can cause schema validation to truncate or fail.
-        // Instead, we force JSON via mimeType and prompt engineering.
+        // Use a more restrictive prompt to ensure JSON validity and manage token usage
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: {
@@ -124,32 +122,32 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
                         }
                     },
                     {
-                        text: `Bạn là chuyên gia giáo dục. Hãy phân tích tài liệu đính kèm và tạo nội dung ôn tập.
+                        text: `Bạn là chuyên gia giáo dục. Hãy phân tích tài liệu được cung cấp và tạo nội dung bài học.
 
-                        YÊU CẦU:
+                        QUAN TRỌNG - TUÂN THỦ NGHIÊM NGẶT:
                         1. Tóm tắt nội dung chính của tài liệu (ngắn gọn).
                         2. Trích xuất TỐI ĐA 3 chủ đề (Topics) quan trọng nhất.
                         3. Với mỗi chủ đề, tạo 10 câu hỏi trắc nghiệm (QUIZ) và 5 câu hỏi tự luận (ESSAY).
                         
-                        TRẢ VỀ JSON DUY NHẤT (Không Markdown) theo mẫu:
+                        TRẢ VỀ JSON DUY NHẤT theo định dạng sau (đảm bảo JSON hợp lệ):
                         {
-                          "subject": "Tên môn học",
-                          "grade": "Lớp",
-                          "overallSummary": "Tóm tắt chung",
+                          "subject": "Tên môn học (Ngắn gọn)",
+                          "grade": "Lớp/Trình độ",
+                          "overallSummary": "Tóm tắt chung ngắn gọn",
                           "topics": [
                             {
                               "topicName": "Tên chủ đề",
-                              "summary": "Tóm tắt chủ đề (ngắn)",
-                              "keyPoints": ["Ý chính 1", "Ý chính 2"],
-                              "formulas": ["Công thức nếu có"],
+                              "summary": "Tóm tắt chủ đề (dưới 50 từ)",
+                              "keyPoints": ["Ý chính 1", "Ý chính 2", "Ý chính 3"],
+                              "formulas": ["Công thức quan trọng (nếu có)"],
                               "questions": [
                                 {
                                   "type": "QUIZ",
                                   "difficulty": "Thông hiểu",
-                                  "question": "Nội dung câu hỏi",
-                                  "options": ["A. Đáp án 1", "B. Đáp án 2", "C. Đáp án 3", "D. Đáp án 4"],
-                                  "correctAnswer": "A. Đáp án 1",
-                                  "solutionGuide": "Hướng dẫn giải ngắn gọn",
+                                  "question": "Câu hỏi ngắn gọn",
+                                  "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+                                  "correctAnswer": "A. ...",
+                                  "solutionGuide": "Giải thích ngắn",
                                   "knowledgeApplied": "Kiến thức áp dụng"
                                 }
                               ]
@@ -160,7 +158,7 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
                 ]
             },
             config: {
-                // responseSchema is removed to prevent truncation errors on large inputs
+                // Force JSON response to minimize formatting errors
                 responseMimeType: "application/json"
             }
         });
@@ -172,8 +170,8 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
             return JSON.parse(cleanJson(text));
         } catch (e) {
             console.error("Failed to parse JSON:", e);
-            console.log("Raw Text:", text);
-            throw new Error("Dữ liệu trả về bị lỗi. Vui lòng thử lại với file nhỏ hơn hoặc rõ nét hơn.");
+            console.log("Raw Text Sample:", text.substring(0, 500) + "..."); // Log start of text for debug
+            throw new Error("Dữ liệu trả về từ AI không đúng định dạng. Vui lòng thử lại hoặc dùng file nhỏ hơn.");
         }
 
     } catch (error) {

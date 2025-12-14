@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { StudySet, QuizQuestion } from '../types';
-import { ArrowLeft, CheckCircle, XCircle, Award, RefreshCw, LayoutGrid, Clock, Check, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Award, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface QuizViewProps {
@@ -13,13 +13,17 @@ const COLORS = ['#10B981', '#EF4444', '#E5E7EB'];
 const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<(boolean | null)[]>([]); // Track correct/incorrect per index
+  
+  // 'answers' tracks Correct(true)/Incorrect(false) status. 
+  // IMPORTANT: Only populate this AFTER submission.
+  const [answers, setAnswers] = useState<(boolean | null)[]>([]); 
+  
   const [userSelections, setUserSelections] = useState<(string | null)[]>([]); // Track specific answers chosen
   const [score, setScore] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [isReviewing, setIsReviewing] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
-  const [showGrid, setShowGrid] = useState(false); // Mobile grid toggle
+  const [showGrid, setShowGrid] = useState(false);
 
   // Generate questions from the study set
   useEffect(() => {
@@ -46,53 +50,41 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
     // Shuffle questions
     const shuffledQuestions = questions.sort(() => 0.5 - Math.random());
     setQuizQuestions(shuffledQuestions);
+    // Initialize states
     setAnswers(new Array(shuffledQuestions.length).fill(null));
     setUserSelections(new Array(shuffledQuestions.length).fill(null));
   }, [set, onBack]);
 
   const handleOptionSelect = (option: string) => {
-    if (showFeedback || answers[currentQuestionIndex] !== null) return;
+    // Prevent changing answer if already completed (though UI hides it)
+    if (isCompleted) return;
     
+    // 1. Visual selection feedback (Blue only, no grading yet)
     setSelectedOption(option);
-    setShowFeedback(true);
 
-    const isCorrect = option === quizQuestions[currentQuestionIndex].correctAnswer;
-    
-    const newAnswers = [...answers];
-    newAnswers[currentQuestionIndex] = isCorrect;
-    setAnswers(newAnswers);
-
-    // Save user selection
+    // 2. Save user selection
     const newUserSelections = [...userSelections];
     newUserSelections[currentQuestionIndex] = option;
     setUserSelections(newUserSelections);
 
-    if (isCorrect) {
-      setScore(prev => prev + 1);
-    }
-
-    // Auto advance after short delay
+    // 3. Auto advance after short delay (Exam flow)
     setTimeout(() => {
-      setShowFeedback(false);
       setSelectedOption(null);
       if (currentQuestionIndex < quizQuestions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
       } else {
-        // Check if all questions are answered
-        const allAnswered = newAnswers.every(a => a !== null);
-        if (allAnswered) {
-             setIsCompleted(true);
-        }
+        // Go to review mode if it was the last question
+        setIsReviewing(true);
       }
-    }, 1200);
+    }, 400); // Faster transition since we don't need to read feedback
   };
 
   const restartQuiz = () => {
     setIsCompleted(false);
+    setIsReviewing(false);
     setCurrentQuestionIndex(0);
     setScore(0);
     setSelectedOption(null);
-    setShowFeedback(false);
     setAnswers(new Array(quizQuestions.length).fill(null));
     setUserSelections(new Array(quizQuestions.length).fill(null));
     setQuizQuestions(prev => [...prev].sort(() => 0.5 - Math.random()));
@@ -100,14 +92,29 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
 
   const handleJumpToQuestion = (index: number) => {
     setCurrentQuestionIndex(index);
-    setSelectedOption(null);
-    setShowFeedback(false);
+    setSelectedOption(null); // Reset local selection state for animation
     setShowGrid(false);
+    setIsReviewing(false); 
+  };
+
+  const handleSubmitQuiz = () => {
+      // --- GRADING LOGIC HAPPENS HERE ---
+      let calculatedScore = 0;
+      const finalAnswers = quizQuestions.map((q, idx) => {
+          const isCorrect = userSelections[idx] === q.correctAnswer;
+          if (isCorrect) calculatedScore++;
+          return isCorrect;
+      });
+
+      setScore(calculatedScore);
+      setAnswers(finalAnswers); // Now we reveal the answers
+      setIsReviewing(false);
+      setIsCompleted(true);
   };
 
   if (quizQuestions.length === 0) return <div className="p-8 text-center">Đang tạo bài kiểm tra...</div>;
 
-  // Result View
+  // 1. Result View (Final - After Submission)
   if (isCompleted) {
     const percentage = Math.round((score / quizQuestions.length) * 100);
     const data = [
@@ -118,7 +125,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in pb-20">
          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold mb-8">Kết quả kiểm tra</h2>
+            <h2 className="text-3xl font-bold mb-8">Kết quả bài làm</h2>
             
             <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 mb-8 max-w-2xl mx-auto">
                 <div className="h-64 w-full flex justify-center items-center">
@@ -141,9 +148,12 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
                 </div>
                 
                 <div className="text-5xl font-bold text-indigo-600 mb-2">{percentage}%</div>
-                <p className="text-gray-500 mb-6">
-                Bạn đã trả lời đúng {score} trên {quizQuestions.length} câu hỏi.
+                <p className="text-gray-500 mb-2">
+                    Bạn đã trả lời đúng {score} trên {quizQuestions.length} câu hỏi.
                 </p>
+                <div className="text-sm bg-orange-100 text-orange-700 px-3 py-1 rounded-full inline-block mb-6 font-medium">
+                    Lưu ý: Điểm số chỉ áp dụng cho câu hỏi trắc nghiệm
+                </div>
 
                 <div className="flex justify-center gap-4">
                 <button 
@@ -164,7 +174,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
 
          {/* Detailed Statistics */}
          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Chi tiết bài làm</h3>
+            <h3 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Chi tiết bài làm & Đáp án</h3>
             
             {quizQuestions.map((question, idx) => {
                 const userAnswer = userSelections[idx];
@@ -194,13 +204,13 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
                                 
                                 <div className="space-y-2">
                                     <div className={`flex items-center gap-2 text-sm font-medium ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                                        <span className="w-24">Bạn chọn:</span>
+                                        <span className="w-24 flex-shrink-0">Bạn chọn:</span>
                                         <span>{userAnswer || 'Chưa trả lời'}</span>
                                     </div>
                                     
                                     {!isCorrect && (
                                         <div className="flex items-center gap-2 text-sm font-medium text-green-700">
-                                            <span className="w-24">Đáp án đúng:</span>
+                                            <span className="w-24 flex-shrink-0">Đáp án đúng:</span>
                                             <span>{question.correctAnswer}</span>
                                         </div>
                                     )}
@@ -215,8 +225,69 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
     );
   }
 
+  // 2. Review View (Before Submit)
+  if (isReviewing) {
+      return (
+        <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
+             <div className="mb-6">
+                 <button onClick={() => setIsReviewing(false)} className="text-gray-500 hover:text-gray-900 font-medium flex items-center gap-2">
+                    <ArrowLeft size={20} /> Xem lại câu hỏi
+                 </button>
+             </div>
+
+             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 text-center mb-8">
+                 <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                     <HelpCircle size={32} />
+                 </div>
+                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Bạn đã sẵn sàng nộp bài?</h2>
+                 <p className="text-gray-500 mb-6">Hãy kiểm tra kỹ các câu trả lời. Sau khi nộp, hệ thống sẽ chấm điểm ngay lập tức.</p>
+                 
+                 <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg text-sm text-blue-800 mb-6 inline-block text-left">
+                     <strong>Lưu ý:</strong> Đối với các câu hỏi tự luận (nếu có), hệ thống sẽ không chấm điểm ngay. Giáo viên sẽ xem xét và chấm bài sau.
+                 </div>
+
+                 <div className="flex justify-center">
+                    <button 
+                        onClick={handleSubmitQuiz}
+                        className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 flex items-center gap-2 transition-transform hover:-translate-y-1"
+                    >
+                        <Send size={20} /> Xác nhận Nộp bài
+                    </button>
+                 </div>
+             </div>
+
+             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <LayoutGrid size={20} /> Tổng quan bài làm
+             </h3>
+             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
+                {quizQuestions.map((_, index) => {
+                    // Check if user has selected an answer for this index
+                    const hasAnswered = !!userSelections[index];
+                    
+                    let statusClass = "bg-gray-100 text-gray-400"; // Default (Not Answered)
+                    if (hasAnswered) statusClass = "bg-indigo-50 text-indigo-700 border-indigo-200 ring-2 ring-indigo-500"; // Answered
+
+                    return (
+                        <button
+                            key={index}
+                            onClick={() => handleJumpToQuestion(index)}
+                            className={`aspect-square rounded-xl flex flex-col items-center justify-center font-bold text-lg border transition-all hover:scale-105 ${statusClass}`}
+                        >
+                            {index + 1}
+                            {hasAnswered && <Check size={14} className="mt-1" />}
+                        </button>
+                    )
+                })}
+             </div>
+        </div>
+      );
+  }
+
+  // 3. Question View (Active Quiz)
   const currentQuestion = quizQuestions[currentQuestionIndex];
-  const progress = ((answers.filter(a => a !== null).length) / quizQuestions.length) * 100;
+  const answeredCount = userSelections.filter(a => a !== null).length;
+  const progress = (answeredCount / quizQuestions.length) * 100;
+  const isAllAnswered = userSelections.every(a => a !== null);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
@@ -232,7 +303,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
               <div className="flex items-center gap-4">
                   <span className="text-sm font-medium text-gray-500 hidden sm:inline">Tiến độ</span>
                   <div className="w-32 bg-gray-200 rounded-full h-2.5">
-                    <div className="bg-green-500 h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                    <div className="bg-indigo-500 h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                   </div>
               </div>
               <button onClick={() => setShowGrid(!showGrid)} className="lg:hidden p-2 text-indigo-600 bg-indigo-50 rounded-lg">
@@ -242,7 +313,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
           </div>
 
           {/* Question Card */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-6 min-h-[200px] flex flex-col justify-center">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-6 min-h-[200px] flex flex-col justify-center relative">
             <div className="flex justify-between items-start mb-4">
                  <h3 className="text-gray-500 text-sm font-bold uppercase tracking-wide">Câu hỏi {currentQuestionIndex + 1}</h3>
             </div>
@@ -250,33 +321,22 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
           </div>
 
           {/* Options */}
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4 mb-8">
             {currentQuestion.options.map((option, idx) => {
+              // Current user selection for THIS question
+              const isSelected = (selectedOption === option) || (userSelections[currentQuestionIndex] === option);
+              
               let buttonStyle = "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50";
               let icon = <span className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center text-xs text-gray-400 font-bold group-hover:border-indigo-400 group-hover:text-indigo-500">{String.fromCharCode(65 + idx)}</span>;
 
-              if (showFeedback || answers[currentQuestionIndex] !== null) {
-                // If question is already answered
-                const isThisCorrect = option === currentQuestion.correctAnswer;
-                const isThisSelected = option === selectedOption || (answers[currentQuestionIndex] !== null && option === selectedOption); // Simplified logic
-
-                if (isThisCorrect) {
-                  buttonStyle = "border-green-500 bg-green-50 text-green-700 ring-1 ring-green-500";
-                  icon = <CheckCircle size={24} className="text-green-600" />;
-                } else if (option === selectedOption && !isThisCorrect) {
-                  buttonStyle = "border-red-500 bg-red-50 text-red-700 ring-1 ring-red-500";
-                  icon = <XCircle size={24} className="text-red-500" />;
-                } else {
-                  buttonStyle = "border-gray-200 opacity-50";
-                }
-              } else if (selectedOption === option) {
-                 buttonStyle = "border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500";
+              if (isSelected) {
+                 buttonStyle = "border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600 text-indigo-900";
+                 icon = <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center"><Check size={14} className="text-white" /></div>;
               }
 
               return (
                 <button
                   key={idx}
-                  disabled={showFeedback || answers[currentQuestionIndex] !== null}
                   onClick={() => handleOptionSelect(option)}
                   className={`group p-5 text-left rounded-xl border-2 transition-all duration-200 flex justify-between items-center ${buttonStyle}`}
                 >
@@ -288,6 +348,18 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
               );
             })}
           </div>
+
+          {/* Button to go back to Review Screen if all answered */}
+          {isAllAnswered && (
+              <div className="flex justify-end">
+                  <button 
+                    onClick={() => setIsReviewing(true)}
+                    className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 shadow-md"
+                  >
+                      Đến trang nộp bài <ArrowRight size={20} />
+                  </button>
+              </div>
+          )}
       </div>
 
       {/* Navigation Grid (Sidebar on Desktop, Modal/Drawer on Mobile) */}
@@ -308,20 +380,20 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
 
             <div className="grid grid-cols-5 gap-3">
                 {quizQuestions.map((_, index) => {
+                    const hasAnswered = !!userSelections[index];
+                    
                     let statusClass = "bg-gray-100 text-gray-600 border-transparent hover:bg-gray-200";
                     if (index === currentQuestionIndex) {
-                        statusClass = "ring-2 ring-indigo-600 bg-indigo-50 text-indigo-700 border-indigo-200";
-                    } else if (answers[index] === true) {
-                        statusClass = "bg-green-100 text-green-700 border-green-200";
-                    } else if (answers[index] === false) {
-                        statusClass = "bg-red-100 text-red-700 border-red-200";
+                        statusClass = "ring-2 ring-indigo-600 bg-white text-indigo-700 border-indigo-200";
+                    } else if (hasAnswered) {
+                        statusClass = "bg-indigo-50 text-indigo-700 border-indigo-200 font-bold";
                     }
 
                     return (
                         <button
                             key={index}
                             onClick={() => handleJumpToQuestion(index)}
-                            className={`aspect-square rounded-lg flex items-center justify-center font-bold text-sm border transition-all ${statusClass}`}
+                            className={`aspect-square rounded-lg flex items-center justify-center text-sm border transition-all ${statusClass}`}
                         >
                             {index + 1}
                         </button>
@@ -332,23 +404,31 @@ const QuizView: React.FC<QuizViewProps> = ({ set, onBack }) => {
             <div className="mt-8 pt-6 border-t border-gray-100">
                 <div className="space-y-3 text-sm text-gray-600">
                     <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 rounded bg-green-100 border border-green-200"></div>
-                        <span>Đã trả lời đúng</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 rounded bg-red-100 border border-red-200"></div>
-                        <span>Đã trả lời sai</span>
+                        <div className="w-4 h-4 rounded bg-indigo-50 border border-indigo-200"></div>
+                        <span>Đã trả lời</span>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded bg-gray-100 border border-gray-200"></div>
                         <span>Chưa trả lời</span>
                     </div>
                      <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 rounded bg-indigo-50 ring-2 ring-indigo-600"></div>
+                        <div className="w-4 h-4 rounded bg-white ring-2 ring-indigo-600"></div>
                         <span>Đang chọn</span>
                     </div>
                 </div>
             </div>
+            
+            {/* Submit Button in Sidebar */}
+            {isAllAnswered && (
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                    <button 
+                        onClick={() => setIsReviewing(true)}
+                        className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-2"
+                    >
+                        <CheckCircle size={18} /> Nộp bài
+                    </button>
+                </div>
+            )}
          </div>
       </div>
 
