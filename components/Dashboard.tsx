@@ -155,6 +155,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, onCreateNew, onSelectSet })
                 />
             </div>
             <button 
+            id="dashboard-create-btn"
             onClick={onCreateNew}
             className="bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2 text-sm whitespace-nowrap"
             >

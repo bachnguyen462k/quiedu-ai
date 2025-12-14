@@ -9,6 +9,7 @@ import QuizView from './components/QuizView';
 import SetDetailView from './components/SetDetailView';
 import ClassManagement from './components/ClassManagement';
 import AiTextbookCreator from './components/AiTextbookCreator';
+import UserTour from './components/UserTour';
 import { StudySet, ViewState, User } from './types';
 import { BookOpen, GraduationCap } from 'lucide-react';
 
@@ -217,6 +218,9 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-y-auto h-screen relative">
         {renderMainContent()}
       </main>
+      
+      {/* User Guide Tour */}
+      <UserTour currentUser={currentUser} />
     </div>
   );
 };
