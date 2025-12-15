@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { Notification, NotificationType, ThemeMode } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { authService } from '../services/authService';
@@ -39,43 +39,54 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [theme]);
 
   // Set theme without calling API (used for syncing with backend data on load)
-  const setThemeMode = (mode: ThemeMode) => {
+  // Wrapped in useCallback to maintain stable reference preventing AuthContext re-runs
+  const setThemeMode = useCallback((mode: ThemeMode) => {
       setTheme(mode);
-  };
+  }, []);
 
   // Toggle theme and call API (user action)
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme(prev => {
         const newTheme = prev === 'light' ? 'dark' : 'light';
         
         // Call API to update theme preference if user is logged in
+        // Fire and forget, don't await
         if (localStorage.getItem('accessToken')) {
             authService.updateTheme(newTheme);
         }
         
         return newTheme;
     });
-  };
+  }, []);
 
   // --- Notification Logic ---
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = (message: string, type: NotificationType) => {
+  const removeNotification = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
+  const addNotification = useCallback((message: string, type: NotificationType) => {
     const id = uuidv4();
     setNotifications(prev => [...prev, { id, message, type }]);
     
     // Auto dismiss
     setTimeout(() => {
-      removeNotification(id);
+      setNotifications(current => current.filter(n => n.id !== id));
     }, 4000);
-  };
+  }, []);
 
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  const contextValue = useMemo(() => ({
+    theme, 
+    toggleTheme, 
+    setThemeMode, 
+    notifications, 
+    addNotification, 
+    removeNotification
+  }), [theme, toggleTheme, setThemeMode, notifications, addNotification, removeNotification]);
 
   return (
-    <AppContext.Provider value={{ theme, toggleTheme, setThemeMode, notifications, addNotification, removeNotification }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

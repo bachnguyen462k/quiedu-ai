@@ -140,14 +140,12 @@ export const authService = {
     }
   },
 
-  // Cập nhật Theme Mode cho user
-  updateTheme: async (theme: ThemeMode): Promise<void> => {
-      try {
-          // PUT /identity/users/theme/dark hoặc /identity/users/theme/light
-          await apiClient.put(`/identity/users/theme/${theme}`);
-      } catch (error) {
-          console.error("Failed to update theme preference on server:", error);
-      }
+  // Cập nhật Theme Mode cho user - Fire and forget
+  updateTheme: (theme: ThemeMode): void => {
+      // Không await để tránh chặn UI, không throw lỗi để tránh spam log nếu thất bại
+      apiClient.put(`/identity/users/theme/${theme}`).catch(() => {
+          // Silent failure: Không làm gì nếu lỗi để tránh làm phiền user
+      });
   },
 
   // Các hàm Mock khác giữ nguyên
