@@ -496,7 +496,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
         </div>
 
         {/* Right Side: Dynamic Form */}
-        <div className="md:w-1/2 p-12 flex flex-col justify-center animate-slide-in">
+        <div className="md:w-1/2 p-12 flex flex-col justify-center">
             
             {authMode === 'LOGIN' && renderLogin()}
             {authMode === 'REGISTER' && renderRegister()}
