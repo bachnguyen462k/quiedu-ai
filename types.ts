@@ -70,7 +70,6 @@ export interface User {
 export interface LoginCredentials {
   email: string;
   password?: string;
-  roleId?: string;
 }
 
 export interface AuthResponse {
