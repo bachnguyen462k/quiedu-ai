@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Bell, Moon, Sun, X, FileText, User, GraduationCap, Clock, Trash2, Globe } from 'lucide-react';
+import { Search, Bell, Moon, Sun, X, FileText, User, GraduationCap, Clock, Trash2, Globe, Loader2 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { StudySet, AiGenerationRecord } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -18,11 +18,18 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [visibleLimit, setVisibleLimit] = useState(10); // Infinity Scroll State for Search
+  
   const searchRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null); // Ref for search bottom
 
   // Notification State
   const [showNotifications, setShowNotifications] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  
+  // Infinity Scroll State for Notifications
+  const [visibleNotifLimit, setVisibleNotifLimit] = useState(10);
+  const loadMoreNotifRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -39,6 +46,66 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Reset visible limit when search query changes
+  useEffect(() => {
+    setVisibleLimit(10);
+  }, [searchQuery]);
+
+  // Reset notification limit when dropdown closes
+  useEffect(() => {
+    if (!showNotifications) {
+      setVisibleNotifLimit(10);
+    }
+  }, [showNotifications]);
+
+  // Infinity Scroll Observer for Search
+  useEffect(() => {
+    if (!showSearchResults) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleLimit((prev) => prev + 10);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current) {
+        observer.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [showSearchResults, visibleLimit]);
+
+  // Infinity Scroll Observer for Notifications
+  useEffect(() => {
+    if (!showNotifications) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleNotifLimit((prev) => prev + 10);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreNotifRef.current) {
+      observer.observe(loadMoreNotifRef.current);
+    }
+
+    return () => {
+      if (loadMoreNotifRef.current) {
+        observer.unobserve(loadMoreNotifRef.current);
+      }
+    };
+  }, [showNotifications, visibleNotifLimit]);
+
   const changeLanguage = () => {
       const newLang = i18n.language === 'vi' ? 'en' : 'vi';
       i18n.changeLanguage(newLang);
@@ -54,25 +121,33 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
     const quizzes = sets.filter(s => 
         s.title.toLowerCase().includes(lowerQuery) || 
         s.description.toLowerCase().includes(lowerQuery)
-    ).slice(0, 3);
+    );
 
     // 2. Filter Teachers (Extract unique authors from sets)
     const uniqueAuthors = Array.from(new Set(sets.map(s => s.author)));
     const teachers = uniqueAuthors
         .filter(author => (author as string).toLowerCase().includes(lowerQuery))
-        .map(author => ({ name: author, avatar: `https://ui-avatars.com/api/?name=${author}&background=random` }))
-        .slice(0, 3);
+        .map(author => ({ name: author, avatar: `https://ui-avatars.com/api/?name=${author}&background=random` }));
 
     // 3. Filter Files (AI History)
     const files = history.filter(h => 
         (h.fileName as string).toLowerCase().includes(lowerQuery) ||
         (h.result?.subject as unknown as string)?.toLowerCase().includes(lowerQuery)
-    ).slice(0, 3);
+    );
 
     return { quizzes, teachers, files };
   }, [searchQuery, sets, history]);
 
   const hasResults = filteredResults.quizzes.length > 0 || filteredResults.teachers.length > 0 || filteredResults.files.length > 0;
+  
+  const hasMoreItems = 
+    filteredResults.quizzes.length > visibleLimit || 
+    filteredResults.teachers.length > visibleLimit || 
+    filteredResults.files.length > visibleLimit;
+
+  // --- NOTIFICATION LOGIC ---
+  const displayedNotifications = notifications.slice(0, visibleNotifLimit);
+  const hasMoreNotifications = notifications.length > visibleNotifLimit;
 
   return (
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 sticky top-0 z-40 transition-colors">
@@ -104,12 +179,12 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                 {t('header.search_no_result')}
                             </div>
                         ) : (
-                            <div className="max-h-[70vh] overflow-y-auto">
+                            <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
                                 {/* Quiz Section */}
                                 {filteredResults.quizzes.length > 0 && (
                                     <div className="p-2">
                                         <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('header.search_quizzes')}</div>
-                                        {filteredResults.quizzes.map(set => (
+                                        {filteredResults.quizzes.slice(0, visibleLimit).map(set => (
                                             <button 
                                                 key={set.id}
                                                 onClick={() => { onSelectSet(set); setShowSearchResults(false); }}
@@ -131,7 +206,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                 {filteredResults.teachers.length > 0 && (
                                     <div className="p-2 border-t border-gray-100 dark:border-gray-700">
                                         <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('header.search_teachers')}</div>
-                                        {filteredResults.teachers.map((t, idx) => (
+                                        {filteredResults.teachers.slice(0, visibleLimit).map((t, idx) => (
                                             <button 
                                                 key={idx}
                                                 className="w-full text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
@@ -147,7 +222,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                 {filteredResults.files.length > 0 && (
                                     <div className="p-2 border-t border-gray-100 dark:border-gray-700">
                                         <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('header.search_files')}</div>
-                                        {filteredResults.files.map(file => (
+                                        {filteredResults.files.slice(0, visibleLimit).map(file => (
                                             <button 
                                                 key={file.id}
                                                 onClick={() => { onSelectHistory(file); setShowSearchResults(false); }}
@@ -164,6 +239,13 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                                 </div>
                                             </button>
                                         ))}
+                                    </div>
+                                )}
+
+                                {/* Sentinel Element for Infinite Scroll */}
+                                {hasMoreItems && (
+                                    <div ref={loadMoreRef} className="p-4 flex justify-center w-full">
+                                        <Loader2 className="animate-spin text-gray-400" size={16} />
                                     </div>
                                 )}
                             </div>
@@ -222,7 +304,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                             )}
                         </div>
                         
-                        <div className="max-h-[60vh] overflow-y-auto">
+                        <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
                             {notifications.length === 0 ? (
                                 <div className="p-8 text-center">
                                     <Bell className="mx-auto text-gray-300 dark:text-gray-600 mb-2" size={32} />
@@ -230,7 +312,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                 </div>
                             ) : (
                                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                                    {notifications.map(notif => (
+                                    {displayedNotifications.map(notif => (
                                         <div key={notif.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex gap-3 relative group">
                                             <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${
                                                 notif.type === 'success' ? 'bg-green-500' : 
@@ -249,6 +331,13 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                             </button>
                                         </div>
                                     ))}
+
+                                    {/* Sentinel Element for Notification Infinite Scroll */}
+                                    {hasMoreNotifications && (
+                                        <div ref={loadMoreNotifRef} className="p-4 flex justify-center w-full">
+                                            <Loader2 className="animate-spin text-gray-400" size={16} />
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
