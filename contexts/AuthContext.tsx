@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, LoginCredentials } from '../types';
 import { authService } from '../services/authService';
 import apiClient from '../services/apiClient';
+import { useApp } from './AppContext';
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +24,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // Use setThemeMode from AppContext to sync theme without triggering API update loop
+  const { setThemeMode } = useApp();
 
   // Khôi phục session khi reload trang
   useEffect(() => {
@@ -35,6 +39,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const userData = await authService.getCurrentUser();
             setUser(userData);
             localStorage.setItem('user', JSON.stringify(userData)); // Cập nhật cache local
+            
+            // Sync theme from API
+            if (typeof userData.darkMode === 'boolean') {
+                setThemeMode(userData.darkMode ? 'dark' : 'light');
+            }
         } catch (error) {
             console.error("Session expired or invalid", error);
             // Nếu token hết hạn hoặc lỗi, xóa session
@@ -47,7 +56,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     initAuth();
-  }, []);
+  }, [setThemeMode]);
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -57,6 +66,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
+
+      // Sync theme from API
+      if (typeof data.user.darkMode === 'boolean') {
+          setThemeMode(data.user.darkMode ? 'dark' : 'light');
+      }
     } catch (error) {
       console.error("Login failed", error);
       throw error;
@@ -72,6 +86,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           localStorage.setItem('accessToken', data.accessToken);
           localStorage.setItem('user', JSON.stringify(data.user));
           setUser(data.user);
+          // Register mock usually returns default theme, but sync anyway
+          if (typeof data.user.darkMode === 'boolean') {
+              setThemeMode(data.user.darkMode ? 'dark' : 'light');
+          }
       } catch (error) {
           console.error("Register failed", error);
           throw error;
@@ -87,6 +105,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
+        
+        if (typeof data.user.darkMode === 'boolean') {
+            setThemeMode(data.user.darkMode ? 'dark' : 'light');
+        }
     } catch (error) {
         console.error("Google Login failed", error);
         throw error;
@@ -107,6 +129,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
         setUser(null);
+        // Optional: Reset to light mode or keep current preference on logout
     }
   };
 

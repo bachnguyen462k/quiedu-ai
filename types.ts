@@ -66,6 +66,7 @@ export interface User {
   roles: UserRole[]; 
   permissions: string[]; // List of permission keys (e.g. "CREATE_POST")
   avatar?: string;
+  darkMode?: boolean; // Theme preference from API
 }
 
 export interface LoginCredentials {

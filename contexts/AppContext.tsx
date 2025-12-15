@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Notification, NotificationType, ThemeMode } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { authService } from '../services/authService';
 
 interface AppContextType {
   // Theme
   theme: ThemeMode;
   toggleTheme: () => void;
+  setThemeMode: (mode: ThemeMode) => void; // Allow setting theme explicitly (e.g. from API data)
   // Notifications
   notifications: Notification[];
   addNotification: (message: string, type: NotificationType) => void;
@@ -36,8 +38,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // Set theme without calling API (used for syncing with backend data on load)
+  const setThemeMode = (mode: ThemeMode) => {
+      setTheme(mode);
+  };
+
+  // Toggle theme and call API (user action)
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    setTheme(prev => {
+        const newTheme = prev === 'light' ? 'dark' : 'light';
+        
+        // Call API to update theme preference if user is logged in
+        if (localStorage.getItem('accessToken')) {
+            authService.updateTheme(newTheme);
+        }
+        
+        return newTheme;
+    });
   };
 
   // --- Notification Logic ---
@@ -58,7 +75,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   return (
-    <AppContext.Provider value={{ theme, toggleTheme, notifications, addNotification, removeNotification }}>
+    <AppContext.Provider value={{ theme, toggleTheme, setThemeMode, notifications, addNotification, removeNotification }}>
       {children}
     </AppContext.Provider>
   );

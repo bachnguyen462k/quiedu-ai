@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { User, LoginCredentials, AuthResponse, UserRole } from '../types';
+import { User, LoginCredentials, AuthResponse, UserRole, ThemeMode } from '../types';
 
 export const authService = {
   // Đăng nhập thực tế với API
@@ -75,7 +75,8 @@ export const authService = {
                     email: userData.email,
                     roles: ['STUDENT'],
                     permissions: [],
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=random&color=fff`
+                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=random&color=fff`,
+                    darkMode: false
                 },
                 accessToken: 'mock-jwt-token-register',
                 refreshToken: 'mock-refresh-token'
@@ -130,12 +131,23 @@ export const authService = {
             email: result.username, // Dùng username làm định danh email
             roles: mappedRoles,
             permissions: permissions, // Danh sách quyền đã flatten
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`,
+            darkMode: result.darkMode // Map field darkMode từ API
         };
     } catch (error) {
         console.error("Get User Info Error:", error);
         throw error;
     }
+  },
+
+  // Cập nhật Theme Mode cho user
+  updateTheme: async (theme: ThemeMode): Promise<void> => {
+      try {
+          // PUT /identity/users/theme/dark hoặc /identity/users/theme/light
+          await apiClient.put(`/identity/users/theme/${theme}`);
+      } catch (error) {
+          console.error("Failed to update theme preference on server:", error);
+      }
   },
 
   // Các hàm Mock khác giữ nguyên
@@ -149,7 +161,8 @@ export const authService = {
                     email: 'nguyen.google@gmail.com',
                     roles: ['STUDENT'],
                     permissions: [],
-                    avatar: 'https://lh3.googleusercontent.com/a/default-user'
+                    avatar: 'https://lh3.googleusercontent.com/a/default-user',
+                    darkMode: false
                 },
                 accessToken: 'mock-google-token-xyz',
                 refreshToken: 'mock-refresh-token'
