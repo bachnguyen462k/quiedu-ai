@@ -64,7 +64,7 @@ export interface User {
   name: string;
   email: string;
   roles: UserRole[]; 
-  permissions: string[]; // Added permissions array
+  permissions: string[]; // List of permission keys (e.g. "CREATE_POST")
   avatar?: string;
 }
 

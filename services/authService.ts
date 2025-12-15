@@ -74,7 +74,7 @@ export const authService = {
                     name: userData.name,
                     email: userData.email,
                     roles: ['STUDENT'],
-                    permissions: [], // Mock permissions
+                    permissions: [],
                     avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=random&color=fff`
                 },
                 accessToken: 'mock-jwt-token-register',
@@ -103,7 +103,7 @@ export const authService = {
                     if (!mappedRoles.includes('STUDENT')) mappedRoles.push('STUDENT');
                 }
 
-                // Map Permissions (Flatten all permissions from all roles)
+                // Map Permissions (Flatten nested permissions)
                 if (r.permissions && Array.isArray(r.permissions)) {
                     r.permissions.forEach((p: any) => {
                         if (p.name && !permissions.includes(p.name)) {
@@ -129,7 +129,7 @@ export const authService = {
             name: displayName,
             email: result.username, // Dùng username làm định danh email
             roles: mappedRoles,
-            permissions: permissions,
+            permissions: permissions, // Danh sách quyền đã flatten
             avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`
         };
     } catch (error) {

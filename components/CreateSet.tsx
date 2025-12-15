@@ -124,15 +124,17 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   const [aiFile, setAiFile] = useState<{name: string, data: string} | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Check Permissions
-  // Fallback: If user has no permissions array (legacy/mock), assume all true for now or strict?
-  // Let's assume strict checking based on the provided list.
+  // --- CHECK PERMISSIONS ---
   const hasPerm = (perm: string) => user?.permissions?.includes(perm) || false;
 
   const canManualEntry = hasPerm('MANUAL_ENTRY_POST');
   const canScanDoc = hasPerm('SCAN_DOCUMENT_POST');
   const canAiTopic = hasPerm('AI_BY_TOPIC_POST');
   const canAiPlanner = hasPerm('AI_LESON_PLANNER_POST');
+
+  const getPermissionTooltip = (hasPermission: boolean) => {
+      return hasPermission ? "" : "Bạn không có quyền sử dụng tính năng này. Vui lòng liên hệ quản trị viên.";
+  };
 
   // Warn user before leaving page if generating
   useEffect(() => {
@@ -429,6 +431,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   <button 
                     onClick={startManual}
                     disabled={!canManualEntry}
+                    title={getPermissionTooltip(canManualEntry)}
                     className={`group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-all text-left flex flex-col h-full relative ${
                         canManualEntry 
                         ? 'hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-xl' 
@@ -449,6 +452,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   <button 
                     onClick={() => openAiModal('TEXT_TOPIC')}
                     disabled={!canAiTopic}
+                    title={getPermissionTooltip(canAiTopic)}
                     className={`group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-all text-left flex flex-col h-full relative overflow-hidden ${
                         canAiTopic
                         ? 'hover:border-purple-500 dark:hover:border-purple-400 hover:shadow-xl'
@@ -472,6 +476,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   <button 
                     onClick={() => openAiModal('FILE_SCAN_QUIZ')}
                     disabled={!canScanDoc}
+                    title={getPermissionTooltip(canScanDoc)}
                     className={`group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-all text-left flex flex-col h-full relative ${
                         canScanDoc
                         ? 'hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-xl'
@@ -492,6 +497,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   <button 
                     onClick={onGoToAiTextbook}
                     disabled={!canAiPlanner}
+                    title={getPermissionTooltip(canAiPlanner)}
                     className={`group bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-all text-left flex flex-col h-full relative overflow-hidden ${
                         canAiPlanner
                         ? 'hover:border-pink-500 dark:hover:border-pink-400 hover:shadow-xl'
@@ -914,7 +920,12 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           <button
                               onClick={() => openAiModal('TEXT_TOPIC')}
                               disabled={!canAiTopic}
-                              className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 shadow-sm transition-all ${canAiTopic ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90' : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'}`}
+                              title={getPermissionTooltip(canAiTopic)}
+                              className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 shadow-sm transition-all ${
+                                  canAiTopic 
+                                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90' 
+                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed grayscale'
+                              }`}
                           >
                               {canAiTopic ? <Sparkles size={16} /> : <Lock size={14} />} 
                               {t('create_set.use_ai')}
