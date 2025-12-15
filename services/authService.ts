@@ -2,20 +2,67 @@ import apiClient from './apiClient';
 import { User, LoginCredentials, AuthResponse } from '../types';
 
 export const authService = {
-  // Đăng nhập
+  // Đăng nhập thực tế với API
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    // Gọi API thực tế
-    const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-    return response.data;
+    try {
+        // Gọi API login: POST /identity/auth/token
+        const response = await apiClient.post('/identity/auth/token', {
+            username: credentials.email, // Form dùng biến 'email' nhưng gửi lên là 'username'
+            password: credentials.password
+        });
+
+        const responseData = response.data;
+
+        // Kiểm tra logic code thành công (1000)
+        if (responseData.code !== 1000) {
+            // Xử lý các mã lỗi cụ thể nếu server trả về HTTP 200 OK
+            if (responseData.code === 1005) {
+                throw new Error("Tài khoản không tồn tại");
+            }
+            throw new Error(responseData.message || "Đăng nhập thất bại");
+        }
+
+        const token = responseData.result?.token;
+        const isAuthenticated = responseData.result?.authenticated;
+
+        if (!token || !isAuthenticated) {
+            throw new Error("Xác thực thất bại hoặc không có token");
+        }
+
+        // Vì API login hiện tại chỉ trả về token, ta tạo thông tin user giả định từ username
+        // Trong thực tế, bạn sẽ dùng token này để gọi API /users/myInfo lấy thông tin chi tiết
+        const mockUserFromLogin: User = {
+            id: 'user-' + credentials.email,
+            name: credentials.email, // Dùng username làm tên
+            email: credentials.email.includes('@') ? credentials.email : `${credentials.email}@local.dev`,
+            role: 'TEACHER', // Mặc định quyền TEACHER để demo full tính năng
+            avatar: `https://ui-avatars.com/api/?name=${credentials.email}&background=random&color=fff`
+        };
+
+        return {
+            user: mockUserFromLogin,
+            accessToken: token,
+            refreshToken: '' // API này chưa trả về refresh token
+        };
+    } catch (error: any) {
+        console.error("Login API Error:", error);
+        
+        // Xử lý lỗi trả về từ server (HTTP 4xx, 5xx)
+        if (error.response?.data) {
+            const errorData = error.response.data;
+            if (errorData.code === 1005) {
+                throw "Tài khoản không tồn tại";
+            }
+            throw errorData.message || "Lỗi hệ thống";
+        }
+
+        // Xử lý lỗi ném ra thủ công trong khối try
+        throw error.message || "Lỗi kết nối máy chủ";
+    }
   },
 
-  // Đăng ký
+  // Đăng ký (Mock)
   register: async (userData: any): Promise<AuthResponse> => {
-    // Gọi API thực tế
-    // const response = await apiClient.post<AuthResponse>('/auth/register', userData);
-    // return response.data;
-    
-    // Mock Register
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve({
@@ -33,49 +80,14 @@ export const authService = {
     });
   },
 
-  // Lấy thông tin user hiện tại (thường dùng token để lấy)
+  // Lấy thông tin user hiện tại (Sử dụng token đã lưu)
   getCurrentUser: async (): Promise<User> => {
-    const response = await apiClient.get<User>('/auth/me');
+    // API lấy thông tin user của bạn, ví dụ: /identity/users/myInfo
+    const response = await apiClient.get<User>('/identity/users/myInfo');
     return response.data;
   },
 
-  // Mock login function (Dùng để test khi chưa có Backend thực)
-  mockLogin: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            // Giả lập check password đơn giản
-            if (credentials.password === 'error') {
-                reject(new Error('Sai mật khẩu'));
-                return;
-            }
-
-            const isTeacher = credentials.email.includes('.gv');
-            const mockUser: User = isTeacher 
-            ? {
-                id: 't1',
-                name: 'Cô Thu Lan',
-                email: credentials.email,
-                role: 'TEACHER',
-                avatar: 'https://ui-avatars.com/api/?name=Thu+Lan&background=6366f1&color=fff'
-              }
-            : {
-                id: 's1',
-                name: 'Nguyễn Văn Nam',
-                email: credentials.email,
-                role: 'STUDENT',
-                avatar: 'https://ui-avatars.com/api/?name=Van+Nam&background=10b981&color=fff'
-              };
-            
-            resolve({
-                user: mockUser,
-                accessToken: 'mock-jwt-token-xyz-123',
-                refreshToken: 'mock-refresh-token'
-            });
-        }, 800);
-    });
-  },
-
-  // Mock Google Login
+  // Các hàm Mock khác giữ nguyên để app không bị lỗi
   mockGoogleLogin: async (): Promise<AuthResponse> => {
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -84,8 +96,8 @@ export const authService = {
                     id: 'g1',
                     name: 'Nguyễn Google',
                     email: 'nguyen.google@gmail.com',
-                    role: 'STUDENT', // Mặc định là học sinh
-                    avatar: 'https://lh3.googleusercontent.com/a/default-user' // Mock avatar
+                    role: 'STUDENT',
+                    avatar: 'https://lh3.googleusercontent.com/a/default-user'
                 },
                 accessToken: 'mock-google-token-xyz',
                 refreshToken: 'mock-refresh-token'
@@ -94,38 +106,15 @@ export const authService = {
     });
   },
 
-  // --- Password Recovery Mock ---
-  
-  // 1. Gửi mã OTP về email
   sendVerificationCode: async (email: string): Promise<boolean> => {
-      return new Promise((resolve) => {
-          setTimeout(() => {
-              console.log(`[Mock Email] Mã OTP gửi tới ${email} là: 123456`);
-              resolve(true);
-          }, 1000);
-      });
+      return new Promise((resolve) => { setTimeout(() => resolve(true), 1000); });
   },
-
-  // 2. Kiểm tra mã OTP
   verifyCode: async (email: string, code: string): Promise<boolean> => {
-      return new Promise((resolve, reject) => {
-          setTimeout(() => {
-              if (code === '123456') {
-                  resolve(true);
-              } else {
-                  reject(new Error("Mã xác thực không chính xác"));
-              }
-          }, 1000);
+      return new Promise((resolve, reject) => { 
+          code === '123456' ? resolve(true) : reject(new Error("Sai mã")); 
       });
   },
-
-  // 3. Đặt lại mật khẩu mới
   resetPassword: async (email: string, newPassword: string): Promise<boolean> => {
-      return new Promise((resolve) => {
-          setTimeout(() => {
-              console.log(`[Mock DB] Đổi mật khẩu cho ${email} thành công.`);
-              resolve(true);
-          }, 1000);
-      });
+      return new Promise((resolve) => { setTimeout(() => resolve(true), 1000); });
   }
 };

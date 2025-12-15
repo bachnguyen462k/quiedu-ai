@@ -32,7 +32,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (token && savedUser) {
         setUser(JSON.parse(savedUser));
-        // Optional: Call verify token API here
       }
       setIsLoading(false);
     };
@@ -43,8 +42,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
-      // Sử dụng mockLogin cho demo
-      const data = await authService.mockLogin(credentials); 
+      // Sử dụng hàm login thực tế thay vì mock
+      const data = await authService.login(credentials); 
 
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('user', JSON.stringify(data.user));

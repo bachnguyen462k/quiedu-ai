@@ -25,7 +25,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
 
   // Login & Register Form State
   const [selectedRole, setSelectedRole] = useState<UserRole>('STUDENT');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(''); // Biến này lưu "username" trong form đăng nhập
   const [password, setPassword] = useState('');
   
   // Register specific
@@ -53,7 +53,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
         await login({ email, password });
         addNotification(t('login.success_login'), 'success');
     } catch (error) {
-        addNotification(t('login.error_login'), 'error');
+        addNotification(typeof error === 'string' ? error : t('login.error_login'), 'error');
     } finally {
         setIsLoading(false);
     }
@@ -155,13 +155,8 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   // Helper to fill mock data
   const fillMockData = (role: UserRole) => {
       setSelectedRole(role);
-      if (role === 'TEACHER') {
-          setEmail('lan.gv@schools.edu');
-          setPassword('password123');
-      } else {
-          setEmail('nam.hs@schools.edu');
-          setPassword('password123');
-      }
+      setEmail('admin');
+      setPassword('admin');
   };
 
   // --- RENDERERS ---
@@ -171,23 +166,22 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('login.login_title')}</h3>
         <p className="text-gray-500 dark:text-gray-400 mb-8">{t('login.welcome_back')}</p>
 
-        {/* Role Selection Mock Helper (Hidden in Real App or kept for testing) */}
+        {/* Quick Fill Helper */}
         <div className="flex gap-2 mb-6">
-             <button onClick={() => fillMockData('STUDENT')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">Mock HS</button>
-             <button onClick={() => fillMockData('TEACHER')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">Mock GV</button>
+             <button onClick={() => fillMockData('TEACHER')} className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 dark:text-gray-300">Fill Admin</button>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.email_label')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tên đăng nhập</label>
                 <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input 
-                        type="email" 
+                        type="text" 
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="name@school.edu.vn"
+                        placeholder="admin"
                         className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                     />
                 </div>
