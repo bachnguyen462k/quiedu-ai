@@ -49,8 +49,12 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
+    // Map selectedRole to roleId expected by Backend
+    const roleId = selectedRole === 'STUDENT' ? 'USER' : 'TEACHER';
+
     try {
-        await login({ email, password });
+        await login({ email, password, roleId });
         addNotification(t('login.success_login'), 'success');
     } catch (error) {
         addNotification(typeof error === 'string' ? error : t('login.error_login'), 'error');
@@ -164,7 +168,35 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   const renderLogin = () => (
       <>
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('login.login_title')}</h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-8">{t('login.welcome_back')}</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">{t('login.welcome_back')}</p>
+
+        {/* Role Selection for Login */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+            <button 
+                type="button"
+                onClick={() => setSelectedRole('STUDENT')}
+                className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
+                    selectedRole === 'STUDENT' 
+                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-500 text-gray-500 dark:text-gray-400'
+                }`}
+            >
+                <GraduationCap size={24} />
+                <span className="font-bold text-sm">{t('login.role_student')}</span>
+            </button>
+            <button 
+                type="button"
+                onClick={() => setSelectedRole('TEACHER')}
+                className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
+                    selectedRole === 'TEACHER' 
+                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-500 text-gray-500 dark:text-gray-400'
+                }`}
+            >
+                <School size={24} />
+                <span className="font-bold text-sm">{t('login.role_teacher')}</span>
+            </button>
+        </div>
 
         {/* Quick Fill Helper */}
         <div className="flex gap-2 mb-6">

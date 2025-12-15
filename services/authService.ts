@@ -8,7 +8,8 @@ export const authService = {
         // 1. Gọi API login để lấy Token
         const response = await apiClient.post('/identity/auth/token', {
             username: credentials.email,
-            password: credentials.password
+            password: credentials.password,
+            roleId: credentials.roleId // Truyền roleId (USER hoặc TEACHER)
         });
 
         const responseData = response.data;
