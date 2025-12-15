@@ -4,6 +4,7 @@ import { generateStudySetWithAI, generateStudySetFromFile } from '../services/ge
 import { Plus, Trash2, Sparkles, Save, Loader2, FileText, Upload, CheckCircle, PenTool, Keyboard, FileUp, ArrowLeft, BrainCircuit, Check, X, Menu, AlertCircle, Lightbulb, ChevronRight, Layers, LayoutGrid, List, BookOpen, ScanLine, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CreateSetProps {
   onSave: (set: StudySet) => void;
@@ -83,6 +84,8 @@ B. Elon Musk
 
 const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextbook, history = [], onSelectHistory }) => {
   const { t } = useTranslation();
+  const { user } = useAuth(); // Access user to check permissions
+
   // Navigation State
   const [creationStep, setCreationStep] = useState<CreationMode>('MENU');
 
@@ -120,6 +123,16 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   const [aiQuestionCount, setAiQuestionCount] = useState<number>(10);
   const [aiFile, setAiFile] = useState<{name: string, data: string} | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Check Permissions
+  // Fallback: If user has no permissions array (legacy/mock), assume all true for now or strict?
+  // Let's assume strict checking based on the provided list.
+  const hasPerm = (perm: string) => user?.permissions?.includes(perm) || false;
+
+  const canManualEntry = hasPerm('MANUAL_ENTRY_POST');
+  const canScanDoc = hasPerm('SCAN_DOCUMENT_POST');
+  const canAiTopic = hasPerm('AI_BY_TOPIC_POST');
+  const canAiPlanner = hasPerm('AI_LESON_PLANNER_POST');
 
   // Warn user before leaving page if generating
   useEffect(() => {
@@ -412,10 +425,17 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-full mx-auto mb-8">
+                  {/* MANUAL ENTRY */}
                   <button 
                     onClick={startManual}
-                    className="group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-xl transition-all text-left flex flex-col h-full"
+                    disabled={!canManualEntry}
+                    className={`group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-all text-left flex flex-col h-full relative ${
+                        canManualEntry 
+                        ? 'hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-xl' 
+                        : 'opacity-50 cursor-not-allowed grayscale'
+                    }`}
                   >
+                      {!canManualEntry && <div className="absolute top-2 right-2"><Lock size={16} className="text-gray-400"/></div>}
                       <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                           <Keyboard size={24} />
                       </div>
@@ -425,10 +445,17 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       </p>
                   </button>
 
+                  {/* AI BY TOPIC */}
                   <button 
                     onClick={() => openAiModal('TEXT_TOPIC')}
-                    className="group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:shadow-xl transition-all text-left flex flex-col h-full relative overflow-hidden"
+                    disabled={!canAiTopic}
+                    className={`group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-all text-left flex flex-col h-full relative overflow-hidden ${
+                        canAiTopic
+                        ? 'hover:border-purple-500 dark:hover:border-purple-400 hover:shadow-xl'
+                        : 'opacity-50 cursor-not-allowed grayscale'
+                    }`}
                   >
+                      {!canAiTopic && <div className="absolute top-2 right-2 z-10"><Lock size={16} className="text-gray-400"/></div>}
                       <div className="absolute top-0 right-0 p-2">
                           <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">{t('create_set.popular_badge')}</span>
                       </div>
@@ -441,10 +468,17 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       </p>
                   </button>
 
+                  {/* SCAN DOCUMENT */}
                   <button 
                     onClick={() => openAiModal('FILE_SCAN_QUIZ')}
-                    className="group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-xl transition-all text-left flex flex-col h-full"
+                    disabled={!canScanDoc}
+                    className={`group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-all text-left flex flex-col h-full relative ${
+                        canScanDoc
+                        ? 'hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-xl'
+                        : 'opacity-50 cursor-not-allowed grayscale'
+                    }`}
                   >
+                      {!canScanDoc && <div className="absolute top-2 right-2"><Lock size={16} className="text-gray-400"/></div>}
                       <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                           <ScanLine size={24} />
                       </div>
@@ -454,10 +488,17 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       </p>
                   </button>
 
+                  {/* AI LESSON PLANNER */}
                   <button 
                     onClick={onGoToAiTextbook}
-                    className="group bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-pink-500 dark:hover:border-pink-400 hover:shadow-xl transition-all text-left flex flex-col h-full relative overflow-hidden"
+                    disabled={!canAiPlanner}
+                    className={`group bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 transition-all text-left flex flex-col h-full relative overflow-hidden ${
+                        canAiPlanner
+                        ? 'hover:border-pink-500 dark:hover:border-pink-400 hover:shadow-xl'
+                        : 'opacity-50 cursor-not-allowed grayscale'
+                    }`}
                   >
+                      {!canAiPlanner && <div className="absolute top-2 right-2 z-10"><Lock size={16} className="text-gray-400"/></div>}
                       <div className="absolute top-0 right-0 p-2">
                           <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1">
                              <Sparkles size={10} /> {t('create_set.pro_badge')}
@@ -872,9 +913,11 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       <div className="flex gap-2">
                           <button
                               onClick={() => openAiModal('TEXT_TOPIC')}
-                              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-sm hover:opacity-90 transition-opacity"
+                              disabled={!canAiTopic}
+                              className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 shadow-sm transition-all ${canAiTopic ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90' : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'}`}
                           >
-                              <Sparkles size={16} /> {t('create_set.use_ai')}
+                              {canAiTopic ? <Sparkles size={16} /> : <Lock size={14} />} 
+                              {t('create_set.use_ai')}
                           </button>
                       </div>
                   </div>
