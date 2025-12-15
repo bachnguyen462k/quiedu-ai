@@ -143,6 +143,7 @@ export const vi = {
       ai_modal_scan_title: "Trích xuất câu hỏi từ file",
       ai_modal_topic_desc: "Nhập chủ đề bạn muốn ôn tập (Ví dụ: 'Lịch sử Việt Nam thế kỷ 20', 'Từ vựng IELTS chủ đề môi trường').",
       ai_modal_topic_ph: "Nhập chủ đề tại đây...",
+      ai_modal_count_label: "Số lượng câu hỏi:",
       ai_modal_scan_desc: "Tải lên tài liệu (PDF, Word, Ảnh chụp đề thi). AI sẽ tự động nhận diện câu hỏi trắc nghiệm.",
       change_file: "Đổi file khác",
       click_upload: "Nhấn để tải lên",

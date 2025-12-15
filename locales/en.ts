@@ -143,6 +143,7 @@ export const en = {
       ai_modal_scan_title: "Extract Questions from File",
       ai_modal_topic_desc: "Enter the topic you want to review (e.g., 'Vietnam History 20th Century', 'IELTS Environment Vocab').",
       ai_modal_topic_ph: "Enter topic here...",
+      ai_modal_count_label: "Number of questions:",
       ai_modal_scan_desc: "Upload document (PDF, Word, Exam Image). AI will automatically detect quiz questions.",
       change_file: "Change File",
       click_upload: "Click to upload",

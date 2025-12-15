@@ -117,6 +117,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiMode, setAiMode] = useState<AiGenerationMode>('TEXT_TOPIC');
   const [aiPrompt, setAiPrompt] = useState('');
+  const [aiQuestionCount, setAiQuestionCount] = useState<number>(10);
   const [aiFile, setAiFile] = useState<{name: string, data: string} | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -340,7 +341,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       let generatedDescription = '';
 
       if (aiMode === 'TEXT_TOPIC') {
-          const result = await generateStudySetWithAI(aiPrompt);
+          const result = await generateStudySetWithAI(aiPrompt, aiQuestionCount);
           generatedTitle = result.title;
           generatedDescription = result.description;
           generatedCards = result.cards;
@@ -397,6 +398,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       setShowAiModal(true);
       setAiFile(null);
       setAiPrompt('');
+      setAiQuestionCount(10);
   };
 
   // --- RENDER: SELECTION MENU ---
@@ -561,6 +563,25 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                     onChange={(e) => setAiPrompt(e.target.value)}
                                     autoFocus
                                 ></textarea>
+                                
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex justify-between">
+                                        {t('create_set.ai_modal_count_label')}
+                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{aiQuestionCount}</span>
+                                    </label>
+                                    <input 
+                                        type="range" 
+                                        min="5" 
+                                        max="30" 
+                                        value={aiQuestionCount}
+                                        onChange={(e) => setAiQuestionCount(parseInt(e.target.value))}
+                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
+                                    />
+                                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                        <span>5</span>
+                                        <span>30</span>
+                                    </div>
+                                </div>
                             </>
                         ) : (
                             <>
@@ -1134,6 +1155,25 @@ B. Sai`}
                             onChange={(e) => setAiPrompt(e.target.value)}
                             autoFocus
                         ></textarea>
+                        
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex justify-between">
+                                {t('create_set.ai_modal_count_label')}
+                                <span className="font-bold text-indigo-600 dark:text-indigo-400">{aiQuestionCount}</span>
+                            </label>
+                            <input 
+                                type="range" 
+                                min="5" 
+                                max="30" 
+                                value={aiQuestionCount}
+                                onChange={(e) => setAiQuestionCount(parseInt(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
+                            />
+                            <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                <span>5</span>
+                                <span>30</span>
+                            </div>
+                        </div>
                     </>
                 ) : (
                     <>
