@@ -41,7 +41,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             localStorage.setItem('user', JSON.stringify(userData)); // Cập nhật cache local
             
             // Sync theme from API
-            if (typeof userData.darkMode === 'boolean') {
+            // Check for value existence instead of strict boolean type to be safer
+            if (userData.darkMode !== undefined && userData.darkMode !== null) {
                 setThemeMode(userData.darkMode ? 'dark' : 'light');
             }
         } catch (error) {
@@ -68,8 +69,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(data.user);
 
       // Sync theme from API
-      if (typeof data.user.darkMode === 'boolean') {
-          setThemeMode(data.user.darkMode ? 'dark' : 'light');
+      // Check for value existence instead of strict boolean type to be safer
+      if (data.user.darkMode !== undefined && data.user.darkMode !== null) {
+          const targetTheme = data.user.darkMode ? 'dark' : 'light';
+          setThemeMode(targetTheme);
+          // Force local storage update immediately to prevent race conditions
+          localStorage.setItem('theme', targetTheme);
       }
     } catch (error) {
       console.error("Login failed", error);
@@ -87,7 +92,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           localStorage.setItem('user', JSON.stringify(data.user));
           setUser(data.user);
           // Register mock usually returns default theme, but sync anyway
-          if (typeof data.user.darkMode === 'boolean') {
+          if (data.user.darkMode !== undefined && data.user.darkMode !== null) {
               setThemeMode(data.user.darkMode ? 'dark' : 'light');
           }
       } catch (error) {
@@ -106,7 +111,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
         
-        if (typeof data.user.darkMode === 'boolean') {
+        if (data.user.darkMode !== undefined && data.user.darkMode !== null) {
             setThemeMode(data.user.darkMode ? 'dark' : 'light');
         }
     } catch (error) {
@@ -157,7 +162,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: !!user, 
         isLoading, 
         login, 
-        register,
+        register, 
         loginWithGoogle, 
         logout, 
         updateUser,
