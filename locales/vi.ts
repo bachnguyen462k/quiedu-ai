@@ -224,7 +224,7 @@ export const vi = {
       ai_modal_scan_desc: "Tải lên file đề thi (PDF, DOCX, Ảnh). AI sẽ trích xuất câu hỏi và đáp án.",
       click_upload: "Nhấn để tải lên file",
       upload_support: "Hỗ trợ PDF, Ảnh, Word",
-      processing: "Đang xử lý...",
+      processing: "Đang xử lý... (Vui lòng không tắt trang)",
       start_create: "Bắt đầu tạo",
       change_file: "Nhấn để thay đổi file"
     },
@@ -323,7 +323,7 @@ export const vi = {
       upload_prompt_title: "Nhấn để tải lên file",
       upload_prompt_desc: "Hỗ trợ: PDF, JPG, PNG (Tối đa 10MB)",
       analyze_btn: "Phân tích & Soạn bài",
-      analyzing: "Đang phân tích...",
+      analyzing: "Đang xử lý... (Không tắt trang)",
       back_create: "Tạo bài mới",
       toc: "Mục lục",
       general_info: "Thông tin chung",

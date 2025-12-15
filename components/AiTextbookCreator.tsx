@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, Sparkles, FileText, CheckCircle, BookOpen, BrainCircuit, ChevronDown, ChevronUp, Save, Loader2, Book, Sigma, PenTool, Lightbulb, Layers, GraduationCap, FileType, Image as ImageIcon, History, Clock, ArrowRight, X, Trash2, Edit3, Plus, Check, List, Link, ArrowLeft, Globe, Lock, Building, Hash, Bookmark } from 'lucide-react';
 import { analyzeTextbookWithAI } from '../services/geminiService';
 import { TextbookAnalysisResult, StudySet, AiGenerationRecord, Flashcard, PrivacyStatus } from '../types';
@@ -91,6 +91,19 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
         topic: '',
         cards: [] 
     });
+
+    // Warn user before leaving page if analyzing
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isAnalyzing) {
+                e.preventDefault();
+                e.returnValue = ''; // Chrome requires returnValue to be set
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isAnalyzing]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {

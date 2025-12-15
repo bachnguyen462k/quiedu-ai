@@ -224,7 +224,7 @@ export const en = {
       ai_modal_scan_desc: "Upload exam file (PDF, DOCX, Image). AI will extract questions and answers.",
       click_upload: "Click to upload file",
       upload_support: "Supports PDF, Image, Word",
-      processing: "Processing...",
+      processing: "Processing... (Do not close page)",
       start_create: "Start Creating",
       change_file: "Click to change file"
     },
@@ -323,7 +323,7 @@ export const en = {
       upload_prompt_title: "Click to upload file",
       upload_prompt_desc: "Supports: PDF, JPG, PNG (Max 10MB)",
       analyze_btn: "Analyze & Generate",
-      analyzing: "Analyzing...",
+      analyzing: "Processing... (Do not close page)",
       back_create: "Create New",
       toc: "Table of Contents",
       general_info: "General Information",
