@@ -17,6 +17,7 @@ import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriang
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from 'react-i18next';
 
 // Mock data generation function (Giữ nguyên mock data cho content)
 const generateMockSets = (count: number): StudySet[] => {
@@ -131,6 +132,7 @@ const AppContent: React.FC = () => {
   
   const { addNotification } = useApp();
   const { user, isAuthenticated, isLoading, logout, updateUser } = useAuth();
+  const { t } = useTranslation();
 
   const activeSet = sets.find(s => s.id === activeSetId);
 
@@ -147,19 +149,19 @@ const AppContent: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    addNotification('Đã đăng xuất thành công.', 'info');
+    addNotification(t('notifications.logged_out'), 'info');
   };
 
   const handleUpdateUser = (updatedUser: User) => {
     updateUser(updatedUser);
-    addNotification('Cập nhật thông tin thành công!', 'success');
+    addNotification(t('notifications.profile_updated'), 'success');
   };
 
   const handleSaveSet = (newSet: StudySet) => {
     const setWithAuthor = { ...newSet, author: user?.name || 'Bạn' };
     setSets([setWithAuthor, ...sets]);
     setView('DASHBOARD');
-    addNotification('Đã tạo học phần mới thành công!', 'success');
+    addNotification(t('notifications.set_created'), 'success');
   };
 
   const handleAddToAiHistory = (record: AiGenerationRecord) => {
@@ -173,7 +175,7 @@ const AppContent: React.FC = () => {
 
   const handleSelectHistory = (record: AiGenerationRecord) => {
       setView('AI_CREATOR');
-      addNotification(`Đã mở tài liệu: ${record.fileName}`, 'info');
+      addNotification(t('notifications.file_opened', { fileName: record.fileName }), 'info');
   };
 
   const handleAddReview = (setId: string, review: Review) => {
@@ -186,7 +188,7 @@ const AppContent: React.FC = () => {
         }
         return s;
     }));
-    addNotification('Cảm ơn đánh giá của bạn!', 'success');
+    addNotification(t('notifications.review_submitted'), 'success');
   };
 
   // Toggle favorite status
@@ -198,9 +200,9 @@ const AppContent: React.FC = () => {
       const set = sets.find(s => s.id === setId);
       if (set) {
           if (!set.isFavorite) {
-              addNotification('Đã thêm vào danh sách yêu thích ❤️', 'success');
+              addNotification(t('notifications.favorite_added'), 'success');
           } else {
-              addNotification('Đã xóa khỏi danh sách yêu thích', 'info');
+              addNotification(t('notifications.favorite_removed'), 'info');
           }
       }
   };

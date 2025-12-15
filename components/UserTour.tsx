@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { X, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface UserTourProps {
   currentUser: User;
@@ -9,6 +10,7 @@ interface UserTourProps {
 }
 
 const UserTour: React.FC<UserTourProps> = ({ currentUser, run, onStop }) => {
+  const { t } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
   const [coords, setCoords] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
@@ -17,28 +19,28 @@ const UserTour: React.FC<UserTourProps> = ({ currentUser, run, onStop }) => {
       const baseSteps = [
         {
           target: 'body', 
-          title: 'Chào mừng đến với QuizEdu! 👋',
-          content: 'Hệ thống học tập thông minh giúp bạn tạo bài học và ôn tập hiệu quả. Hãy cùng điểm qua các chức năng chính nhé.'
+          title: t('tour.step_1_title'),
+          content: t('tour.step_1_desc')
         },
         {
           target: '#sidebar-dashboard',
-          title: 'Trang chủ',
-          content: 'Xem tổng quan hoạt động, các học phần đang xu hướng và truy cập nhanh vào các chức năng.',
+          title: t('tour.step_2_title'),
+          content: t('tour.step_2_desc'),
         },
         {
           target: '#sidebar-create',
-          title: 'Tạo học phần & AI ✨',
-          content: 'Tại đây bạn có thể tạo thẻ ghi nhớ thủ công hoặc sử dụng AI để soạn bài tự động từ tài liệu (PDF, Ảnh) trong tích tắc.',
+          title: t('tour.step_3_title'),
+          content: t('tour.step_3_desc'),
         },
         {
           target: '#sidebar-library',
-          title: 'Thư viện',
-          content: 'Kho tàng kiến thức của bạn. Tìm kiếm, quản lý và ôn tập tất cả các học phần tại đây.',
+          title: t('tour.step_4_title'),
+          content: t('tour.step_4_desc'),
         },
         {
           target: '#sidebar-classes',
-          title: 'Lớp học',
-          content: 'Không gian lớp học trực tuyến. Quản lý danh sách lớp, giao bài tập và theo dõi tiến độ của học sinh.',
+          title: t('tour.step_5_title'),
+          content: t('tour.step_5_desc'),
         },
       ];
       
@@ -182,7 +184,7 @@ const UserTour: React.FC<UserTourProps> = ({ currentUser, run, onStop }) => {
 
              <div className="mb-3 flex items-center gap-2">
                  <span className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">
-                    Hướng dẫn {stepIndex + 1}/{steps.length}
+                    {t('tour.guide_label')} {stepIndex + 1}/{steps.length}
                  </span>
              </div>
              
@@ -197,13 +199,13 @@ const UserTour: React.FC<UserTourProps> = ({ currentUser, run, onStop }) => {
                     disabled={stepIndex === 0}
                     className={`text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 transition-opacity ${stepIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 >
-                    <ChevronLeft size={16} /> Quay lại
+                    <ChevronLeft size={16} /> {t('tour.back')}
                 </button>
                 <button 
                     onClick={handleNext}
                     className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none flex items-center gap-2 transition-all hover:-translate-y-0.5"
                 >
-                    {isLastStep ? 'Hoàn tất' : 'Tiếp theo'}
+                    {isLastStep ? t('tour.finish') : t('tour.next')}
                     {isLastStep ? <Check size={18} /> : <ChevronRight size={18} />}
                 </button>
              </div>

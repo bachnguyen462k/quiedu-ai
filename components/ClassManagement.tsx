@@ -3,6 +3,7 @@ import { User, ClassGroup, StudySet, ClassAssignment, StudentResult } from '../t
 import { Users, Plus, BookOpen, BarChart3, MoreVertical, Calendar, ChevronRight, Search, ArrowLeft, Trophy, TrendingUp, AlertCircle, ChevronLeft, Check, X, Eye, Upload, FileText, Sparkles, Paperclip, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { gradeSubmissionWithAI } from '../services/geminiService';
+import { useTranslation } from 'react-i18next';
 
 interface ClassManagementProps {
   currentUser: User;
@@ -79,6 +80,8 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
   const [aiFeedback, setAiFeedback] = useState<string>('');
   const [isGrading, setIsGrading] = useState(false);
 
+  const { t } = useTranslation();
+
   const selectedClass = classes.find(c => c.id === selectedClassId);
   const selectedAssignment = selectedClass?.assignments.find(a => a.id === selectedAssignmentId);
 
@@ -93,13 +96,13 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
   };
 
   const handleCreateClass = () => {
-    const name = prompt("Nhập tên lớp học mới:");
+    const name = prompt(t('class_mgmt.create_class_prompt'));
     if (name) {
       const newClass: ClassGroup = {
         id: `c${Date.now()}`,
         name,
         teacherId: currentUser.id,
-        description: 'Mô tả lớp học...',
+        description: t('class_mgmt.default_desc'),
         studentCount: 0,
         assignments: []
       };
@@ -184,7 +187,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
       setClasses(updatedClasses);
       setStudentSubmission(null);
       setIsStudentSubmitting(null);
-      alert("Đã nộp bài thành công!");
+      alert(t('notifications.submitted_success'));
   };
 
   const handleTriggerAIGrading = async () => {
@@ -255,10 +258,10 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
 
     // Distribution Data
     const distribution = [
-        { name: 'Yếu (<50)', range: [0, 49], count: 0, fill: '#EF4444' }, // Red
-        { name: 'TB (50-69)', range: [50, 69], count: 0, fill: '#F59E0B' }, // Yellow
-        { name: 'Khá (70-84)', range: [70, 84], count: 0, fill: '#3B82F6' }, // Blue
-        { name: 'Giỏi (85+)', range: [85, 100], count: 0, fill: '#10B981' }, // Green
+        { name: t('class_mgmt.dist_weak'), range: [0, 49], count: 0, fill: '#EF4444' }, // Red
+        { name: t('class_mgmt.dist_avg'), range: [50, 69], count: 0, fill: '#F59E0B' }, // Yellow
+        { name: t('class_mgmt.dist_good'), range: [70, 84], count: 0, fill: '#3B82F6' }, // Blue
+        { name: t('class_mgmt.dist_excellent'), range: [85, 100], count: 0, fill: '#10B981' }, // Green
     ];
 
     scores.forEach(s => {
@@ -285,7 +288,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                     }}
                     className="mb-4 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 flex items-center gap-2 text-sm font-medium transition-colors"
                 >
-                    &larr; Quay lại danh sách lớp
+                    &larr; {t('class_mgmt.back_list')}
                 </button>
 
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 transition-colors">
@@ -298,19 +301,19 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                             onClick={() => { setActiveTab('OVERVIEW'); setSelectedAssignmentId(null); }}
                             className={`py-3 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'OVERVIEW' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                         >
-                            Bài tập & Hoạt động
+                            {t('class_mgmt.tab_overview')}
                         </button>
                         <button 
                              onClick={() => { setActiveTab('MEMBERS'); setSelectedAssignmentId(null); }}
                              className={`py-3 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'MEMBERS' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                         >
-                            Thành viên ({selectedClass.studentCount})
+                            {t('class_mgmt.tab_members')} ({selectedClass.studentCount})
                         </button>
                         <button 
                              onClick={() => { setActiveTab('STATS'); setSelectedAssignmentId(null); }}
                              className={`py-3 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'STATS' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                         >
-                            Bảng điểm & Thống kê
+                            {t('class_mgmt.tab_stats')}
                         </button>
                     </div>
                 </div>
@@ -319,19 +322,19 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                 {activeTab === 'OVERVIEW' && (
                     <div>
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Bài tập đã giao</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('class_mgmt.assignments_title')}</h3>
                             <button 
                                 onClick={() => setIsAssignModalOpen(true)}
                                 className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 flex items-center gap-2 transition-colors"
                             >
-                                <Plus size={16} /> Giao bài mới
+                                <Plus size={16} /> {t('class_mgmt.assign_new')}
                             </button>
                         </div>
                         
                         {selectedClass.assignments.length === 0 ? (
                              <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 transition-colors">
                                 <BookOpen className="mx-auto text-gray-300 dark:text-gray-600 mb-3" size={40} />
-                                <p className="text-gray-500 dark:text-gray-400">Chưa có bài tập nào được giao.</p>
+                                <p className="text-gray-500 dark:text-gray-400">{t('class_mgmt.no_assignments')}</p>
                              </div>
                         ) : (
                             <div className="space-y-4">
@@ -346,13 +349,13 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                     {assign.studySetTitle}
                                                     {assign.attachmentName && <Paperclip size={14} className="text-gray-400" />}
                                                 </h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">Giao ngày: {new Date(assign.assignedAt).toLocaleDateString('vi-VN')}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{t('class_mgmt.assigned_date')} {new Date(assign.assignedAt).toLocaleDateString('vi-VN')}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-6 justify-end">
                                             <div className="text-right">
                                                 <div className="text-sm font-bold text-gray-900 dark:text-white">{assign.results.length}/{selectedClass.studentCount}</div>
-                                                <div className="text-xs text-gray-500 dark:text-gray-400">Đã nộp</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">{t('class_mgmt.submitted_count')}</div>
                                             </div>
                                             <button className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
                                                 <MoreVertical size={20} />
@@ -371,9 +374,9 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                         {/* Level 1: List of Assignments (Hierarchy) */}
                         {!selectedAssignmentId ? (
                              <div>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Chọn bài kiểm tra để xem thống kê</h3>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('class_mgmt.select_stat')}</h3>
                                 {selectedClass.assignments.length === 0 ? (
-                                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">Chưa có dữ liệu thống kê.</div>
+                                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">{t('class_mgmt.no_stats')}</div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {selectedClass.assignments.map(assign => {
@@ -395,11 +398,11 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                     <h4 className="font-bold text-gray-900 dark:text-white text-lg mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{assign.studySetTitle}</h4>
                                                     <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                                                         <div>
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400">Đã nộp</p>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400">{t('class_mgmt.submitted_count')}</p>
                                                             <p className="font-bold text-gray-900 dark:text-white">{assign.results.length}/{selectedClass.studentCount}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400">Điểm TB</p>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400">{t('class_mgmt.avg_score')}</p>
                                                             <p className={`font-bold ${stats.avg >= 80 ? 'text-green-600 dark:text-green-400' : stats.avg >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
                                                                 {stats.avg}/100
                                                             </p>
@@ -425,25 +428,25 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                             onClick={() => { setSelectedAssignmentId(null); setResultsPage(1); }}
                                             className="mb-4 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 text-sm font-bold transition-colors"
                                         >
-                                            <ArrowLeft size={16} /> Quay lại danh sách
+                                            <ArrowLeft size={16} /> {t('class_mgmt.back_stats')}
                                         </button>
 
                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                                             <div>
                                                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedAssignment.studySetTitle}</h2>
-                                                <p className="text-gray-500 dark:text-gray-400 text-sm">Thống kê chi tiết kết quả làm bài của học sinh</p>
+                                                <p className="text-gray-500 dark:text-gray-400 text-sm">{t('class_mgmt.detail_stats_title')}</p>
                                             </div>
                                             <div className="flex gap-2">
                                                  <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 px-4 py-2 rounded-lg text-center shadow-sm">
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Điểm TB</div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">{t('class_mgmt.avg_score')}</div>
                                                     <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{stats.avg}</div>
                                                  </div>
                                                  <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 px-4 py-2 rounded-lg text-center shadow-sm">
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Cao nhất</div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">{t('class_mgmt.highest')}</div>
                                                     <div className="text-xl font-bold text-green-600 dark:text-green-400">{stats.max}</div>
                                                  </div>
                                                  <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 px-4 py-2 rounded-lg text-center shadow-sm">
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Thấp nhất</div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">{t('class_mgmt.lowest')}</div>
                                                     <div className="text-xl font-bold text-red-600 dark:text-red-400">{stats.min}</div>
                                                  </div>
                                             </div>
@@ -452,7 +455,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                         {/* Chart Section */}
                                         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-8 transition-colors">
                                             <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                                <BarChart3 size={20} className="text-gray-400" /> Biểu đồ phân bổ điểm số
+                                                <BarChart3 size={20} className="text-gray-400" /> {t('class_mgmt.score_dist')}
                                             </h4>
                                             <div className="h-64 w-full">
                                                 <ResponsiveContainer width="100%" height="100%">
@@ -477,17 +480,17 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                         {/* Result Table */}
                                         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
                                             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
-                                                <h4 className="font-bold text-gray-800 dark:text-white">Danh sách học sinh ({selectedAssignment.results.length} đã nộp)</h4>
+                                                <h4 className="font-bold text-gray-800 dark:text-white">{t('class_mgmt.student_list_title')} ({selectedAssignment.results.length} {t('class_mgmt.submitted_count').toLowerCase()})</h4>
                                             </div>
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-sm text-left">
                                                     <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700/50">
                                                         <tr>
-                                                            <th className="px-6 py-3 whitespace-nowrap">Học sinh</th>
-                                                            <th className="px-6 py-3 whitespace-nowrap">Điểm số</th>
-                                                            <th className="px-6 py-3 whitespace-nowrap">Trạng thái</th>
-                                                            <th className="px-6 py-3 whitespace-nowrap">Thời gian nộp</th>
-                                                            <th className="px-6 py-3 whitespace-nowrap">Chi tiết</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">{t('class_mgmt.col_student')}</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">{t('class_mgmt.col_score')}</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">{t('class_mgmt.col_status')}</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">{t('class_mgmt.col_time')}</th>
+                                                            <th className="px-6 py-3 whitespace-nowrap">{t('class_mgmt.col_detail')}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -507,7 +510,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                                     </td>
                                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                                         {res.score === 0 && res.submissionUrl ? (
-                                                                           <span className="px-2 py-1 rounded-full text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">Chờ chấm</span>
+                                                                           <span className="px-2 py-1 rounded-full text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{t('class_mgmt.status_pending')}</span>
                                                                         ) : (
                                                                             <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                                                                                 res.score >= 85 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 
@@ -520,9 +523,9 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                                     </td>
                                                                     <td className="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                                                                         {res.submissionUrl ? (
-                                                                            <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><FileText size={14} /> File đính kèm</span>
+                                                                            <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><FileText size={14} /> {t('class_mgmt.status_attached')}</span>
                                                                         ) : (
-                                                                            `${Math.round((res.score / 100) * res.totalQuestions)}/${res.totalQuestions} câu đúng`
+                                                                            `${Math.round((res.score / 100) * res.totalQuestions)}/${res.totalQuestions} ${t('class_mgmt.status_correct')}`
                                                                         )}
                                                                     </td>
                                                                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(res.completedAt).toLocaleString('vi-VN')}</td>
@@ -533,7 +536,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                             ))
                                                         ) : (
                                                             <tr>
-                                                                <td colSpan={5} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400 italic">Chưa có học sinh nào nộp bài</td>
+                                                                <td colSpan={5} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400 italic">{t('class_mgmt.no_submissions')}</td>
                                                             </tr>
                                                         )}
                                                     </tbody>
@@ -549,20 +552,20 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                             disabled={resultsPage === 1}
                                                             className="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
                                                         >
-                                                            Trước
+                                                            {t('class_mgmt.prev')}
                                                         </button>
                                                         <button 
                                                             onClick={() => setResultsPage(Math.min(totalPages, resultsPage + 1))}
                                                             disabled={resultsPage === totalPages}
                                                             className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
                                                         >
-                                                            Sau
+                                                            {t('class_mgmt.next')}
                                                         </button>
                                                     </div>
                                                     <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                                                         <div>
                                                             <p className="text-sm text-gray-700 dark:text-gray-300">
-                                                                Hiển thị <span className="font-medium">{(resultsPage - 1) * ITEMS_PER_PAGE + 1}</span> đến <span className="font-medium">{Math.min(resultsPage * ITEMS_PER_PAGE, sortedResults.length)}</span> trong số <span className="font-medium">{sortedResults.length}</span> kết quả
+                                                                {t('class_mgmt.showing')} <span className="font-medium">{(resultsPage - 1) * ITEMS_PER_PAGE + 1}</span> {t('class_mgmt.to')} <span className="font-medium">{Math.min(resultsPage * ITEMS_PER_PAGE, sortedResults.length)}</span> {t('class_mgmt.of')} <span className="font-medium">{sortedResults.length}</span> {t('class_mgmt.results')}
                                                             </p>
                                                         </div>
                                                         <div>
@@ -572,7 +575,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                                     disabled={resultsPage === 1}
                                                                     className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                                                                 >
-                                                                    <span className="sr-only">Trước</span>
+                                                                    <span className="sr-only">{t('class_mgmt.prev')}</span>
                                                                     <ChevronLeft className="h-5 w-5" aria-hidden="true" />
                                                                 </button>
                                                                 
@@ -595,7 +598,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                                     disabled={resultsPage === totalPages}
                                                                     className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 dark:text-gray-500 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                                                                 >
-                                                                    <span className="sr-only">Sau</span>
+                                                                    <span className="sr-only">{t('class_mgmt.next')}</span>
                                                                     <ChevronRight className="h-5 w-5" aria-hidden="true" />
                                                                 </button>
                                                             </nav>
@@ -615,8 +618,8 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                 {activeTab === 'MEMBERS' && (
                     <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 transition-colors">
                         <Users className="mx-auto text-gray-300 dark:text-gray-600 mb-3" size={40} />
-                        <p className="text-gray-500 dark:text-gray-400 mb-4">Danh sách thành viên lớp học</p>
-                        <button className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Thêm học sinh</button>
+                        <p className="text-gray-500 dark:text-gray-400 mb-4">{t('class_mgmt.members_title')}</p>
+                        <button className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">{t('class_mgmt.add_student')}</button>
                     </div>
                 )}
 
@@ -628,7 +631,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                 <div>
                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{viewingStudentResult.studentName}</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Điểm: <span className="font-bold text-indigo-600 dark:text-indigo-400">{viewingStudentResult.score}/100</span>
+                                        {t('class_mgmt.score_label')} <span className="font-bold text-indigo-600 dark:text-indigo-400">{viewingStudentResult.score}/100</span>
                                     </p>
                                 </div>
                                 <button onClick={() => setViewingStudentResult(null)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
@@ -651,7 +654,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                 download="bai_lam_hoc_sinh.png"
                                                 className="text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:underline flex items-center gap-1"
                                             >
-                                                <Download size={14} /> Tải ảnh xuống
+                                                <Download size={14} /> {t('class_mgmt.download_img')}
                                             </a>
                                         </div>
                                     ) : (
@@ -661,7 +664,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                     <p className="font-bold text-gray-800 dark:text-gray-100 mb-2">Câu {idx + 1}: {detail.questionTerm}</p>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                                                         <div className={detail.isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
-                                                            <span className="font-semibold block text-xs uppercase opacity-70 mb-1">Học sinh chọn:</span>
+                                                            <span className="font-semibold block text-xs uppercase opacity-70 mb-1">{t('class_mgmt.student_choice')}</span>
                                                             <div className="flex items-center gap-2">
                                                                 {detail.isCorrect ? <Check size={16} /> : <X size={16} />}
                                                                 {detail.userAnswer}
@@ -669,7 +672,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                         </div>
                                                         {!detail.isCorrect && (
                                                             <div className="text-green-700 dark:text-green-400">
-                                                                <span className="font-semibold block text-xs uppercase opacity-70 mb-1">Đáp án đúng:</span>
+                                                                <span className="font-semibold block text-xs uppercase opacity-70 mb-1">{t('class_mgmt.correct_answer')}</span>
                                                                 <div className="flex items-center gap-2">
                                                                     <Check size={16} />
                                                                     {detail.correctAnswer}
@@ -687,7 +690,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                 <div className="space-y-4">
                                      <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800">
                                          <h4 className="font-bold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2">
-                                             <Sparkles size={18} /> Trợ lý AI
+                                             <Sparkles size={18} /> {t('class_mgmt.ai_assistant')}
                                          </h4>
                                          {viewingStudentResult.submissionUrl && (
                                              <button 
@@ -695,7 +698,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                 disabled={isGrading}
                                                 className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 mb-4 transition-colors"
                                              >
-                                                {isGrading ? 'Đang phân tích...' : 'Chấm bài ngay'}
+                                                {isGrading ? t('class_mgmt.analyzing') : t('class_mgmt.grade_now')}
                                              </button>
                                          )}
                                          
@@ -706,8 +709,8 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                          ) : (
                                             <p className="text-sm text-gray-500 dark:text-gray-400">
                                                 {viewingStudentResult.submissionUrl 
-                                                    ? "Nhấn nút để AI phân tích bài làm của học sinh." 
-                                                    : "AI chỉ hỗ trợ chấm bài tự luận qua hình ảnh."}
+                                                    ? t('class_mgmt.ai_guide_btn')
+                                                    : t('class_mgmt.ai_guide_text')}
                                             </p>
                                          )}
                                      </div>
@@ -719,7 +722,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                     onClick={() => setViewingStudentResult(null)}
                                     className="px-6 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-medium transition-colors"
                                 >
-                                    Đóng
+                                    {t('class_mgmt.close')}
                                 </button>
                             </div>
                         </div>
@@ -730,10 +733,10 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                 {isAssignModalOpen && (
                     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                         <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 max-h-[80vh] flex flex-col transition-colors animate-fade-in">
-                            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Giao bài tập cho lớp</h3>
+                            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">{t('class_mgmt.assign_modal_title')}</h3>
                             
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Đính kèm tài liệu (PDF, Ảnh)</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('class_mgmt.attach_label')}</label>
                                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative">
                                     <input 
                                         type="file" 
@@ -747,14 +750,14 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                     ) : (
                                         <div className="text-gray-500 dark:text-gray-400">
                                             <Upload size={24} className="mx-auto mb-2 text-gray-400" />
-                                            <span className="text-sm">Nhấn để tải lên</span>
+                                            <span className="text-sm">{t('class_mgmt.click_upload')}</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             <div className="flex-1 overflow-y-auto space-y-2 mb-4 custom-scrollbar">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chọn học phần</label>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('class_mgmt.select_set')}</label>
                                 {sets.map(set => (
                                     <button 
                                         key={set.id}
@@ -762,7 +765,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                         className="w-full text-left p-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-500 transition-all flex items-center justify-between group"
                                     >
                                         <span className="font-medium text-gray-700 dark:text-gray-200 group-hover:text-indigo-700 dark:group-hover:text-indigo-400">{set.title}</span>
-                                        <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{set.cards.length} câu</span>
+                                        <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{set.cards.length} {t('class_mgmt.cards_count')}</span>
                                     </button>
                                 ))}
                             </div>
@@ -770,7 +773,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                 onClick={() => setIsAssignModalOpen(false)}
                                 className="w-full py-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
                             >
-                                Hủy bỏ
+                                {t('class_mgmt.cancel')}
                             </button>
                         </div>
                     </div>
@@ -784,14 +787,14 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20 animate-fade-in">
             <div className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Quản lý lớp học</h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Tạo lớp, giao bài và theo dõi tiến độ của học sinh.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('class_mgmt.mgmt_title')}</h1>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{t('class_mgmt.mgmt_desc')}</p>
                 </div>
                 <button 
                     onClick={handleCreateClass}
                     className="bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-indigo-700 flex items-center gap-2 shadow-sm transition-colors"
                 >
-                    <Plus size={18} /> <span className="hidden sm:inline">Tạo lớp mới</span><span className="sm:hidden">Thêm</span>
+                    <Plus size={18} /> <span className="hidden sm:inline">{t('class_mgmt.create_class_btn')}</span><span className="sm:hidden">{t('class_mgmt.add_short')}</span>
                 </button>
             </div>
 
@@ -807,15 +810,15 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                 <Users size={24} />
                             </div>
                             <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold px-2 py-1 rounded">
-                                {cls.studentCount} HS
+                                {cls.studentCount} {t('class_mgmt.student_count')}
                             </span>
                         </div>
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{cls.name}</h3>
                         <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mb-4">{cls.description}</p>
                         
                         <div className="border-t border-gray-100 dark:border-gray-700 pt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                             <span className="flex items-center gap-1"><BookOpen size={14} /> {cls.assignments.length} bài tập</span>
-                             <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-medium group-hover:underline">Chi tiết <ChevronRight size={14} /></span>
+                             <span className="flex items-center gap-1"><BookOpen size={14} /> {cls.assignments.length} {t('class_mgmt.exercises_count')}</span>
+                             <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-medium group-hover:underline">{t('class_mgmt.detail_link')} <ChevronRight size={14} /></span>
                         </div>
                     </div>
                 ))}
@@ -827,7 +830,7 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
   // --- View: Student Dashboard (Simplified) ---
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20 animate-fade-in">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Lớp học của tôi</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t('class_mgmt.my_classes')}</h1>
         
         {classes.length > 0 ? (
              <div className="grid grid-cols-1 gap-4">
@@ -840,13 +843,13 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">{cls.name}</h3>
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm">Giáo viên: Cô Thu Lan</p>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">{t('class_mgmt.teacher_label')} Cô Thu Lan</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-3">
-                            <h4 className="font-bold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">Bài tập cần làm</h4>
+                            <h4 className="font-bold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">{t('class_mgmt.todo_title')}</h4>
                             {cls.assignments.map(assign => {
                                 const submitted = assign.results.some(r => r.studentId === currentUser.id);
                                 return (
@@ -864,13 +867,13 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="text-xs text-gray-500 dark:text-gray-400">Hạn chót: {new Date(assign.assignedAt + 86400000 * 7).toLocaleDateString('vi-VN')}</div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">{t('class_mgmt.deadline')} {new Date(assign.assignedAt + 86400000 * 7).toLocaleDateString('vi-VN')}</div>
                                         </div>
                                     </div>
                                     <div className="flex gap-2 w-full sm:w-auto">
                                         {submitted ? (
                                             <span className="flex-1 sm:flex-none justify-center px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold rounded-lg text-sm flex items-center gap-1">
-                                                <Check size={16} /> Đã nộp
+                                                <Check size={16} /> {t('class_mgmt.submitted_count')}
                                             </span>
                                         ) : (
                                             <>
@@ -878,25 +881,25 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                                                     onClick={() => setIsStudentSubmitting(assign.id)}
                                                     className="flex-1 sm:flex-none px-3 py-2 border border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 text-sm font-bold rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center justify-center gap-1 transition-colors"
                                                 >
-                                                    <Upload size={16} /> Nộp file
+                                                    <Upload size={16} /> {t('class_mgmt.submit_file')}
                                                 </button>
                                                 <button className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition-colors">
-                                                    Làm bài
+                                                    {t('class_mgmt.do_quiz')}
                                                 </button>
                                             </>
                                         )}
                                     </div>
                                 </div>
                             )})}
-                            {cls.assignments.length === 0 && <p className="text-gray-400 dark:text-gray-500 text-sm italic">Không có bài tập nào.</p>}
+                            {cls.assignments.length === 0 && <p className="text-gray-400 dark:text-gray-500 text-sm italic">{t('class_mgmt.no_exercises')}</p>}
                         </div>
                     </div>
                 ))}
              </div>
         ) : (
             <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">Bạn chưa tham gia lớp học nào.</p>
-                <button className="mt-4 text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Tham gia lớp học bằng mã</button>
+                <p className="text-gray-500 dark:text-gray-400">{t('class_mgmt.no_classes')}</p>
+                <button className="mt-4 text-indigo-600 dark:text-indigo-400 font-bold hover:underline">{t('class_mgmt.join_class')}</button>
             </div>
         )}
 
@@ -904,8 +907,8 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
         {isStudentSubmitting && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md p-6 transition-colors animate-fade-in">
-                    <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Nộp bài làm</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Tải lên ảnh chụp vở bài tập hoặc file PDF.</p>
+                    <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">{t('class_mgmt.submit_modal_title')}</h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{t('class_mgmt.submit_desc')}</p>
                     
                     <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative mb-6">
                         <input 
@@ -918,12 +921,12 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                             <div className="flex flex-col items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium">
                                 <FileText size={32} /> 
                                 <span>{studentSubmission.name}</span>
-                                <span className="text-xs text-green-600 dark:text-green-400">Đã sẵn sàng nộp</span>
+                                <span className="text-xs text-green-600 dark:text-green-400">{t('class_mgmt.ready_submit')}</span>
                             </div>
                         ) : (
                             <div className="text-gray-500 dark:text-gray-400">
                                 <Upload size={32} className="mx-auto mb-2 text-gray-400" />
-                                <span className="font-medium">Nhấn để tải lên file</span>
+                                <span className="font-medium">{t('class_mgmt.upload_guide')}</span>
                             </div>
                         )}
                     </div>
@@ -933,14 +936,14 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
                             onClick={() => { setIsStudentSubmitting(null); setStudentSubmission(null); }}
                             className="flex-1 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors"
                         >
-                            Hủy
+                            {t('class_mgmt.cancel')}
                         </button>
                         <button 
                             onClick={handleSubmitAssignment}
                             disabled={!studentSubmission}
                             className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            Nộp bài
+                            {t('class_mgmt.submit_btn')}
                         </button>
                     </div>
                 </div>

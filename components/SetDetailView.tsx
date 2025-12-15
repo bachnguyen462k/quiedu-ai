@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { StudySet } from '../types';
 import { ArrowLeft, Clock, User, Play, BookOpen, BarChart3, Star, Calendar, Lock, Info, ShieldCheck, Share2, Link, QrCode, Copy, Check, MessageSquare, X, Download, Heart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SetDetailViewProps {
   set: StudySet;
@@ -12,6 +13,7 @@ interface SetDetailViewProps {
 }
 
 const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlashcard, onStartQuiz, onToggleFavorite }) => {
+  const { t } = useTranslation();
   const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
 
@@ -47,7 +49,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
             onClick={onBack}
             className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors font-medium"
         >
-            <ArrowLeft size={20} /> Quay lại thư viện
+            <ArrowLeft size={20} /> {t('set_detail.back_library')}
         </button>
 
         {/* Favorite Button on Detail View */}
@@ -61,7 +63,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                 }`}
             >
                 <Heart size={18} fill={set.isFavorite ? "currentColor" : "none"} />
-                <span className="font-bold text-sm">{set.isFavorite ? 'Đã thích' : 'Yêu thích'}</span>
+                <span className="font-bold text-sm">{set.isFavorite ? t('set_detail.liked') : t('set_detail.like')}</span>
             </button>
         )}
       </div>
@@ -72,12 +74,12 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
           <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
             <div className="flex items-start justify-between mb-4">
                <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                  {set.cards.length} Câu hỏi
+                  {set.cards.length} {t('set_detail.questions_count')}
                </span>
                <div className="flex items-center gap-1 text-yellow-500">
                   <Star size={16} fill="currentColor" />
                   <span className="text-sm font-bold">{averageRating}</span>
-                  <span className="text-gray-400 dark:text-gray-500 text-xs font-normal">({reviews.length} đánh giá)</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xs font-normal">({reviews.length} {t('set_detail.reviews_count')})</span>
                </div>
             </div>
             
@@ -97,7 +99,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                 </div>
                 <div className="flex items-center gap-2">
                     <Play size={18} className="text-gray-400 dark:text-gray-500" />
-                    <span>{set.plays || 0} lượt thi</span>
+                    <span>{set.plays || 0} {t('set_detail.plays_count')}</span>
                 </div>
             </div>
           </div>
@@ -106,16 +108,16 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <ShieldCheck size={20} className="text-indigo-600 dark:text-indigo-400" />
-                Thông tin bài kiểm tra
+                {t('set_detail.info_title')}
             </h3>
             
             {/* Knowledge Summary */}
             <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800 mb-6">
                 <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-300 uppercase mb-2 flex items-center gap-2">
-                    <Info size={16} /> Phạm vi kiến thức
+                    <Info size={16} /> {t('set_detail.scope_title')}
                 </h4>
                 <p className="text-indigo-800 dark:text-indigo-200 leading-relaxed text-sm text-justify">
-                    {set.description ? set.description : "Học phần này bao gồm các kiến thức quan trọng đã được tổng hợp. Nội dung câu hỏi xoay quanh các chủ đề đã học."}
+                    {set.description ? set.description : t('set_detail.scope_desc')}
                 </p>
             </div>
 
@@ -124,12 +126,12 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                 <div className="w-14 h-14 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-gray-500 dark:text-gray-300 mb-4 shadow-inner">
                     <Lock size={28} />
                 </div>
-                <h4 className="font-bold text-gray-800 dark:text-white text-lg mb-2">Danh sách câu hỏi được bảo mật</h4>
+                <h4 className="font-bold text-gray-800 dark:text-white text-lg mb-2">{t('set_detail.hidden_title')}</h4>
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
-                    Để đảm bảo tính khách quan và đánh giá chính xác năng lực, chi tiết {set.cards.length} câu hỏi và đáp án sẽ không được hiển thị trước.
+                    {t('set_detail.hidden_desc', { count: set.cards.length })}
                 </p>
                 <div className="mt-4 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-full">
-                    Chỉ hiển thị khi làm bài
+                    {t('set_detail.hidden_badge')}
                 </div>
             </div>
           </div>
@@ -140,12 +142,12 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                  <div className="bg-orange-100 dark:bg-orange-900/30 p-2 rounded-lg text-orange-600 dark:text-orange-400">
                     <MessageSquare size={20} />
                  </div>
-                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Đánh giá & Bình luận ({reviews.length})</h3>
+                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('set_detail.comments_title')} ({reviews.length})</h3>
              </div>
 
              {reviews.length === 0 ? (
                  <div className="text-center py-8 text-gray-500 dark:text-gray-400 italic">
-                     Chưa có đánh giá nào. Hãy là người đầu tiên!
+                     {t('set_detail.no_comments')}
                  </div>
              ) : (
                  <div className="space-y-4">
@@ -179,7 +181,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
         <div className="space-y-6">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-indigo-100 dark:border-indigo-900/50 sticky top-24 transition-colors">
                 
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Bắt đầu làm bài</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t('set_detail.start_title')}</h3>
                 
                 <div className="space-y-4">
                     <button 
@@ -190,8 +192,8 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                             <BookOpen size={24} />
                         </div>
                         <div>
-                            <span className="block font-bold text-gray-900 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-400">Ôn tập thẻ</span>
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Xem lướt các khái niệm</span>
+                            <span className="block font-bold text-gray-900 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-400">{t('set_detail.mode_flashcard')}</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{t('set_detail.mode_flashcard_desc')}</span>
                         </div>
                     </button>
 
@@ -203,8 +205,8 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                             <BarChart3 size={24} />
                         </div>
                         <div>
-                            <span className="block font-bold text-lg">Vào thi ngay</span>
-                            <span className="text-indigo-100 text-sm">Chế độ kiểm tra tính điểm</span>
+                            <span className="block font-bold text-lg">{t('set_detail.mode_quiz')}</span>
+                            <span className="text-indigo-100 text-sm">{t('set_detail.mode_quiz_desc')}</span>
                         </div>
                     </button>
                 </div>
@@ -212,10 +214,10 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                 {/* --- STATS SECTION --- */}
                 {set.averageScore !== undefined && (
                     <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Thống kê lớp học</p>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('set_detail.stats_title')}</p>
                         <div className="flex items-end gap-2">
                             <span className="text-3xl font-bold text-gray-900 dark:text-white">{set.averageScore}%</span>
-                            <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">Điểm trung bình</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('set_detail.avg_score')}</span>
                         </div>
                         <div className="w-full bg-gray-100 dark:bg-gray-700 h-2 rounded-full mt-2 overflow-hidden">
                             <div className="bg-green-500 h-full rounded-full" style={{ width: `${set.averageScore}%` }}></div>
@@ -226,7 +228,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                 {/* --- EMBEDDED SHARE SECTION --- */}
                 <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
                     <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 text-sm">
-                        <Share2 size={16} className="text-indigo-600 dark:text-indigo-400" /> Chia sẻ học phần
+                        <Share2 size={16} className="text-indigo-600 dark:text-indigo-400" /> {t('set_detail.share_title')}
                     </h4>
 
                     {/* Copy Code */}
@@ -236,14 +238,14 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                             className="bg-indigo-50 dark:bg-indigo-900/20 border-2 border-dashed border-indigo-200 dark:border-indigo-700 rounded-xl p-3 text-center cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:border-indigo-300 dark:hover:border-indigo-500 transition-all group relative"
                             title="Nhấn để sao chép mã"
                         >
-                            <span className="text-[10px] text-indigo-400 uppercase font-bold block mb-1">Mã tham gia</span>
+                            <span className="text-[10px] text-indigo-400 uppercase font-bold block mb-1">{t('set_detail.join_code')}</span>
                             <span className="font-mono text-xl font-bold text-indigo-700 dark:text-indigo-300 tracking-wider">
                                 {shareCode}
                             </span>
                             
                             {/* Copy Feedback Overlay */}
                             <div className={`absolute inset-0 flex items-center justify-center bg-indigo-600/90 rounded-lg transition-opacity duration-200 ${copiedType === 'CODE' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                                <span className="text-white font-bold text-sm flex items-center gap-1"><Check size={16}/> Đã chép!</span>
+                                <span className="text-white font-bold text-sm flex items-center gap-1"><Check size={16}/> {t('set_detail.copied')}</span>
                             </div>
                         </div>
                     </div>
@@ -267,7 +269,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                                      {copiedType === 'LINK' ? <Check size={14} className="text-green-600"/> : <Copy size={14} />}
                                  </button>
                              </div>
-                             <p className="text-[10px] text-center text-gray-400 mt-1 font-medium">Link bài học</p>
+                             <p className="text-[10px] text-center text-gray-400 mt-1 font-medium">{t('set_detail.link_label')}</p>
                          </div>
 
                          {/* QR Code Box - Click to expand */}
@@ -282,7 +284,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                                  </div>
                              </div>
                              <p className="text-[10px] text-gray-400 mt-1 font-medium flex items-center gap-1">
-                                 <QrCode size={10} /> Quét mã (Nhấn để phóng to)
+                                 <QrCode size={10} /> {t('set_detail.qr_label')}
                              </p>
                          </div>
                     </div>
@@ -303,15 +305,15 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                     <X size={24} />
                 </button>
                 
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Mã QR lớp học</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Quét mã để truy cập bài học trên điện thoại</p>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('set_detail.qr_modal_title')}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{t('set_detail.qr_modal_desc')}</p>
                 
                 <div className="bg-white p-3 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900 mb-6 shadow-inner">
                     <img src={largeQrCodeUrl} alt="Large QR Code" className="w-64 h-64 object-contain" />
                 </div>
                 
                 <div className="w-full bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 text-center">
-                    <p className="text-xs text-indigo-500 dark:text-indigo-300 uppercase font-bold mb-1">Mã tham gia</p>
+                    <p className="text-xs text-indigo-500 dark:text-indigo-300 uppercase font-bold mb-1">{t('set_detail.join_code')}</p>
                     <p className="text-2xl font-mono font-bold text-indigo-700 dark:text-indigo-400 tracking-wider select-all">{shareCode}</p>
                 </div>
             </div>

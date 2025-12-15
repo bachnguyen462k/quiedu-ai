@@ -101,14 +101,14 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                     <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-fade-in">
                         {!hasResults ? (
                             <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                                Không tìm thấy kết quả phù hợp.
+                                {t('header.search_no_result')}
                             </div>
                         ) : (
                             <div className="max-h-[70vh] overflow-y-auto">
                                 {/* Quiz Section */}
                                 {filteredResults.quizzes.length > 0 && (
                                     <div className="p-2">
-                                        <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Học phần (Quiz)</div>
+                                        <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('header.search_quizzes')}</div>
                                         {filteredResults.quizzes.map(set => (
                                             <button 
                                                 key={set.id}
@@ -120,7 +120,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{set.title}</div>
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{set.cards.length} thuật ngữ</div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{set.cards.length} {t('header.terms_count')}</div>
                                                 </div>
                                             </button>
                                         ))}
@@ -130,7 +130,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                 {/* Teacher Section */}
                                 {filteredResults.teachers.length > 0 && (
                                     <div className="p-2 border-t border-gray-100 dark:border-gray-700">
-                                        <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Giáo viên</div>
+                                        <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('header.search_teachers')}</div>
                                         {filteredResults.teachers.map((t, idx) => (
                                             <button 
                                                 key={idx}
@@ -146,7 +146,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                 {/* Files Section */}
                                 {filteredResults.files.length > 0 && (
                                     <div className="p-2 border-t border-gray-100 dark:border-gray-700">
-                                        <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tài liệu đã tải lên</div>
+                                        <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('header.search_files')}</div>
                                         {filteredResults.files.map(file => (
                                             <button 
                                                 key={file.id}
@@ -210,7 +210,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                 {/* Notification Dropdown */}
                 {showNotifications && (
                     <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-fade-in origin-top-right">
-                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-750">
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700">
                             <h3 className="font-bold text-gray-900 dark:text-white text-sm">{t('header.notifications')}</h3>
                             {notifications.length > 0 && (
                                 <button 
@@ -239,7 +239,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                             }`}></div>
                                             <div className="flex-1">
                                                 <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">{notif.message}</p>
-                                                <p className="text-[10px] text-gray-400 mt-1">Vừa xong</p>
+                                                <p className="text-[10px] text-gray-400 mt-1">{t('header.just_now')}</p>
                                             </div>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); removeNotification(notif.id); }}

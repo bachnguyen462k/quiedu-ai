@@ -3,6 +3,7 @@ import { Flashcard, StudySet, PrivacyStatus } from '../types';
 import { generateStudySetWithAI, generateStudySetFromFile } from '../services/geminiService';
 import { Plus, Trash2, Sparkles, Save, Loader2, FileText, Upload, CheckCircle, PenTool, Keyboard, FileUp, ArrowLeft, BrainCircuit, Check, X, Menu, AlertCircle, Lightbulb, ChevronRight, Layers, LayoutGrid, List, BookOpen, ScanLine, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from 'react-i18next';
 
 interface CreateSetProps {
   onSave: (set: StudySet) => void;
@@ -79,6 +80,7 @@ B. Elon Musk
 *C. Bill Gates`;
 
 const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextbook }) => {
+  const { t } = useTranslation();
   // Navigation State
   const [creationStep, setCreationStep] = useState<CreationMode>('MENU');
 
@@ -285,12 +287,12 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
     }
 
     if (!title.trim()) {
-      alert("Vui lòng nhập tiêu đề học phần");
+      alert(t('notifications.enter_title'));
       return;
     }
     const validCards = finalCards.filter(c => c.term.trim() && c.definition.trim());
     if (validCards.length < 2) {
-      alert("Cần ít nhất 2 câu hỏi hợp lệ (có nội dung và đáp án đúng) để tạo học phần");
+      alert(t('notifications.min_cards'));
       return;
     }
 
@@ -357,7 +359,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       setCreationStep('EDITOR');
 
     } catch (error) {
-      alert("Có lỗi xảy ra khi xử lý với AI. Vui lòng thử lại hoặc kiểm tra file.");
+      alert(t('notifications.ai_error'));
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -387,8 +389,8 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       return (
           <div className="max-w-6xl mx-auto px-4 py-12 animate-fade-in relative">
               <div className="text-center mb-12">
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Bạn muốn tạo học phần bằng cách nào?</h2>
-                  <p className="text-gray-500 dark:text-gray-400">Chọn phương thức phù hợp nhất để bắt đầu xây dựng bài học của bạn.</p>
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{t('create_set.title_method')}</h2>
+                  <p className="text-gray-500 dark:text-gray-400">{t('create_set.desc_method')}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
@@ -399,9 +401,9 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                           <Keyboard size={28} />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Nhập liệu thủ công</h3>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('create_set.manual_title')}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                          Tự nhập từng câu hỏi và đáp án. Phù hợp khi bạn đã có sẵn nội dung chi tiết.
+                          {t('create_set.manual_desc')}
                       </p>
                   </button>
 
@@ -410,14 +412,14 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                     className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:shadow-xl transition-all text-left flex flex-col h-full relative overflow-hidden"
                   >
                       <div className="absolute top-0 right-0 p-2">
-                          <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Phổ biến</span>
+                          <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">{t('create_set.popular_badge')}</span>
                       </div>
                       <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                           <BrainCircuit size={28} />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">AI tạo từ Chủ đề</h3>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('create_set.ai_topic_title')}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                          Chỉ cần nhập chủ đề (VD: "Từ vựng IELTS"), AI sẽ tự động sinh ra danh sách từ và nghĩa.
+                          {t('create_set.ai_topic_desc')}
                       </p>
                   </button>
 
@@ -428,9 +430,9 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                           <ScanLine size={28} />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Quét Đề thi / Tài liệu</h3>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('create_set.scan_file_title')}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                          Tải lên file PDF, Word hoặc Ảnh chụp đề thi. AI sẽ trích xuất câu hỏi trắc nghiệm có sẵn.
+                          {t('create_set.scan_file_desc')}
                       </p>
                   </button>
 
@@ -440,22 +442,22 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   >
                       <div className="absolute top-0 right-0 p-2">
                           <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1">
-                             <Sparkles size={10} /> Pro
+                             <Sparkles size={10} /> {t('create_set.pro_badge')}
                           </span>
                       </div>
                       <div className="w-14 h-14 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                           <BookOpen size={28} />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Soạn bài chi tiết (AI)</h3>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('create_set.ai_textbook_title')}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                          Phân tích sâu Sách giáo khoa hoặc Tài liệu dài. Tự động tóm tắt lý thuyết và tạo câu hỏi vận dụng.
+                          {t('create_set.ai_textbook_desc')}
                       </p>
                   </button>
               </div>
 
               <div className="mt-12 text-center">
                   <button onClick={onCancel} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium">
-                      Hủy bỏ
+                      {t('create_set.cancel')}
                   </button>
               </div>
 
@@ -465,8 +467,8 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                     <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-gray-200 dark:border-gray-700 transition-colors">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
-                                {aiMode === 'TEXT_TOPIC' && <><BrainCircuit className="text-purple-600" /> AI Tạo từ Chủ đề</>}
-                                {aiMode === 'FILE_SCAN_QUIZ' && <><ScanLine className="text-indigo-600" /> Quét Đề thi / Tài liệu</>}
+                                {aiMode === 'TEXT_TOPIC' && <><BrainCircuit className="text-purple-600" /> {t('create_set.ai_modal_topic_title')}</>}
+                                {aiMode === 'FILE_SCAN_QUIZ' && <><ScanLine className="text-indigo-600" /> {t('create_set.ai_modal_scan_title')}</>}
                             </h3>
                             <button onClick={() => setShowAiModal(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
                                 <X size={24} />
@@ -475,10 +477,10 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                         
                         {aiMode === 'TEXT_TOPIC' ? (
                             <>
-                                <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">Nhập chủ đề bạn muốn học, AI sẽ tự động tạo danh sách câu hỏi trắc nghiệm.</p>
+                                <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">{t('create_set.ai_modal_topic_desc')}</p>
                                 <textarea
                                     className="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl p-4 h-32 focus:ring-2 focus:ring-indigo-500 outline-none resize-none mb-4 text-sm transition-colors"
-                                    placeholder="Ví dụ: 50 từ vựng tiếng Anh chủ đề Du lịch..."
+                                    placeholder={t('create_set.ai_modal_topic_ph')}
                                     value={aiPrompt}
                                     onChange={(e) => setAiPrompt(e.target.value)}
                                     autoFocus
@@ -487,7 +489,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                         ) : (
                             <>
                                 <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
-                                    Tải lên file đề thi (PDF, DOCX, Ảnh). AI sẽ trích xuất câu hỏi và đáp án.
+                                    {t('create_set.ai_modal_scan_desc')}
                                 </p>
                                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative mb-6 group">
                                     <input 
@@ -503,14 +505,14 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                             </div>
                                             <div>
                                                 <span className="font-bold text-sm truncate max-w-[200px] block">{aiFile.name}</span>
-                                                <span className="text-xs text-gray-500 dark:text-gray-400">Nhấn để thay đổi file</span>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">{t('create_set.change_file')}</span>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="text-gray-500 dark:text-gray-400 flex flex-col items-center group-hover:scale-105 transition-transform">
                                             <Upload size={32} className="mb-3 text-gray-400" />
-                                            <span className="font-bold text-sm text-gray-700 dark:text-gray-300">Nhấn để tải lên file</span>
-                                            <span className="text-xs mt-1">Hỗ trợ PDF, Ảnh, Word</span>
+                                            <span className="font-bold text-sm text-gray-700 dark:text-gray-300">{t('create_set.click_upload')}</span>
+                                            <span className="text-xs mt-1">{t('create_set.upload_support')}</span>
                                         </div>
                                     )}
                                 </div>
@@ -522,7 +524,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                 onClick={() => setShowAiModal(false)}
                                 className="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl font-medium text-sm transition-colors"
                             >
-                                Hủy bỏ
+                                {t('create_set.cancel')}
                             </button>
                             <button 
                                 onClick={handleAiGenerate}
@@ -530,7 +532,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                 className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all shadow-md hover:shadow-indigo-200"
                             >
                                 {isGenerating ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                                {isGenerating ? 'Đang xử lý...' : 'Bắt đầu tạo'}
+                                {isGenerating ? t('create_set.processing') : t('create_set.start_create')}
                             </button>
                         </div>
                     </div>
@@ -549,13 +551,13 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
             <button 
                 onClick={() => setCreationStep('MENU')}
                 className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
-                title="Quay lại menu chọn"
+                title={t('create_set.back_menu')}
             >
                 <ArrowLeft size={20} />
             </button>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                Soạn thảo học phần
-                {cards.length > 0 && <span className="bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs px-2 py-0.5 rounded-full">{cards.length} câu</span>}
+                {t('create_set.editor_title')}
+                {cards.length > 0 && <span className="bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs px-2 py-0.5 rounded-full">{cards.length} {t('class_mgmt.cards_count')}</span>}
             </h2>
         </div>
         
@@ -564,13 +566,13 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                 onClick={onCancel} 
                 className="flex-1 sm:flex-none px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium text-sm transition-colors"
             >
-                Hủy
+                {t('create_set.cancel')}
             </button>
             <button 
                 onClick={handleSave}
                 className="flex-1 sm:flex-none px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center justify-center gap-2 text-sm shadow-sm transition-colors"
             >
-                <Save size={18} /> <span className="hidden sm:inline">Lưu học phần</span><span className="sm:hidden">Lưu</span>
+                <Save size={18} /> <span className="hidden sm:inline">{t('create_set.save_btn')}</span><span className="sm:hidden">{t('create_set.save_short')}</span>
             </button>
         </div>
       </div>
@@ -583,23 +585,23 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   {/* General Info Card */}
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 transition-colors">
                       <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                          <FileText size={18} className="text-indigo-600 dark:text-indigo-400" /> Thông tin chung
+                          <FileText size={18} className="text-indigo-600 dark:text-indigo-400" /> {t('create_set.general_info')}
                       </h3>
                       <div className="space-y-4">
                           <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Tiêu đề</label>
+                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('create_set.title_label')}</label>
                               <input
                                   type="text"
-                                  placeholder="Ví dụ: Lịch sử 12 - Bài 1"
+                                  placeholder={t('create_set.title_ph')}
                                   className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-bold text-gray-900 dark:text-white transition-colors placeholder-gray-400"
                                   value={title}
                                   onChange={e => setTitle(e.target.value)}
                               />
                           </div>
                           <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Mô tả</label>
+                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('create_set.desc_label')}</label>
                               <textarea
-                                  placeholder="Mô tả ngắn gọn..."
+                                  placeholder={t('create_set.desc_ph')}
                                   rows={2}
                                   className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-gray-700 dark:text-gray-200 transition-colors placeholder-gray-400 resize-none"
                                   value={description}
@@ -610,18 +612,18 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           {/* Metadata Fields */}
                           <div className="grid grid-cols-2 gap-3">
                               <div>
-                                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Globe size={10} /> Quyền riêng tư</label>
+                                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Globe size={10} /> {t('create_set.privacy_label')}</label>
                                   <select 
                                     value={privacy}
                                     onChange={(e) => setPrivacy(e.target.value as PrivacyStatus)}
                                     className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                   >
-                                      <option value="PUBLIC">Công khai</option>
-                                      <option value="PRIVATE">Riêng tư</option>
+                                      <option value="PUBLIC">{t('create_set.public')}</option>
+                                      <option value="PRIVATE">{t('create_set.private')}</option>
                                   </select>
                               </div>
                               <div>
-                                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><GraduationCap size={10} /> Trình độ</label>
+                                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><GraduationCap size={10} /> {t('create_set.level_label')}</label>
                                   <select 
                                     value={level}
                                     onChange={(e) => handleLevelChange(e.target.value)}
@@ -635,10 +637,10 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           </div>
 
                           <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><BookOpen size={10} /> Môn học</label>
+                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><BookOpen size={10} /> {t('create_set.subject_label')}</label>
                               <input 
                                 type="text"
-                                placeholder="VD: Toán, Lý, Tiếng Anh..."
+                                placeholder={t('create_set.subject_ph')}
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
                                 className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -646,11 +648,11 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           </div>
 
                           <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Building size={10} /> Trường học</label>
+                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Building size={10} /> {t('create_set.school_label')}</label>
                               <input 
                                 type="text"
                                 list="school-options"
-                                placeholder="Chọn hoặc nhập tên trường..."
+                                placeholder={t('create_set.school_ph')}
                                 value={school}
                                 onChange={(e) => setSchool(e.target.value)}
                                 className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -663,10 +665,10 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           </div>
 
                           <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Bookmark size={10} /> Chuyên ngành</label>
+                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Bookmark size={10} /> {t('create_set.major_label')}</label>
                               <input 
                                 type="text"
-                                placeholder="VD: CNTT, Kinh tế..."
+                                placeholder={t('create_set.major_ph')}
                                 value={major}
                                 onChange={(e) => setMajor(e.target.value)}
                                 className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -674,10 +676,10 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           </div>
 
                           <div>
-                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Hash size={10} /> Chủ đề</label>
+                              <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Hash size={10} /> {t('create_set.topic_label')}</label>
                               <input 
                                 type="text"
-                                placeholder="VD: Hàm số, Thì quá khứ..."
+                                placeholder={t('create_set.topic_ph')}
                                 value={topic}
                                 onChange={(e) => setTopic(e.target.value)}
                                 className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -690,7 +692,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-col transition-colors max-h-[calc(100vh-350px)]">
                       <div className="flex justify-between items-center mb-3 flex-shrink-0">
                           <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
-                              <List size={18} className="text-indigo-600 dark:text-indigo-400" /> Mục lục câu hỏi
+                              <List size={18} className="text-indigo-600 dark:text-indigo-400" /> {t('create_set.toc_title')}
                           </h3>
                           <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-bold">
                               {editorMode === 'VISUAL' ? cards.length : parsedPreviewCards.length}
@@ -725,7 +727,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                 onClick={handleAddCard}
                                 className="w-full py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors"
                             >
-                                <Plus size={16} /> Thêm nhanh
+                                <Plus size={16} /> {t('create_set.add_quick')}
                             </button>
                         </div>
                       )}
@@ -745,7 +747,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                 : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
                             }`}
                           >
-                              <Layers size={16} /> Trực quan
+                              <Layers size={16} /> {t('create_set.visual_mode')}
                           </button>
                           <button
                             onClick={() => handleSwitchMode('TEXT')}
@@ -755,14 +757,14 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                 : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
                             }`}
                           >
-                              <FileText size={16} /> Nhập văn bản
+                              <FileText size={16} /> {t('create_set.text_mode')}
                           </button>
                           
                           <button 
                             onClick={() => setShowTextGuide(true)}
                             className="flex items-center gap-1 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 text-sm font-medium transition-colors whitespace-nowrap"
                           >
-                              <HelpCircle size={16} /> Hướng dẫn
+                              <HelpCircle size={16} /> {t('create_set.guide')}
                           </button>
                       </div>
                       
@@ -771,7 +773,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                               onClick={() => openAiModal('TEXT_TOPIC')}
                               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-sm hover:opacity-90 transition-opacity"
                           >
-                              <Sparkles size={16} /> Dùng AI tạo thêm
+                              <Sparkles size={16} /> {t('create_set.use_ai')}
                           </button>
                       </div>
                   </div>
@@ -797,17 +799,17 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                     <span className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm">
                                         {index + 1}
                                     </span>
-                                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded">Quiz</span>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded">{t('create_set.quiz')}</span>
                                     {(!card.definition || !card.options?.includes(card.definition)) && (
                                         <span className="text-orange-500 text-xs font-bold flex items-center gap-1">
-                                            <AlertCircle size={14} /> Chọn đáp án đúng
+                                            <AlertCircle size={14} /> {t('create_set.choose_correct')}
                                         </span>
                                     )}
                                 </div>
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); handleRemoveCard(card.id); }}
                                     className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" 
-                                    title="Xóa câu hỏi"
+                                    title={t('create_set.delete_card')}
                                 >
                                     <Trash2 size={18} />
                                 </button>
@@ -817,11 +819,11 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                 {/* Question Input */}
                                 <div className="mb-6">
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 flex items-center gap-1">
-                                        <BrainCircuit size={14} /> Câu hỏi
+                                        <BrainCircuit size={14} /> {t('create_set.question_label')}
                                     </label>
                                     <textarea
                                         className="w-full p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 focus:bg-white dark:focus:bg-gray-700 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400 font-medium text-lg leading-relaxed resize-none"
-                                        placeholder="Nhập nội dung câu hỏi..."
+                                        placeholder={t('create_set.question_ph')}
                                         rows={2}
                                         value={card.term}
                                         onChange={e => handleTermChange(card.id, e.target.value)}
@@ -831,7 +833,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                 {/* Options Grid */}
                                 <div className="mb-6">
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1">
-                                        <List size={14} /> Các lựa chọn đáp án
+                                        <List size={14} /> {t('create_set.options_label')}
                                     </label>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {card.options?.map((option, optIdx) => {
@@ -841,7 +843,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                                     <div 
                                                         onClick={() => handleSetCorrectAnswer(card.id, option)}
                                                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer flex-shrink-0 transition-all ${isCorrect ? 'border-green-500 bg-green-500 text-white scale-110' : 'border-gray-300 dark:border-gray-500 text-transparent hover:border-green-400'}`}
-                                                        title="Đánh dấu là đáp án đúng"
+                                                        title={t('create_set.choose_correct')}
                                                     >
                                                         <Check size={14} strokeWidth={4} />
                                                     </div>
@@ -849,7 +851,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                                          <input 
                                                             type="text"
                                                             className="w-full bg-transparent outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400 font-medium text-sm"
-                                                            placeholder={`Đáp án ${String.fromCharCode(65 + optIdx)}...`}
+                                                            placeholder={t('create_set.option_ph', { char: String.fromCharCode(65 + optIdx) })}
                                                             value={option}
                                                             onChange={(e) => handleOptionChange(card.id, optIdx, e.target.value)}
                                                         />
@@ -869,7 +871,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                             onClick={() => handleAddOption(card.id)}
                                             className="mt-3 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:underline flex items-center gap-1 px-1"
                                         >
-                                            <Plus size={14} /> Thêm lựa chọn khác
+                                            <Plus size={14} /> {t('create_set.add_option')}
                                         </button>
                                     )}
                                 </div>
@@ -878,11 +880,11 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30">
                                         <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 uppercase mb-2 flex items-center gap-1">
-                                            <Lightbulb size={14} /> Giải thích / Hướng dẫn
+                                            <Lightbulb size={14} /> {t('create_set.explanation_label')}
                                         </label>
                                         <textarea
                                             className="w-full p-2 bg-transparent border-none focus:ring-0 outline-none text-blue-900 dark:text-blue-200 placeholder-blue-300 resize-none text-sm leading-relaxed"
-                                            placeholder="Nhập lời giải thích cho đáp án đúng..."
+                                            placeholder={t('create_set.explanation_ph')}
                                             rows={2}
                                             value={card.explanation || ''}
                                             onChange={e => handleExplanationChange(card.id, e.target.value)}
@@ -890,12 +892,12 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                     </div>
                                     <div className="bg-gray-100 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
                                         <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-2 flex items-center gap-1">
-                                            <Link size={14} /> Link bài viết tham khảo
+                                            <Link size={14} /> {t('create_set.link_label')}
                                         </label>
                                         <input 
                                             type="text"
                                             className="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-gray-800 dark:text-white placeholder-gray-400"
-                                            placeholder="https://vidu.com/bai-viet..."
+                                            placeholder="https://..."
                                             value={card.relatedLink || ''}
                                             onChange={e => handleLinkChange(card.id, e.target.value)}
                                         />
@@ -909,7 +911,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                             onClick={handleAddCard}
                             className="w-full py-4 mt-4 bg-gray-100 dark:bg-gray-800/50 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 font-bold hover:border-indigo-500 dark:hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex items-center justify-center gap-2 shadow-sm"
                         >
-                            <Plus size={20} /> Thêm câu hỏi mới
+                            <Plus size={20} /> {t('create_set.add_new_card')}
                         </button>
                       </div>
                   ) : (
@@ -918,10 +920,10 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           {/* Input Column */}
                           <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                               <div className="p-3 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">
-                                  <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">Nhập liệu</span>
+                                  <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">{t('create_set.input_label')}</span>
                                   <div className="text-[10px] text-gray-400 flex gap-2">
-                                      <span>* = Đáp án đúng</span>
-                                      <span>&lt;br /&gt; = Xuống dòng</span>
+                                      <span>{t('create_set.input_hint_correct')}</span>
+                                      <span>{t('create_set.input_hint_break')}</span>
                                   </div>
                               </div>
                               <textarea
@@ -946,7 +948,7 @@ B. Sai`}
                               {/* PREVIEW HEADER */}
                               <div className="p-3 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center shrink-0">
                                   <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-300 flex items-center gap-2">
-                                      <Eye size={12} /> Xem trước ({parsedPreviewCards.length})
+                                      <Eye size={12} /> {t('create_set.preview_title')} ({parsedPreviewCards.length})
                                   </span>
                               </div>
 
@@ -954,7 +956,7 @@ B. Sai`}
                               <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-white dark:bg-gray-800/30">
                                   {parsedPreviewCards.length === 0 ? (
                                       <div className="text-center text-gray-400 text-sm mt-10">
-                                          Nội dung xem trước sẽ hiển thị tại đây...
+                                          {t('create_set.preview_empty')}
                                       </div>
                                   ) : (
                                       parsedPreviewCards.map((card, idx) => {
@@ -992,7 +994,7 @@ B. Sai`}
             <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden" onClick={e => e.stopPropagation()}>
                 <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-750">
                     <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Info size={20} className="text-indigo-600" /> Hướng dẫn nhập văn bản
+                        <Info size={20} className="text-indigo-600" /> {t('create_set.guide_title')}
                     </h3>
                     <button onClick={() => setShowTextGuide(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         <X size={20} />
@@ -1001,10 +1003,10 @@ B. Sai`}
                 
                 <div className="p-6 space-y-4 text-sm text-gray-600 dark:text-gray-300">
                     <div className="space-y-2">
-                        <p><strong className="text-indigo-600 dark:text-indigo-400">1. Cấu trúc câu hỏi:</strong> Mỗi câu hỏi cách nhau bởi một dòng trắng.</p>
-                        <p><strong className="text-indigo-600 dark:text-indigo-400">2. Dòng đầu tiên:</strong> Là nội dung câu hỏi.</p>
-                        <p><strong className="text-indigo-600 dark:text-indigo-400">3. Các dòng tiếp theo:</strong> Là các lựa chọn đáp án.</p>
-                        <p><strong className="text-indigo-600 dark:text-indigo-400">4. Đáp án đúng:</strong> Thêm dấu sao <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded font-bold">*</code> ở đầu dòng đáp án đúng.</p>
+                        <p><strong className="text-indigo-600 dark:text-indigo-400">{t('create_set.guide_step_1')}</strong></p>
+                        <p><strong className="text-indigo-600 dark:text-indigo-400">{t('create_set.guide_step_2')}</strong></p>
+                        <p><strong className="text-indigo-600 dark:text-indigo-400">{t('create_set.guide_step_3')}</strong></p>
+                        <p><strong className="text-indigo-600 dark:text-indigo-400">{t('create_set.guide_step_4')}</strong></p>
                     </div>
 
                     <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700 relative group">
@@ -1015,7 +1017,7 @@ B. Sai`}
                             onClick={() => { setTextEditorContent(SAMPLE_TEXT_FORMAT); setShowTextGuide(false); }}
                             className="absolute top-2 right-2 bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 p-1.5 rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-1 text-xs font-bold opacity-0 group-hover:opacity-100"
                         >
-                            <Copy size={12} /> Chép mẫu
+                            <Copy size={12} /> {t('create_set.copy_sample')}
                         </button>
                     </div>
                 </div>
@@ -1025,7 +1027,7 @@ B. Sai`}
                         onClick={() => { setTextEditorContent(SAMPLE_TEXT_FORMAT); setShowTextGuide(false); }}
                         className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
                     >
-                        <Copy size={16} /> Chép ví dụ vào bài
+                        <Copy size={16} /> {t('create_set.copy_to_editor')}
                     </button>
                 </div>
             </div>
@@ -1038,8 +1040,8 @@ B. Sai`}
             <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-gray-200 dark:border-gray-700 transition-colors">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
-                        {aiMode === 'TEXT_TOPIC' && <><BrainCircuit className="text-purple-600" /> AI Tạo từ Chủ đề</>}
-                        {aiMode === 'FILE_SCAN_QUIZ' && <><ScanLine className="text-indigo-600" /> Quét Đề thi / Tài liệu</>}
+                        {aiMode === 'TEXT_TOPIC' && <><BrainCircuit className="text-purple-600" /> {t('create_set.ai_modal_topic_title')}</>}
+                        {aiMode === 'FILE_SCAN_QUIZ' && <><ScanLine className="text-indigo-600" /> {t('create_set.ai_modal_scan_title')}</>}
                     </h3>
                     <button onClick={() => setShowAiModal(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         <X size={24} />
@@ -1048,10 +1050,10 @@ B. Sai`}
                 
                 {aiMode === 'TEXT_TOPIC' ? (
                     <>
-                        <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">Nhập chủ đề bạn muốn học, AI sẽ tự động tạo danh sách câu hỏi trắc nghiệm.</p>
+                        <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">{t('create_set.ai_modal_topic_desc')}</p>
                         <textarea
                             className="w-full border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl p-4 h-32 focus:ring-2 focus:ring-indigo-500 outline-none resize-none mb-4 text-sm transition-colors"
-                            placeholder="Ví dụ: 50 từ vựng tiếng Anh chủ đề Du lịch..."
+                            placeholder={t('create_set.ai_modal_topic_ph')}
                             value={aiPrompt}
                             onChange={(e) => setAiPrompt(e.target.value)}
                             autoFocus
@@ -1060,7 +1062,7 @@ B. Sai`}
                 ) : (
                     <>
                         <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
-                            Tải lên file đề thi (PDF, DOCX, Ảnh). AI sẽ trích xuất câu hỏi và đáp án.
+                            {t('create_set.ai_modal_scan_desc')}
                         </p>
                         <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative mb-6 group">
                             <input 
@@ -1076,14 +1078,14 @@ B. Sai`}
                                     </div>
                                     <div>
                                         <span className="font-bold text-sm truncate max-w-[200px] block">{aiFile.name}</span>
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">Nhấn để thay đổi file</span>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">{t('create_set.change_file')}</span>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-gray-500 dark:text-gray-400 flex flex-col items-center group-hover:scale-105 transition-transform">
                                     <Upload size={32} className="mb-3 text-gray-400" />
-                                    <span className="font-bold text-sm text-gray-700 dark:text-gray-300">Nhấn để tải lên file</span>
-                                    <span className="text-xs mt-1">Hỗ trợ PDF, Ảnh, Word</span>
+                                    <span className="font-bold text-sm text-gray-700 dark:text-gray-300">{t('create_set.click_upload')}</span>
+                                    <span className="text-xs mt-1">{t('create_set.upload_support')}</span>
                                 </div>
                             )}
                         </div>
@@ -1095,7 +1097,7 @@ B. Sai`}
                         onClick={() => setShowAiModal(false)}
                         className="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl font-medium text-sm transition-colors"
                     >
-                        Hủy bỏ
+                        {t('create_set.cancel')}
                     </button>
                     <button 
                         onClick={handleAiGenerate}
@@ -1103,7 +1105,7 @@ B. Sai`}
                         className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all shadow-md hover:shadow-indigo-200"
                     >
                         {isGenerating ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                        {isGenerating ? 'Đang xử lý...' : 'Bắt đầu tạo'}
+                        {isGenerating ? t('create_set.processing') : t('create_set.start_create')}
                     </button>
                 </div>
             </div>

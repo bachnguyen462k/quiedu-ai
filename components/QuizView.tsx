@@ -3,6 +3,7 @@ import { StudySet, QuizQuestion, Review, User } from '../types';
 import { ArrowLeft, CheckCircle, XCircle, Award, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle, Star, MessageSquare, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from 'react-i18next';
 
 interface QuizViewProps {
   set: StudySet;
@@ -14,6 +15,7 @@ interface QuizViewProps {
 const COLORS = ['#10B981', '#EF4444', '#E5E7EB'];
 
 const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddReview }) => {
+  const { t } = useTranslation();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   
@@ -35,7 +37,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   // Generate questions from the study set
   useEffect(() => {
     if (set.cards.length < 4) {
-      alert("Cần ít nhất 4 thẻ để tạo bài kiểm tra.");
+      alert(t('quiz.error_min_cards'));
       onBack();
       return;
     }
@@ -61,7 +63,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     // Initialize states
     setAnswers(new Array(shuffledQuestions.length).fill(null));
     setUserSelections(new Array(shuffledQuestions.length).fill(null));
-  }, [set, onBack]);
+  }, [set, onBack, t]);
 
   const handleOptionSelect = (option: string) => {
     if (isCompleted) return;
@@ -119,7 +121,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
   const handleSubmitReview = () => {
       if (rating === 0) {
-          alert("Vui lòng chọn số sao đánh giá");
+          alert(t('quiz.alert_rating'));
           return;
       }
       
@@ -137,20 +139,20 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
       setReviewSubmitted(true);
   };
 
-  if (quizQuestions.length === 0) return <div className="p-8 text-center dark:text-white">Đang tạo bài kiểm tra...</div>;
+  if (quizQuestions.length === 0) return <div className="p-8 text-center dark:text-white">{t('quiz.generating')}</div>;
 
   // 1. Result View (Final - After Submission)
   if (isCompleted) {
     const percentage = Math.round((score / quizQuestions.length) * 100);
     const data = [
-      { name: 'Đúng', value: score },
-      { name: 'Sai', value: quizQuestions.length - score },
+      { name: t('quiz.correct'), value: score },
+      { name: t('quiz.incorrect'), value: quizQuestions.length - score },
     ];
 
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in pb-20">
          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Kết quả bài làm</h2>
+            <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">{t('quiz.result_title')}</h2>
             
             <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8 max-w-2xl mx-auto transition-colors">
                 <div className="h-64 w-full flex justify-center items-center">
@@ -174,7 +176,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 
                 <div className="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">{percentage}%</div>
                 <p className="text-gray-500 dark:text-gray-400 mb-6">
-                    Bạn đã trả lời đúng {score} trên {quizQuestions.length} câu hỏi.
+                    {t('quiz.result_desc', { score, total: quizQuestions.length })}
                 </p>
 
                 <div className="flex justify-center gap-4">
@@ -182,13 +184,13 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                         onClick={onBack}
                         className="px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
                     >
-                        Quay lại chi tiết
+                        {t('quiz.back_detail')}
                     </button>
                     <button 
                         onClick={restartQuiz}
                         className="px-6 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-medium flex items-center gap-2 transition-colors"
                     >
-                        <RefreshCw size={20} /> Làm lại bài
+                        <RefreshCw size={20} /> {t('quiz.retry')}
                     </button>
                 </div>
             </div>
@@ -199,8 +201,8 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <MessageSquare size={80} className="text-orange-500" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 relative z-10">Đánh giá học phần này</h3>
-                    <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm relative z-10">Ý kiến của bạn giúp cải thiện chất lượng bài học.</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 relative z-10">{t('quiz.review_title')}</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm relative z-10">{t('quiz.review_desc')}</p>
                     
                     <div className="flex justify-center gap-2 mb-4 relative z-10">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -220,7 +222,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                     <div className="relative z-10">
                         <textarea
                             className="w-full p-3 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm mb-3 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-colors"
-                            placeholder="Nhập nhận xét của bạn..."
+                            placeholder={t('quiz.review_ph')}
                             rows={3}
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
@@ -229,21 +231,21 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                             onClick={handleSubmitReview}
                             className="w-full bg-orange-500 text-white py-2 rounded-lg font-bold hover:bg-orange-600 transition-colors shadow-sm"
                         >
-                            Gửi đánh giá
+                            {t('quiz.send_review')}
                         </button>
                     </div>
                 </div>
             ) : (
                 <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-2xl border border-green-200 dark:border-green-800 max-w-2xl mx-auto mb-8 flex flex-col items-center justify-center animate-fade-in transition-colors">
                     <CheckCircle size={40} className="text-green-500 mb-2" />
-                    <h3 className="text-lg font-bold text-green-800 dark:text-green-300">Cảm ơn đánh giá của bạn!</h3>
+                    <h3 className="text-lg font-bold text-green-800 dark:text-green-300">{t('quiz.review_thanks_title')}</h3>
                 </div>
             )}
          </div>
 
          {/* Detailed Statistics */}
          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Chi tiết bài làm & Đáp án</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">{t('quiz.detail_title')}</h3>
             
             {quizQuestions.map((question, idx) => {
                 const userAnswer = userSelections[idx];
@@ -267,19 +269,19 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                             </div>
                             <div className="flex-1">
                                 <h4 className="font-bold text-gray-900 dark:text-white mb-3 text-lg">
-                                    <span className="text-gray-500 dark:text-gray-400 text-sm font-normal mr-2">Câu {idx + 1}:</span>
+                                    <span className="text-gray-500 dark:text-gray-400 text-sm font-normal mr-2">{t('quiz.question_prefix')} {idx + 1}:</span>
                                     {question.question}
                                 </h4>
                                 
                                 <div className="space-y-2">
                                     <div className={`flex items-center gap-2 text-sm font-medium ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
-                                        <span className="w-24 flex-shrink-0">Bạn chọn:</span>
-                                        <span>{userAnswer || 'Chưa trả lời'}</span>
+                                        <span className="w-24 flex-shrink-0">{t('quiz.your_choice')}</span>
+                                        <span>{userAnswer || t('quiz.not_answered')}</span>
                                     </div>
                                     
                                     {!isCorrect && (
                                         <div className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-400">
-                                            <span className="w-24 flex-shrink-0">Đáp án đúng:</span>
+                                            <span className="w-24 flex-shrink-0">{t('quiz.correct_answer')}</span>
                                             <span>{question.correctAnswer}</span>
                                         </div>
                                     )}
@@ -293,7 +295,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium hover:underline transition-colors"
                                             >
-                                                <ExternalLink size={14} /> Xem bài viết tham khảo
+                                                <ExternalLink size={14} /> {t('quiz.ref_link')}
                                             </a>
                                         </div>
                                     )}
@@ -314,7 +316,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
         <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
              <div className="mb-6">
                  <button onClick={() => setIsReviewing(false)} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium flex items-center gap-2 transition-colors">
-                    <ArrowLeft size={20} /> Xem lại câu hỏi
+                    <ArrowLeft size={20} /> {t('quiz.review_questions')}
                  </button>
              </div>
 
@@ -322,21 +324,21 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                  <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4">
                      <HelpCircle size={32} />
                  </div>
-                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Bạn đã sẵn sàng nộp bài?</h2>
-                 <p className="text-gray-500 dark:text-gray-400 mb-6">Hãy kiểm tra kỹ các câu trả lời. Sau khi nộp, hệ thống sẽ chấm điểm ngay lập tức.</p>
+                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('quiz.ready_submit')}</h2>
+                 <p className="text-gray-500 dark:text-gray-400 mb-6">{t('quiz.ready_desc')}</p>
                  
                  <div className="flex justify-center">
                     <button 
                         onClick={handleSubmitQuiz}
                         className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-indigo-700 shadow-lg shadow-indigo-200 flex items-center gap-2 transition-transform hover:-translate-y-1"
                     >
-                        <Send size={20} /> Xác nhận Nộp bài
+                        <Send size={20} /> {t('quiz.confirm_submit')}
                     </button>
                  </div>
              </div>
 
              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <LayoutGrid size={20} /> Tổng quan bài làm
+                <LayoutGrid size={20} /> {t('quiz.overview')}
              </h3>
              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3">
                 {quizQuestions.map((_, index) => {
@@ -375,10 +377,10 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
           <div className="mb-6">
             <div className="flex justify-between items-center mb-4">
               <button onClick={onBack} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium flex items-center gap-2 transition-colors">
-                <ArrowLeft size={20} /> Thoát
+                <ArrowLeft size={20} /> {t('quiz.exit')}
               </button>
               <div className="flex items-center gap-4">
-                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:inline">Tiến độ</span>
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:inline">{t('quiz.progress')}</span>
                   <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                     <div className="bg-indigo-500 h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                   </div>
@@ -392,7 +394,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
           {/* Question Card */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-8 mb-6 min-h-[200px] flex flex-col justify-center relative transition-colors">
             <div className="flex justify-between items-start mb-4">
-                 <h3 className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wide">Câu hỏi {currentQuestionIndex + 1}</h3>
+                 <h3 className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wide">{t('quiz.question_prefix')} {currentQuestionIndex + 1}</h3>
             </div>
             <p className="text-2xl font-medium text-gray-900 dark:text-white leading-relaxed">{currentQuestion.question}</p>
           </div>
@@ -432,7 +434,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                     onClick={() => setIsReviewing(true)}
                     className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 shadow-md transition-colors"
                   >
-                      Đến trang nộp bài <ArrowRight size={20} />
+                      {t('quiz.to_submit_page')} <ArrowRight size={20} />
                   </button>
               </div>
           )}
@@ -447,7 +449,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <LayoutGrid size={20} className="text-indigo-600 dark:text-indigo-400" /> 
-                    Danh sách câu hỏi
+                    {t('quiz.list_questions')}
                 </h3>
                 <button onClick={() => setShowGrid(false)} className="lg:hidden text-gray-500 dark:text-gray-400">
                     <XCircle size={24} />
@@ -481,15 +483,15 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800"></div>
-                        <span>Đã trả lời</span>
+                        <span>{t('quiz.status_answered')}</span>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"></div>
-                        <span>Chưa trả lời</span>
+                        <span>{t('quiz.status_unanswered')}</span>
                     </div>
                      <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded bg-white dark:bg-gray-600 ring-2 ring-indigo-600 dark:ring-indigo-400"></div>
-                        <span>Đang chọn</span>
+                        <span>{t('quiz.status_current')}</span>
                     </div>
                 </div>
             </div>
@@ -501,7 +503,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                         onClick={() => setIsReviewing(true)}
                         className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
                     >
-                        <CheckCircle size={18} /> Nộp bài
+                        <CheckCircle size={18} /> {t('quiz.submit_btn')}
                     </button>
                 </div>
             )}

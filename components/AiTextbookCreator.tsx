@@ -3,6 +3,7 @@ import { Upload, Sparkles, FileText, CheckCircle, BookOpen, BrainCircuit, Chevro
 import { analyzeTextbookWithAI } from '../services/geminiService';
 import { TextbookAnalysisResult, StudySet, AiGenerationRecord, Flashcard, PrivacyStatus } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from 'react-i18next';
 
 interface AiTextbookCreatorProps {
     onSaveToLibrary: (set: StudySet) => void;
@@ -59,6 +60,7 @@ const SCHOOLS_BY_LEVEL: Record<string, string[]> = {
 };
 
 const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, history, onAddToHistory, onBack }) => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<'CREATE' | 'HISTORY'>('CREATE');
     const [file, setFile] = useState<{name: string, data: string, type: string} | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -96,7 +98,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
             
             // Check file size (limit to ~100MB)
             if (selectedFile.size > 100 * 1024 * 1024) {
-                alert("Vui lòng tải lên file nhỏ hơn 100MB");
+                alert(t('ai_creator.error_file_size'));
                 return;
             }
 
@@ -131,7 +133,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
             onAddToHistory(newRecord);
 
         } catch (error) {
-            alert("Có lỗi xảy ra khi phân tích tài liệu. Vui lòng đảm bảo file không bị hỏng hoặc thử lại.");
+            alert(t('ai_creator.error_analyze'));
         } finally {
             setIsAnalyzing(false);
         }
@@ -298,7 +300,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
 
     const handleFinalSave = () => {
         if (!editingSet.title.trim()) {
-            alert("Vui lòng nhập tên học phần");
+            alert(t('ai_creator.error_no_title'));
             return;
         }
 
@@ -327,6 +329,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
         let colorClass = 'bg-green-500';
         let label = 'Nhận biết';
 
+        // NOTE: These strings match the AI output format directly
         switch (level) {
             case 'Nhận biết':
                 activeSegments = 1;
@@ -382,16 +385,16 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                 onClick={onBack}
                 className="mb-6 flex items-center gap-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 font-medium transition-colors"
             >
-                <ArrowLeft size={20} /> Quay lại
+                <ArrowLeft size={20} /> {t('common.back')}
             </button>
 
             <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Sparkles className="text-indigo-600 dark:text-indigo-400" /> Soạn bài từ Tài liệu
+                        <Sparkles className="text-indigo-600 dark:text-indigo-400" /> {t('ai_creator.title')}
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-2">
-                        Hỗ trợ phân tích tài liệu PDF, Sách giáo khoa điện tử hoặc Ảnh chụp bài học.
+                        {t('ai_creator.subtitle')}
                     </p>
                 </div>
                 
@@ -401,13 +404,13 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                         onClick={() => setActiveTab('CREATE')}
                         className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all ${activeTab === 'CREATE' ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                     >
-                        <Upload size={16} /> Tạo mới
+                        <Upload size={16} /> {t('ai_creator.tab_create')}
                     </button>
                     <button 
                          onClick={() => setActiveTab('HISTORY')}
                          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all ${activeTab === 'HISTORY' ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
                     >
-                        <History size={16} /> Lịch sử ({history.length})
+                        <History size={16} /> {t('ai_creator.tab_history')} ({history.length})
                     </button>
                 </div>
             </div>
@@ -418,13 +421,13 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                     {history.length === 0 ? (
                         <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 transition-colors">
                              <History className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
-                             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Chưa có bài soạn nào</h3>
-                             <p className="text-gray-500 dark:text-gray-400 mb-6">Các bài học do AI tạo ra sẽ được lưu tự động tại đây.</p>
+                             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('ai_creator.no_history_title')}</h3>
+                             <p className="text-gray-500 dark:text-gray-400 mb-6">{t('ai_creator.no_history_desc')}</p>
                              <button 
                                 onClick={() => setActiveTab('CREATE')}
                                 className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
                              >
-                                Tạo bài học đầu tiên
+                                {t('ai_creator.create_first')}
                              </button>
                         </div>
                     ) : (
@@ -458,7 +461,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                         onClick={() => handleHistorySelect(record)}
                                         className="w-full py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg font-bold text-sm group-hover:bg-indigo-600 group-hover:text-white transition-colors flex items-center justify-center gap-2"
                                     >
-                                        Xem & Chỉnh sửa <ArrowRight size={16} />
+                                        {t('ai_creator.view_edit')} <ArrowRight size={16} />
                                     </button>
                                 </div>
                             ))}
@@ -475,7 +478,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 mb-8 transition-colors">
                             <div className="flex flex-col md:flex-row gap-6 items-center">
                                 <div className="flex-1 w-full">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tải lên tài liệu (PDF hoặc Ảnh)</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('ai_creator.upload_label')}</label>
                                     <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative group overflow-hidden">
                                         <input 
                                             type="file" 
@@ -497,10 +500,10 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                                 
                                                 <p className="font-bold text-gray-900 dark:text-white truncate max-w-xs">{file.name}</p>
                                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-                                                    <CheckCircle size={12} /> Đã tải lên thành công
+                                                    <CheckCircle size={12} /> {t('ai_creator.upload_success')}
                                                 </p>
                                                 <button className="mt-4 text-xs text-gray-500 dark:text-gray-400 underline hover:text-indigo-600 dark:hover:text-indigo-400 z-30 relative cursor-pointer pointer-events-none group-hover:pointer-events-auto">
-                                                    (Nhấn để chọn file khác)
+                                                    {t('ai_creator.change_file')}
                                                 </button>
                                             </div>
                                         ) : (
@@ -510,8 +513,8 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                                         <Upload size={24} />
                                                     </div>
                                                 </div>
-                                                <p className="font-medium text-gray-700 dark:text-gray-300">Nhấn để tải lên file</p>
-                                                <p className="text-xs text-gray-400 mt-1">Hỗ trợ: PDF, JPG, PNG (Tối đa 10MB)</p>
+                                                <p className="font-medium text-gray-700 dark:text-gray-300">{t('ai_creator.upload_prompt_title')}</p>
+                                                <p className="text-xs text-gray-400 mt-1">{t('ai_creator.upload_prompt_desc')}</p>
                                                 <div className="flex justify-center gap-2 mt-2">
                                                     <span className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"><FileType size={10} /> PDF</span>
                                                     <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"><ImageIcon size={10} /> ẢNH</span>
@@ -532,7 +535,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                         }`}
                                     >
                                         {isAnalyzing ? <Loader2 className="animate-spin" /> : <BrainCircuit />}
-                                        {isAnalyzing ? 'Đang phân tích...' : 'Phân tích & Soạn bài'}
+                                        {isAnalyzing ? t('ai_creator.analyzing') : t('ai_creator.analyze_btn')}
                                     </button>
                                 </div>
                             </div>
@@ -548,12 +551,12 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                     onClick={() => { setResult(null); setFile(null); }}
                                     className="w-full mb-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-2 rounded-lg font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                                 >
-                                    &larr; Tạo bài mới
+                                    &larr; {t('ai_creator.back_create')}
                                 </button>
 
                                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 max-h-[400px] lg:max-h-[calc(100vh-200px)] flex flex-col transition-colors">
                                     <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                        <Layers size={18} /> Mục lục ({result.topics.length})
+                                        <Layers size={18} /> {t('ai_creator.toc')} ({result.topics.length})
                                     </h3>
                                     <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-1">
                                         {result.topics.map((topic, idx) => (
@@ -567,14 +570,14 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                                 }`}
                                             >
                                                 <div className="line-clamp-2">{topic.topicName}</div>
-                                                <div className="text-xs text-gray-400 font-normal mt-1">{topic.questions.length} câu hỏi</div>
+                                                <div className="text-xs text-gray-400 font-normal mt-1">{topic.questions.length} {t('create_set.question')}</div>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
 
                                 <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800 text-sm">
-                                    <div className="font-bold text-indigo-900 dark:text-indigo-300 mb-1">Thông tin chung</div>
+                                    <div className="font-bold text-indigo-900 dark:text-indigo-300 mb-1">{t('ai_creator.general_info')}</div>
                                     <div className="text-indigo-700 dark:text-indigo-400 mb-2 font-medium">{result.subject} - {result.grade}</div>
                                     <p className="text-indigo-600 dark:text-indigo-300 opacity-80 text-xs leading-relaxed">{result.overallSummary}</p>
                                 </div>
@@ -588,21 +591,21 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                         onClick={handleOpenSaveModal}
                                         className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-sm text-sm whitespace-nowrap transition-colors"
                                     >
-                                        <Save size={18} /> Lưu bài này vào thư viện
+                                        <Save size={18} /> {t('ai_creator.save_to_lib')}
                                     </button>
                                 </div>
 
                                 {/* Theory Section */}
                                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors">
                                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                        <BookOpen className="text-indigo-600 dark:text-indigo-400" size={20} /> Lý thuyết trọng tâm
+                                        <BookOpen className="text-indigo-600 dark:text-indigo-400" size={20} /> {t('ai_creator.theory_title')}
                                     </h3>
                                     <p className="text-gray-700 dark:text-gray-300 mb-4 italic">{currentTopic.summary}</p>
                                     
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div>
                                             <h4 className="font-bold text-xs text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-2">
-                                                <Lightbulb size={14} /> Các ý chính
+                                                <Lightbulb size={14} /> {t('ai_creator.key_points')}
                                             </h4>
                                             <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300 text-sm">
                                                 {currentTopic.keyPoints.map((point, idx) => (
@@ -613,7 +616,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                         {currentTopic.formulas.length > 0 && (
                                             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-100 dark:border-gray-600">
                                                 <h4 className="font-bold text-xs text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-2">
-                                                    <Sigma size={14} /> Công thức / Định lý
+                                                    <Sigma size={14} /> {t('ai_creator.formulas')}
                                                 </h4>
                                                 <ul className="space-y-2">
                                                     {currentTopic.formulas.map((formula, idx) => (
@@ -632,14 +635,14 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                             <PenTool className="text-indigo-600 dark:text-indigo-400" size={20} /> 
-                                            Bài tập vận dụng
+                                            {t('ai_creator.exercises')}
                                         </h3>
                                         <div className="flex gap-2">
                                             <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-xs font-bold">
-                                                {currentTopic.questions.filter(q => q.type === 'QUIZ').length} Trắc nghiệm
+                                                {currentTopic.questions.filter(q => q.type === 'QUIZ').length} {t('ai_creator.type_quiz')}
                                             </span>
                                             <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full text-xs font-bold">
-                                                {currentTopic.questions.filter(q => q.type === 'ESSAY').length} Tự luận
+                                                {currentTopic.questions.filter(q => q.type === 'ESSAY').length} {t('ai_creator.type_essay')}
                                             </span>
                                         </div>
                                     </div>
@@ -711,8 +714,8 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                                             <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 rounded-lg text-sm text-orange-800 dark:text-orange-300 flex items-start gap-3">
                                                                 <PenTool size={16} className="mt-0.5" />
                                                                 <div>
-                                                                    <span className="font-bold block mb-1">Dạng bài tự luận:</span>
-                                                                    Học sinh sẽ trình bày lời giải ra giấy và chụp ảnh nộp lại.
+                                                                    <span className="font-bold block mb-1">{t('ai_creator.essay_guide_title')}</span>
+                                                                    {t('ai_creator.essay_guide_desc')}
                                                                 </div>
                                                             </div>
                                                         )}
@@ -723,7 +726,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                                                 <GraduationCap size={60} className="text-blue-600 dark:text-blue-400" />
                                                             </div>
                                                             <h5 className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase mb-2 flex items-center gap-1 relative z-10">
-                                                                <Book size={14} /> Hướng dẫn giải chi tiết
+                                                                <Book size={14} /> {t('ai_creator.solution_guide')}
                                                             </h5>
                                                             <p className="text-sm text-blue-900 dark:text-blue-200 whitespace-pre-line leading-relaxed relative z-10">{q.solutionGuide}</p>
                                                         </div>
@@ -747,9 +750,9 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-750 rounded-t-2xl">
                             <div>
                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                    <Edit3 size={20} className="text-indigo-600 dark:text-indigo-400" /> Xem lại & Chỉnh sửa
+                                    <Edit3 size={20} className="text-indigo-600 dark:text-indigo-400" /> {t('ai_creator.modal_title')}
                                 </h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Điều chỉnh nội dung câu hỏi trước khi lưu.</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('ai_creator.modal_desc')}</p>
                             </div>
                             <button onClick={() => setShowSaveModal(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
                                 <X size={24} />
@@ -761,7 +764,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                             {/* Set Info */}
                             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tên học phần</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('ai_creator.input_name')}</label>
                                     <input 
                                         type="text" 
                                         value={editingSet.title}
@@ -770,7 +773,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mô tả ngắn</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('ai_creator.input_desc')}</label>
                                     <input 
                                         type="text" 
                                         value={editingSet.description}
@@ -782,18 +785,18 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                 {/* Metadata Fields */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Globe size={10} /> Quyền riêng tư</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Globe size={10} /> {t('create_set.privacy_label')}</label>
                                         <select 
                                             value={editingSet.privacy}
                                             onChange={(e) => setEditingSet({...editingSet, privacy: e.target.value as PrivacyStatus})}
                                             className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         >
-                                            <option value="PUBLIC">Công khai</option>
-                                            <option value="PRIVATE">Riêng tư</option>
+                                            <option value="PUBLIC">{t('create_set.public')}</option>
+                                            <option value="PRIVATE">{t('create_set.private')}</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><GraduationCap size={10} /> Trình độ</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><GraduationCap size={10} /> {t('create_set.level_label')}</label>
                                         <select 
                                             value={editingSet.level}
                                             onChange={(e) => handleLevelChangeInModal(e.target.value)}
@@ -808,21 +811,21 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><BookOpen size={10} /> Môn học</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><BookOpen size={10} /> {t('create_set.subject_label')}</label>
                                         <input 
                                             type="text"
-                                            placeholder="VD: Toán, Lý..."
+                                            placeholder={t('create_set.subject_ph')}
                                             value={editingSet.subject}
                                             onChange={(e) => setEditingSet({...editingSet, subject: e.target.value})}
                                             className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Building size={10} /> Trường học</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Building size={10} /> {t('create_set.school_label')}</label>
                                         <input 
                                             type="text"
                                             list="ai-school-options"
-                                            placeholder="Tên trường..."
+                                            placeholder={t('create_set.school_ph')}
                                             value={editingSet.school}
                                             onChange={(e) => setEditingSet({...editingSet, school: e.target.value})}
                                             className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -837,20 +840,20 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Bookmark size={10} /> Chuyên ngành</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Bookmark size={10} /> {t('create_set.major_label')}</label>
                                         <input 
                                             type="text"
-                                            placeholder="VD: CNTT..."
+                                            placeholder={t('create_set.major_ph')}
                                             value={editingSet.major}
                                             onChange={(e) => setEditingSet({...editingSet, major: e.target.value})}
                                             className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Hash size={10} /> Chủ đề</label>
+                                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Hash size={10} /> {t('create_set.topic_label')}</label>
                                         <input 
                                             type="text"
-                                            placeholder="VD: Hàm số..."
+                                            placeholder={t('create_set.topic_ph')}
                                             value={editingSet.topic}
                                             onChange={(e) => setEditingSet({...editingSet, topic: e.target.value})}
                                             className="w-full p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -862,12 +865,12 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                             {/* Cards List */}
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <h4 className="font-bold text-gray-800 dark:text-white">Danh sách câu hỏi ({editingSet.cards.length})</h4>
+                                    <h4 className="font-bold text-gray-800 dark:text-white">{t('ai_creator.list_questions')} ({editingSet.cards.length})</h4>
                                     <button 
                                         onClick={handleAddNewCard}
                                         className="text-indigo-600 dark:text-indigo-400 text-sm font-bold flex items-center gap-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-3 py-1.5 rounded-lg transition-colors"
                                     >
-                                        <Plus size={16} /> Thêm câu hỏi
+                                        <Plus size={16} /> {t('ai_creator.add_question')}
                                     </button>
                                 </div>
 
@@ -876,12 +879,12 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                         {/* Card Header & Controls */}
                                         <div className="flex justify-between items-start mb-4">
                                             <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded text-xs font-bold uppercase">
-                                                Câu {idx + 1}
+                                                {t('create_set.quiz')} {idx + 1}
                                             </span>
                                             <button 
                                                 onClick={() => handleRemoveCard(card.id)}
                                                 className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1"
-                                                title="Xóa câu hỏi"
+                                                title={t('create_set.delete_card')}
                                             >
                                                 <Trash2 size={16} />
                                             </button>
@@ -891,21 +894,21 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                             {/* Term (Question) */}
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 flex items-center gap-1">
-                                                    <BrainCircuit size={12} /> Câu hỏi
+                                                    <BrainCircuit size={12} /> {t('ai_creator.question')}
                                                 </label>
                                                 <textarea
                                                     rows={2}
                                                     value={card.term}
                                                     onChange={(e) => handleCardTermChange(card.id, e.target.value)}
                                                     className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none resize-none text-base font-medium text-gray-900 dark:text-white transition-colors"
-                                                    placeholder="Nhập nội dung câu hỏi..."
+                                                    placeholder={t('ai_creator.question_ph')}
                                                 />
                                             </div>
 
                                             {/* Options Grid */}
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 flex items-center gap-1">
-                                                    <List size={12} /> Đáp án (Chọn đáp án đúng)
+                                                    <List size={12} /> {t('ai_creator.answer_label')}
                                                 </label>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     {card.options?.map((option, optIdx) => {
@@ -946,7 +949,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                                     onClick={() => handleAddOption(card.id)}
                                                     className="mt-2 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:underline flex items-center gap-1"
                                                 >
-                                                    <Plus size={12} /> Thêm lựa chọn
+                                                    <Plus size={12} /> {t('ai_creator.add_option')}
                                                 </button>
                                             </div>
 
@@ -955,21 +958,21 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                                 {/* Explanation Field */}
                                                 <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
                                                     <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 uppercase mb-1 flex items-center gap-1">
-                                                        <Lightbulb size={12} /> Giải thích
+                                                        <Lightbulb size={12} /> {t('ai_creator.explanation')}
                                                     </label>
                                                     <textarea
                                                         rows={2}
                                                         value={card.explanation || ''}
                                                         onChange={(e) => handleCardExplanationChange(card.id, e.target.value)}
                                                         className="w-full bg-transparent border-none focus:ring-0 outline-none text-sm text-blue-900 dark:text-blue-200 placeholder-blue-300 resize-none p-0"
-                                                        placeholder="Giải thích cho đáp án đúng..."
+                                                        placeholder={t('ai_creator.explanation_ph')}
                                                     />
                                                 </div>
 
                                                 {/* Link Field */}
                                                 <div className="bg-gray-100 dark:bg-gray-700/30 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                                                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1 flex items-center gap-1">
-                                                        <Link size={12} /> Link tham khảo
+                                                        <Link size={12} /> {t('ai_creator.ref_link')}
                                                     </label>
                                                     <input 
                                                         type="text"
@@ -992,13 +995,13 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                 onClick={() => setShowSaveModal(false)}
                                 className="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-bold transition-colors"
                             >
-                                Hủy bỏ
+                                {t('common.cancel')}
                             </button>
                             <button 
                                 onClick={handleFinalSave}
                                 className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm flex items-center gap-2 transition-all hover:shadow-indigo-200 hover:-translate-y-0.5"
                             >
-                                <Save size={18} /> Xác nhận Lưu
+                                <Save size={18} /> {t('ai_creator.confirm_save')}
                             </button>
                         </div>
                     </div>

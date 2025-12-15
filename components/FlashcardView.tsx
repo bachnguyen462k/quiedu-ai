@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StudySet } from '../types';
 import { ArrowLeft, ArrowRight, RotateCcw, Copy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface FlashcardViewProps {
   set: StudySet;
@@ -8,6 +9,7 @@ interface FlashcardViewProps {
 }
 
 const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -53,7 +55,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
           onClick={onBack}
           className="text-gray-600 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 flex items-center gap-2 font-medium transition-colors"
         >
-          <ArrowLeft size={20} /> Quay lại
+          <ArrowLeft size={20} /> {t('flashcard.back')}
         </button>
         <div className="text-sm font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
           {currentIndex + 1} / {set.cards.length}
@@ -73,16 +75,16 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
             
             {/* Front */}
             <div className="absolute w-full h-full flex flex-col items-center justify-center p-8 bg-white dark:bg-gray-800 rounded-2xl backface-hidden border-2 border-transparent hover:border-indigo-100 dark:hover:border-indigo-900 transition-colors">
-              <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-4 absolute top-6">Thuật ngữ</span>
+              <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-4 absolute top-6">{t('flashcard.term')}</span>
               <div className="text-3xl md:text-4xl font-medium text-gray-800 dark:text-gray-100 break-words max-w-full">
                 {currentCard.term}
               </div>
-              <div className="absolute bottom-6 text-gray-400 dark:text-gray-500 text-sm">Nhấn để lật</div>
+              <div className="absolute bottom-6 text-gray-400 dark:text-gray-500 text-sm">{t('flashcard.click_flip')}</div>
             </div>
 
             {/* Back */}
             <div className="absolute w-full h-full flex flex-col items-center justify-center p-8 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl backface-hidden rotate-y-180 border-2 border-indigo-200 dark:border-indigo-800 transition-colors">
-              <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-4 absolute top-6">Định nghĩa</span>
+              <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-4 absolute top-6">{t('flashcard.definition')}</span>
               <div className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 break-words max-w-full">
                 {currentCard.definition}
               </div>
@@ -107,7 +109,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
           <button 
             onClick={() => { setIsFlipped(false); setCurrentIndex(0); }}
             className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors p-2"
-            title="Làm lại từ đầu"
+            title={t('flashcard.restart')}
           >
             <RotateCcw size={20} />
           </button>
@@ -128,7 +130,7 @@ const FlashcardView: React.FC<FlashcardViewProps> = ({ set, onBack }) => {
       
       {/* List view below */}
       <div className="mt-16">
-        <h3 className="text-xl font-bold mb-6 text-gray-800 dark:text-white">Danh sách thuật ngữ trong học phần này ({set.cards.length})</h3>
+        <h3 className="text-xl font-bold mb-6 text-gray-800 dark:text-white">{t('flashcard.list_terms')} ({set.cards.length})</h3>
         <div className="grid gap-4">
           {set.cards.map((card, idx) => (
             <div key={card.id} className={`p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4 items-start transition-colors ${idx === currentIndex ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : ''}`}>

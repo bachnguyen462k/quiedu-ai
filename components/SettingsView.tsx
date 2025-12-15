@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { User as UserIcon, Mail, Camera, Save, Shield, CheckCircle, Lock, Key, AlertCircle, Moon, Sun } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { useTranslation } from 'react-i18next';
 
 interface SettingsViewProps {
   currentUser: User;
@@ -10,6 +11,7 @@ interface SettingsViewProps {
 
 const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }) => {
   const { theme, toggleTheme } = useApp();
+  const { t } = useTranslation();
 
   // Profile State
   const [name, setName] = useState(currentUser.name);
@@ -34,7 +36,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
     e.preventDefault();
     
     if (!name.trim() || !email.trim()) {
-      alert('Vui lòng điền đầy đủ tên và email');
+      alert(t('notifications.enter_name_email'));
       return;
     }
 
@@ -45,7 +47,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
       avatar
     });
 
-    setProfileMessage('Đã cập nhật thông tin thành công!');
+    setProfileMessage(t('notifications.profile_updated'));
     setTimeout(() => setProfileMessage(''), 3000);
   };
 
@@ -55,28 +57,28 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
 
     // Basic Validation
     if (!currentPassword || !newPassword || !confirmPassword) {
-        setPasswordMessage({ type: 'error', text: 'Vui lòng điền đầy đủ các trường.' });
+        setPasswordMessage({ type: 'error', text: t('notifications.fill_all_fields') });
         return;
     }
 
     if (newPassword.length < 6) {
-        setPasswordMessage({ type: 'error', text: 'Mật khẩu mới phải có ít nhất 6 ký tự.' });
+        setPasswordMessage({ type: 'error', text: t('notifications.pass_min_length') });
         return;
     }
 
     if (newPassword !== confirmPassword) {
-        setPasswordMessage({ type: 'error', text: 'Mật khẩu xác nhận không khớp.' });
+        setPasswordMessage({ type: 'error', text: t('notifications.pass_mismatch') });
         return;
     }
 
     if (currentPassword === newPassword) {
-        setPasswordMessage({ type: 'error', text: 'Mật khẩu mới không được trùng với mật khẩu cũ.' });
+        setPasswordMessage({ type: 'error', text: t('notifications.pass_same') });
         return;
     }
 
     // Simulate API call success
     setTimeout(() => {
-        setPasswordMessage({ type: 'success', text: 'Đổi mật khẩu thành công!' });
+        setPasswordMessage({ type: 'success', text: t('notifications.pass_changed') });
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
