@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrainCircuit, LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, ChevronLeft, ChevronRight, HelpCircle, Shield } from 'lucide-react';
 import { ViewState, User } from '../types';
 import { useTranslation } from 'react-i18next';
 
@@ -118,6 +118,24 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
                  {isCollapsed && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                         {t('sidebar.help')}
+                    </div>
+                )}
+            </button>
+
+            {/* Terms & Policies Button */}
+            <button 
+                title={isCollapsed ? t('sidebar.terms') : ''}
+                className={`w-full flex items-center rounded-lg font-medium transition-all duration-200 group relative text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 ${isCollapsed ? 'justify-center py-3 px-0' : 'gap-3 px-4 py-3'}`}
+            >
+                <Shield size={20} className="shrink-0" />
+                <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
+                    isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100 static'
+                }`}>
+                    {t('sidebar.terms')}
+                </span>
+                 {isCollapsed && (
+                    <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                        {t('sidebar.terms')}
                     </div>
                 )}
             </button>
