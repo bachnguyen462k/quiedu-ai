@@ -52,14 +52,14 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
     // 2. Filter Teachers (Extract unique authors from sets)
     const uniqueAuthors = Array.from(new Set(sets.map(s => s.author)));
     const teachers = uniqueAuthors
-        .filter(author => author.toLowerCase().includes(lowerQuery))
+        .filter(author => (author as string).toLowerCase().includes(lowerQuery))
         .map(author => ({ name: author, avatar: `https://ui-avatars.com/api/?name=${author}&background=random` }))
         .slice(0, 3);
 
     // 3. Filter Files (AI History)
     const files = history.filter(h => 
-        h.fileName.toLowerCase().includes(lowerQuery) ||
-        h.result.subject.toLowerCase().includes(lowerQuery)
+        (h.fileName as string).toLowerCase().includes(lowerQuery) ||
+        (h.result?.subject as unknown as string)?.toLowerCase().includes(lowerQuery)
     ).slice(0, 3);
 
     return { quizzes, teachers, files };

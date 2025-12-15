@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Flashcard, StudySet, PrivacyStatus } from '../types';
 import { generateStudySetWithAI, generateStudySetFromFile } from '../services/geminiService';
-import { Plus, Trash2, Sparkles, Save, Loader2, FileText, Upload, CheckCircle, PenTool, Keyboard, FileUp, ArrowLeft, BrainCircuit, Check, X, Menu, AlertCircle, Lightbulb, ChevronRight, Layers, LayoutGrid, List, BookOpen, ScanLine, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Save, Loader2, FileText, Upload, CheckCircle, PenTool, Keyboard, FileUp, ArrowLeft, BrainCircuit, Check, X, Menu, AlertCircle, Lightbulb, ChevronRight, Layers, LayoutGrid, List, BookOpen, ScanLine, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 interface CreateSetProps {
@@ -61,6 +61,23 @@ const SCHOOLS_BY_LEVEL: Record<string, string[]> = {
   ]
 };
 
+const SAMPLE_TEXT_FORMAT = `Thủ đô của Việt Nam là gì?
+A. Thành phố Hồ Chí Minh
+*B. Hà Nội
+C. Đà Nẵng
+D. Hải Phòng
+
+Công thức hóa học của nước là?
+A. H2O2
+*B. H2O
+C. HO
+D. O2
+
+Ai là người sáng lập Microsoft?
+A. Steve Jobs
+B. Elon Musk
+*C. Bill Gates`;
+
 const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextbook }) => {
   // Navigation State
   const [creationStep, setCreationStep] = useState<CreationMode>('MENU');
@@ -87,6 +104,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   // Text Editor State
   const [textEditorContent, setTextEditorContent] = useState('');
   const [parsedPreviewCards, setParsedPreviewCards] = useState<Flashcard[]>([]);
+  const [showTextGuide, setShowTextGuide] = useState(false);
 
   // Refs for scrolling
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -739,6 +757,13 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           >
                               <FileText size={16} /> Nhập văn bản
                           </button>
+                          
+                          <button 
+                            onClick={() => setShowTextGuide(true)}
+                            className="flex items-center gap-1 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 text-sm font-medium transition-colors whitespace-nowrap"
+                          >
+                              <HelpCircle size={16} /> Hướng dẫn
+                          </button>
                       </div>
                       
                       <div className="flex gap-2">
@@ -916,14 +941,17 @@ B. Sai`}
                               />
                           </div>
 
-                          {/* Preview Column */}
+                          {/* Right Column: Preview ONLY */}
                           <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                              {/* PREVIEW HEADER */}
                               <div className="p-3 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center shrink-0">
                                   <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-300 flex items-center gap-2">
                                       <Eye size={12} /> Xem trước ({parsedPreviewCards.length})
                                   </span>
                               </div>
-                              <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+
+                              {/* PREVIEW LIST */}
+                              <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-white dark:bg-gray-800/30">
                                   {parsedPreviewCards.length === 0 ? (
                                       <div className="text-center text-gray-400 text-sm mt-10">
                                           Nội dung xem trước sẽ hiển thị tại đây...
@@ -957,6 +985,52 @@ B. Sai`}
               </div>
           </div>
       </div>
+
+      {/* TEXT GUIDE MODAL */}
+      {showTextGuide && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowTextGuide(false)}>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-750">
+                    <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Info size={20} className="text-indigo-600" /> Hướng dẫn nhập văn bản
+                    </h3>
+                    <button onClick={() => setShowTextGuide(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                        <X size={20} />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-4 text-sm text-gray-600 dark:text-gray-300">
+                    <div className="space-y-2">
+                        <p><strong className="text-indigo-600 dark:text-indigo-400">1. Cấu trúc câu hỏi:</strong> Mỗi câu hỏi cách nhau bởi một dòng trắng.</p>
+                        <p><strong className="text-indigo-600 dark:text-indigo-400">2. Dòng đầu tiên:</strong> Là nội dung câu hỏi.</p>
+                        <p><strong className="text-indigo-600 dark:text-indigo-400">3. Các dòng tiếp theo:</strong> Là các lựa chọn đáp án.</p>
+                        <p><strong className="text-indigo-600 dark:text-indigo-400">4. Đáp án đúng:</strong> Thêm dấu sao <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded font-bold">*</code> ở đầu dòng đáp án đúng.</p>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700 relative group">
+                        <pre className="whitespace-pre-wrap font-mono text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {SAMPLE_TEXT_FORMAT}
+                        </pre>
+                        <button 
+                            onClick={() => { setTextEditorContent(SAMPLE_TEXT_FORMAT); setShowTextGuide(false); }}
+                            className="absolute top-2 right-2 bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 p-1.5 rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-1 text-xs font-bold opacity-0 group-hover:opacity-100"
+                        >
+                            <Copy size={12} /> Chép mẫu
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+                    <button 
+                        onClick={() => { setTextEditorContent(SAMPLE_TEXT_FORMAT); setShowTextGuide(false); }}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
+                    >
+                        <Copy size={16} /> Chép ví dụ vào bài
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
 
       {/* SHARED AI MODAL */}
       {showAiModal && (
