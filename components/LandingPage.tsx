@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrainCircuit, BookOpen, Zap, ArrowRight, Users, Globe } from 'lucide-react';
+import { BrainCircuit, BookOpen, Zap, ArrowRight, Users, Globe, ScanLine, PenTool } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface LandingPageProps {
@@ -122,6 +122,66 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
              </div>
           </div>
         </div>
+      </div>
+
+      {/* Creation Features Section */}
+      <div className="py-20 bg-white dark:bg-gray-900 relative border-t border-gray-100 dark:border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-16">
+                  <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
+                      {t('landing.create_section_title')}
+                  </h2>
+                  <p className="text-xl text-gray-500 dark:text-gray-400 max-w-3xl mx-auto">
+                      {t('landing.create_section_desc')}
+                  </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* AI Method */}
+                  <div className="bg-gradient-to-br from-purple-50 to-white dark:from-gray-800 dark:to-gray-900 p-8 rounded-2xl border border-purple-100 dark:border-purple-900/30 hover:shadow-xl hover:border-purple-300 dark:hover:border-purple-700 transition-all duration-300 group">
+                      <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400 mb-6 group-hover:scale-110 transition-transform">
+                          <BrainCircuit size={32} />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{t('landing.create_method_1_title')}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
+                          {t('landing.create_method_1_desc')}
+                      </p>
+                  </div>
+
+                  {/* Scan Method */}
+                  <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900 p-8 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 group">
+                      <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-6 group-hover:scale-110 transition-transform">
+                          <ScanLine size={32} />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{t('landing.create_method_2_title')}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
+                          {t('landing.create_method_2_desc')}
+                      </p>
+                  </div>
+
+                  {/* Manual Method */}
+                  <div className="bg-gradient-to-br from-orange-50 to-white dark:from-gray-800 dark:to-gray-900 p-8 rounded-2xl border border-orange-100 dark:border-orange-900/30 hover:shadow-xl hover:border-orange-300 dark:hover:border-orange-700 transition-all duration-300 group">
+                      <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400 mb-6 group-hover:scale-110 transition-transform">
+                          <PenTool size={32} />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{t('landing.create_method_3_title')}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
+                          {t('landing.create_method_3_desc')}
+                      </p>
+                  </div>
+
+                  {/* AI Lesson Planner Method (NEW) */}
+                  <div className="bg-gradient-to-br from-pink-50 to-white dark:from-gray-800 dark:to-gray-900 p-8 rounded-2xl border border-pink-100 dark:border-pink-900/30 hover:shadow-xl hover:border-pink-300 dark:hover:border-pink-700 transition-all duration-300 group">
+                      <div className="w-16 h-16 bg-pink-100 dark:bg-pink-900/30 rounded-2xl flex items-center justify-center text-pink-600 dark:text-pink-400 mb-6 group-hover:scale-110 transition-transform">
+                          <BookOpen size={32} />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{t('landing.create_method_4_title')}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
+                          {t('landing.create_method_4_desc')}
+                      </p>
+                  </div>
+              </div>
+          </div>
       </div>
 
       {/* Feature Grid */}

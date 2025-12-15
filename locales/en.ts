@@ -72,7 +72,17 @@ export const en = {
       feature_ai: "AI Grading",
       feature_ai_desc: "AI system analyzes and grades essay questions in detail, saving teachers time.",
       feature_class: "Class Management",
-      feature_class_desc: "Assign homework, track progress, and view student performance statistics."
+      feature_class_desc: "Assign homework, track progress, and view student performance statistics.",
+      create_section_title: "Creating exams has never been easier",
+      create_section_desc: "Diverse creation methods to suit all your needs.",
+      create_method_1_title: "AI Auto-Generate",
+      create_method_1_desc: "Just enter a topic (e.g., 'Vietnam History'), AI will generate a complete quiz set in seconds.",
+      create_method_2_title: "Document Scan (OCR)",
+      create_method_2_desc: "Upload PDF, Word, or exam photos. System automatically extracts questions and answers.",
+      create_method_3_title: "Manual Editor",
+      create_method_3_desc: "Powerful, flexible editor allows you to manually craft every detail of your questions.",
+      create_method_4_title: "AI Lesson Planner",
+      create_method_4_desc: "Deeply analyze documents to generate theory summaries, formulas, and mixed exercises."
     },
     login: {
       login_title: "Login",

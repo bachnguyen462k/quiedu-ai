@@ -347,6 +347,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           generatedCards = result.cards;
 
       } else if (aiMode === 'FILE_SCAN_QUIZ') {
+          // Reverted to not accept count argument
           const result = await generateStudySetFromFile(aiFile!.data, aiFile!.name);
           generatedTitle = result.title;
           generatedDescription = result.description;
@@ -563,25 +564,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                     onChange={(e) => setAiPrompt(e.target.value)}
                                     autoFocus
                                 ></textarea>
-                                
-                                <div className="mb-6">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex justify-between">
-                                        {t('create_set.ai_modal_count_label')}
-                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{aiQuestionCount}</span>
-                                    </label>
-                                    <input 
-                                        type="range" 
-                                        min="5" 
-                                        max="30" 
-                                        value={aiQuestionCount}
-                                        onChange={(e) => setAiQuestionCount(parseInt(e.target.value))}
-                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
-                                    />
-                                    <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                        <span>5</span>
-                                        <span>30</span>
-                                    </div>
-                                </div>
                             </>
                         ) : (
                             <>
@@ -614,6 +596,28 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                     )}
                                 </div>
                             </>
+                        )}
+
+                        {/* Slider for Question Count (Only for TEXT_TOPIC) */}
+                        {aiMode === 'TEXT_TOPIC' && (
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex justify-between">
+                                    {t('create_set.ai_modal_count_label')}
+                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">{aiQuestionCount}</span>
+                                </label>
+                                <input 
+                                    type="range" 
+                                    min="5" 
+                                    max="30" 
+                                    value={aiQuestionCount}
+                                    onChange={(e) => setAiQuestionCount(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
+                                />
+                                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                    <span>5</span>
+                                    <span>30</span>
+                                </div>
+                            </div>
                         )}
 
                         <div className="flex justify-end gap-3 pt-2">
@@ -1155,25 +1159,6 @@ B. Sai`}
                             onChange={(e) => setAiPrompt(e.target.value)}
                             autoFocus
                         ></textarea>
-                        
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex justify-between">
-                                {t('create_set.ai_modal_count_label')}
-                                <span className="font-bold text-indigo-600 dark:text-indigo-400">{aiQuestionCount}</span>
-                            </label>
-                            <input 
-                                type="range" 
-                                min="5" 
-                                max="30" 
-                                value={aiQuestionCount}
-                                onChange={(e) => setAiQuestionCount(parseInt(e.target.value))}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
-                            />
-                            <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                <span>5</span>
-                                <span>30</span>
-                            </div>
-                        </div>
                     </>
                 ) : (
                     <>
@@ -1206,6 +1191,28 @@ B. Sai`}
                             )}
                         </div>
                     </>
+                )}
+
+                {/* Slider for Question Count (Only for TEXT_TOPIC) */}
+                {aiMode === 'TEXT_TOPIC' && (
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex justify-between">
+                            {t('create_set.ai_modal_count_label')}
+                            <span className="font-bold text-indigo-600 dark:text-indigo-400">{aiQuestionCount}</span>
+                        </label>
+                        <input 
+                            type="range" 
+                            min="5" 
+                            max="30" 
+                            value={aiQuestionCount}
+                            onChange={(e) => setAiQuestionCount(parseInt(e.target.value))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
+                        />
+                        <div className="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>5</span>
+                            <span>30</span>
+                        </div>
+                    </div>
                 )}
 
                 <div className="flex justify-end gap-3 pt-2">

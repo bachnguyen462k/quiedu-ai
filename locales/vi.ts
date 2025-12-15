@@ -72,7 +72,17 @@ export const vi = {
       feature_ai: "AI Chấm Điểm",
       feature_ai_desc: "Hệ thống AI phân tích và chấm điểm bài tự luận chi tiết, tiết kiệm thời gian cho giáo viên.",
       feature_class: "Quản Lý Lớp Học",
-      feature_class_desc: "Giao bài tập, theo dõi tiến độ và thống kê kết quả học tập của từng học sinh."
+      feature_class_desc: "Giao bài tập, theo dõi tiến độ và thống kê kết quả học tập của từng học sinh.",
+      create_section_title: "Tạo đề thi cực nhanh với 4 cách",
+      create_section_desc: "Chúng tôi cung cấp đa dạng phương thức tạo nội dung phù hợp với mọi nhu cầu của bạn.",
+      create_method_1_title: "AI Tạo Theo Chủ Đề",
+      create_method_1_desc: "Chỉ cần nhập chủ đề (VD: 'Lịch sử Việt Nam'), AI sẽ tự động sinh ra bộ câu hỏi trắc nghiệm hoàn chỉnh.",
+      create_method_2_title: "Quét Tài Liệu (OCR)",
+      create_method_2_desc: "Tải lên file PDF, Word hoặc ảnh chụp đề thi. Hệ thống tự động trích xuất câu hỏi và đáp án.",
+      create_method_3_title: "Soạn Thảo Thủ Công",
+      create_method_3_desc: "Trình biên tập mạnh mẽ, linh hoạt cho phép bạn tự soạn thảo chi tiết từng câu hỏi.",
+      create_method_4_title: "AI Soạn Giáo Án",
+      create_method_4_desc: "Phân tích sâu tài liệu sách giáo khoa để tạo tóm tắt lý thuyết, công thức và bài tập tự luận."
     },
     login: {
       login_title: "Đăng nhập",
