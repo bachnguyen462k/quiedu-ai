@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { StudySet } from '../types';
-import { ArrowLeft, Clock, User, Play, BookOpen, BarChart3, Star, Calendar, Lock, Info, ShieldCheck, Share2, Link, QrCode, Copy, Check, MessageSquare, X, Download, Heart } from 'lucide-react';
+import { ArrowLeft, Clock, User, Play, BookOpen, BarChart3, Star, Calendar, Lock, Info, ShieldCheck, Share2, Link, QrCode, Copy, Check, MessageSquare, X, Download, Heart, Flag, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useApp } from '../contexts/AppContext';
 
 interface SetDetailViewProps {
   set: StudySet;
@@ -14,8 +14,14 @@ interface SetDetailViewProps {
 
 const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlashcard, onStartQuiz, onToggleFavorite }) => {
   const { t } = useTranslation();
+  const { addNotification } = useApp();
   const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
+  
+  // Report Modal State
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('copyright');
+  const [reportDescription, setReportDescription] = useState('');
 
   const formattedDate = new Date(set.createdAt).toLocaleDateString('vi-VN', {
     year: 'numeric',
@@ -41,6 +47,14 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
     setTimeout(() => setCopiedType(null), 2000);
   };
 
+  const handleReportSubmit = () => {
+      // Logic to submit report to backend would go here
+      addNotification(t('notifications.report_success'), 'success');
+      setShowReportModal(false);
+      setReportDescription('');
+      setReportReason('copyright');
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 relative animate-fade-in">
       {/* Back Button */}
@@ -52,20 +66,31 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
             <ArrowLeft size={20} /> {t('set_detail.back_library')}
         </button>
 
-        {/* Favorite Button on Detail View */}
-        {onToggleFavorite && (
+        <div className="flex gap-3">
+            {/* Report Button */}
             <button
-                onClick={() => onToggleFavorite(set.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
-                    set.isFavorite 
-                    ? 'border-red-200 bg-red-50 text-red-600 dark:bg-red-900/20 dark:border-red-800' 
-                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
-                }`}
+                onClick={() => setShowReportModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-red-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:text-red-400 transition-colors"
+                title={t('set_detail.report_btn')}
             >
-                <Heart size={18} fill={set.isFavorite ? "currentColor" : "none"} />
-                <span className="font-bold text-sm">{set.isFavorite ? t('set_detail.liked') : t('set_detail.like')}</span>
+                <Flag size={18} />
             </button>
-        )}
+
+            {/* Favorite Button on Detail View */}
+            {onToggleFavorite && (
+                <button
+                    onClick={() => onToggleFavorite(set.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
+                        set.isFavorite 
+                        ? 'border-red-200 bg-red-50 text-red-600 dark:bg-red-900/20 dark:border-red-800' 
+                        : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+                    }`}
+                >
+                    <Heart size={18} fill={set.isFavorite ? "currentColor" : "none"} />
+                    <span className="font-bold text-sm hidden sm:inline">{set.isFavorite ? t('set_detail.liked') : t('set_detail.like')}</span>
+                </button>
+            )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -315,6 +340,56 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                 <div className="w-full bg-indigo-50 dark:bg-indigo-900/30 rounded-xl p-4 text-center">
                     <p className="text-xs text-indigo-500 dark:text-indigo-300 uppercase font-bold mb-1">{t('set_detail.join_code')}</p>
                     <p className="text-2xl font-mono font-bold text-indigo-700 dark:text-indigo-400 tracking-wider select-all">{shareCode}</p>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowReportModal(false)}>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl max-w-md w-full relative transform transition-all scale-100" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Flag size={20} className="text-red-500" /> {t('set_detail.report_modal_title')}
+                    </h3>
+                    <button onClick={() => setShowReportModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                        <X size={24} />
+                    </button>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('set_detail.report_reason_label')}</label>
+                        <select 
+                            value={reportReason}
+                            onChange={(e) => setReportReason(e.target.value)}
+                            className="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-gray-900 dark:text-white"
+                        >
+                            <option value="copyright">{t('set_detail.report_reason_copyright')}</option>
+                            <option value="inappropriate">{t('set_detail.report_reason_inappropriate')}</option>
+                            <option value="spam">{t('set_detail.report_reason_spam')}</option>
+                            <option value="other">{t('set_detail.report_reason_other')}</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('set_detail.report_desc_label')}</label>
+                        <textarea
+                            value={reportDescription}
+                            onChange={(e) => setReportDescription(e.target.value)}
+                            rows={4}
+                            className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-gray-900 dark:text-white resize-none"
+                            placeholder={t('set_detail.report_desc_ph')}
+                        ></textarea>
+                    </div>
+
+                    <button 
+                        onClick={handleReportSubmit}
+                        className="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 shadow-sm mt-2"
+                    >
+                        <Send size={18} /> {t('set_detail.report_submit')}
+                    </button>
                 </div>
             </div>
         </div>

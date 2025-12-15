@@ -151,7 +151,8 @@ export const en = {
       enter_title: "Please enter a title for the study set",
       min_cards: "At least 2 valid questions (with content and correct answer) are required",
       ai_error: "An error occurred with AI processing. Please try again or check the file.",
-      submitted_success: "Assignment submitted successfully!"
+      submitted_success: "Assignment submitted successfully!",
+      report_success: "Thank you. We have received your report."
     },
     create_set: {
       title_method: "How do you want to create your set?",
@@ -226,7 +227,14 @@ export const en = {
       upload_support: "Supports PDF, Image, Word",
       processing: "Processing... (Do not close page)",
       start_create: "Start Creating",
-      change_file: "Click to change file"
+      change_file: "Click to change file",
+      recent_activity: "Processing History & Recent Files",
+      col_name: "Document Name / Topic",
+      col_type: "Type",
+      col_date: "Date",
+      col_status: "Status",
+      status_completed: "Completed",
+      action_view: "Review"
     },
     class_mgmt: {
       create_class_prompt: "Enter new class name:",
@@ -426,7 +434,17 @@ export const en = {
       link_label: "Lesson Link",
       qr_label: "Scan QR (Click to zoom)",
       qr_modal_title: "Class QR Code",
-      qr_modal_desc: "Scan to access lesson on mobile"
+      qr_modal_desc: "Scan to access lesson on mobile",
+      report_btn: "Report",
+      report_modal_title: "Report Issue",
+      report_reason_label: "Reason",
+      report_reason_copyright: "Copyright Infringement",
+      report_reason_inappropriate: "Inappropriate Content",
+      report_reason_spam: "Spam / Advertising",
+      report_reason_other: "Other",
+      report_desc_label: "Description",
+      report_desc_ph: "Please describe the issue...",
+      report_submit: "Submit Report"
     },
     tour: {
       step_1_title: "Welcome to QuizEdu! 👋",

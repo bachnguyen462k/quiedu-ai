@@ -151,7 +151,8 @@ export const vi = {
       enter_title: "Vui lòng nhập tiêu đề học phần",
       min_cards: "Cần ít nhất 2 câu hỏi hợp lệ (có nội dung và đáp án đúng) để tạo học phần",
       ai_error: "Có lỗi xảy ra khi xử lý với AI. Vui lòng thử lại hoặc kiểm tra file.",
-      submitted_success: "Đã nộp bài thành công!"
+      submitted_success: "Đã nộp bài thành công!",
+      report_success: "Cảm ơn bạn. Chúng tôi đã nhận được báo cáo."
     },
     create_set: {
       title_method: "Bạn muốn tạo học phần bằng cách nào?",
@@ -226,7 +227,14 @@ export const vi = {
       upload_support: "Hỗ trợ PDF, Ảnh, Word",
       processing: "Đang xử lý... (Vui lòng không tắt trang)",
       start_create: "Bắt đầu tạo",
-      change_file: "Nhấn để thay đổi file"
+      change_file: "Nhấn để thay đổi file",
+      recent_activity: "Lịch sử xử lý & Tài liệu gần đây",
+      col_name: "Tên tài liệu / Chủ đề",
+      col_type: "Loại",
+      col_date: "Thời gian",
+      col_status: "Trạng thái",
+      status_completed: "Hoàn thành",
+      action_view: "Xem lại"
     },
     class_mgmt: {
       create_class_prompt: "Nhập tên lớp học mới:",
@@ -386,8 +394,8 @@ export const vi = {
       review_questions: "Xem lại câu hỏi",
       ready_submit: "Bạn đã sẵn sàng nộp bài?",
       ready_desc: "Hãy kiểm tra kỹ các câu trả lời. Sau khi nộp, hệ thống sẽ chấm điểm ngay lập tức.",
-      confirm_submit: "Xác nhận Nộp bài",
-      overview: "Tổng quan bài làm",
+      confirm_submit: "Confirm Submit",
+      overview: "Quiz Overview",
       exit: "Thoát",
       progress: "Tiến độ",
       to_submit_page: "Đến trang nộp bài",
@@ -426,7 +434,17 @@ export const vi = {
       link_label: "Link bài học",
       qr_label: "Quét mã (Nhấn để phóng to)",
       qr_modal_title: "Mã QR lớp học",
-      qr_modal_desc: "Quét mã để truy cập bài học trên điện thoại"
+      qr_modal_desc: "Quét mã để truy cập bài học trên điện thoại",
+      report_btn: "Báo cáo",
+      report_modal_title: "Báo cáo vấn đề",
+      report_reason_label: "Lý do báo cáo",
+      report_reason_copyright: "Vi phạm bản quyền",
+      report_reason_inappropriate: "Nội dung không phù hợp",
+      report_reason_spam: "Spam / Quảng cáo",
+      report_reason_other: "Lý do khác",
+      report_desc_label: "Mô tả chi tiết",
+      report_desc_ph: "Vui lòng mô tả rõ vấn đề bạn gặp phải...",
+      report_submit: "Gửi báo cáo"
     },
     tour: {
       step_1_title: "Chào mừng đến với QuizEdu! 👋",

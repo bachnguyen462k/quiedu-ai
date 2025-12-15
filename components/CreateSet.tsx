@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Flashcard, StudySet, PrivacyStatus } from '../types';
+import { Flashcard, StudySet, PrivacyStatus, AiGenerationRecord } from '../types';
 import { generateStudySetWithAI, generateStudySetFromFile } from '../services/geminiService';
-import { Plus, Trash2, Sparkles, Save, Loader2, FileText, Upload, CheckCircle, PenTool, Keyboard, FileUp, ArrowLeft, BrainCircuit, Check, X, Menu, AlertCircle, Lightbulb, ChevronRight, Layers, LayoutGrid, List, BookOpen, ScanLine, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Save, Loader2, FileText, Upload, CheckCircle, PenTool, Keyboard, FileUp, ArrowLeft, BrainCircuit, Check, X, Menu, AlertCircle, Lightbulb, ChevronRight, Layers, LayoutGrid, List, BookOpen, ScanLine, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
 
@@ -9,6 +9,8 @@ interface CreateSetProps {
   onSave: (set: StudySet) => void;
   onCancel: () => void;
   onGoToAiTextbook: () => void;
+  history?: AiGenerationRecord[];
+  onSelectHistory?: (record: AiGenerationRecord) => void;
 }
 
 type CreationMode = 'MENU' | 'EDITOR';
@@ -79,7 +81,7 @@ A. Steve Jobs
 B. Elon Musk
 *C. Bill Gates`;
 
-const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextbook }) => {
+const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextbook, history = [], onSelectHistory }) => {
   const { t } = useTranslation();
   // Navigation State
   const [creationStep, setCreationStep] = useState<CreationMode>('MENU');
@@ -400,73 +402,134 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   // --- RENDER: SELECTION MENU ---
   if (creationStep === 'MENU') {
       return (
-          <div className="max-w-6xl mx-auto px-4 py-12 animate-fade-in relative">
-              <div className="text-center mb-12">
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{t('create_set.title_method')}</h2>
+          <div className="max-w-6xl mx-auto px-4 py-12 animate-fade-in relative pb-32">
+              <div className="text-center mb-10">
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('create_set.title_method')}</h2>
                   <p className="text-gray-500 dark:text-gray-400">{t('create_set.desc_method')}</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-full mx-auto mb-8">
                   <button 
                     onClick={startManual}
-                    className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-xl transition-all text-left flex flex-col h-full"
+                    className="group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-xl transition-all text-left flex flex-col h-full"
                   >
-                      <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                          <Keyboard size={28} />
+                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <Keyboard size={24} />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('create_set.manual_title')}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{t('create_set.manual_title')}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
                           {t('create_set.manual_desc')}
                       </p>
                   </button>
 
                   <button 
                     onClick={() => openAiModal('TEXT_TOPIC')}
-                    className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:shadow-xl transition-all text-left flex flex-col h-full relative overflow-hidden"
+                    className="group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:shadow-xl transition-all text-left flex flex-col h-full relative overflow-hidden"
                   >
                       <div className="absolute top-0 right-0 p-2">
                           <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">{t('create_set.popular_badge')}</span>
                       </div>
-                      <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                          <BrainCircuit size={28} />
+                      <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <BrainCircuit size={24} />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('create_set.ai_topic_title')}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{t('create_set.ai_topic_title')}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
                           {t('create_set.ai_topic_desc')}
                       </p>
                   </button>
 
                   <button 
                     onClick={() => openAiModal('FILE_SCAN_QUIZ')}
-                    className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-xl transition-all text-left flex flex-col h-full"
+                    className="group bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-xl transition-all text-left flex flex-col h-full"
                   >
-                      <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                          <ScanLine size={28} />
+                      <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <ScanLine size={24} />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('create_set.scan_file_title')}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{t('create_set.scan_file_title')}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
                           {t('create_set.scan_file_desc')}
                       </p>
                   </button>
 
                   <button 
                     onClick={onGoToAiTextbook}
-                    className="group bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-pink-500 dark:hover:border-pink-400 hover:shadow-xl transition-all text-left flex flex-col h-full relative overflow-hidden"
+                    className="group bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:border-pink-500 dark:hover:border-pink-400 hover:shadow-xl transition-all text-left flex flex-col h-full relative overflow-hidden"
                   >
                       <div className="absolute top-0 right-0 p-2">
                           <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase flex items-center gap-1">
                              <Sparkles size={10} /> {t('create_set.pro_badge')}
                           </span>
                       </div>
-                      <div className="w-14 h-14 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                          <BookOpen size={28} />
+                      <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <BookOpen size={24} />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('create_set.ai_textbook_title')}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{t('create_set.ai_textbook_title')}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
                           {t('create_set.ai_textbook_desc')}
                       </p>
                   </button>
               </div>
+
+              {/* RECENT ACTIVITY TABLE */}
+              {history.length > 0 && (
+                  <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 flex items-center justify-between">
+                          <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                              <Clock size={18} className="text-gray-500" />
+                              {t('create_set.recent_activity')}
+                          </h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                          <table className="w-full text-left text-sm">
+                              <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-medium uppercase text-xs">
+                                  <tr>
+                                      <th className="px-6 py-3">{t('create_set.col_name')}</th>
+                                      <th className="px-6 py-3">{t('create_set.col_type')}</th>
+                                      <th className="px-6 py-3">{t('create_set.col_date')}</th>
+                                      <th className="px-6 py-3">{t('create_set.col_status')}</th>
+                                      <th className="px-6 py-3 text-right">Action</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                  {history.map((record) => {
+                                      // Determine type based on data structure (approximate)
+                                      const isTextbook = record.result?.topics?.length > 0;
+                                      return (
+                                          <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                              <td className="px-6 py-4 font-medium text-gray-900 dark:text-white truncate max-w-xs">
+                                                  {record.fileName || (record.result?.topics?.[0]?.topicName) || "Untitled"}
+                                              </td>
+                                              <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                                                  {isTextbook ? (
+                                                      <span className="flex items-center gap-1.5"><BookOpen size={14} className="text-pink-500" /> {t('create_set.ai_textbook_title')}</span>
+                                                  ) : (
+                                                      <span className="flex items-center gap-1.5"><ScanLine size={14} className="text-indigo-500" /> {t('create_set.scan_file_title')}</span>
+                                                  )}
+                                              </td>
+                                              <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                                                  {new Date(record.createdAt).toLocaleDateString()}
+                                              </td>
+                                              <td className="px-6 py-4">
+                                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                                      <CheckSquare size={12} /> {t('create_set.status_completed')}
+                                                  </span>
+                                              </td>
+                                              <td className="px-6 py-4 text-right">
+                                                  <button 
+                                                      onClick={() => onSelectHistory && onSelectHistory(record)}
+                                                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium text-xs border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                                                  >
+                                                      {t('create_set.action_view')}
+                                                  </button>
+                                              </td>
+                                          </tr>
+                                      );
+                                  })}
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              )}
 
               <div className="mt-12 text-center">
                   <button onClick={onCancel} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium">

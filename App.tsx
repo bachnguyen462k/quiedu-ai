@@ -277,6 +277,8 @@ const AppContent: React.FC = () => {
             onSave={handleSaveSet}
             onCancel={() => setView('DASHBOARD')}
             onGoToAiTextbook={() => setView('AI_CREATOR')}
+            history={aiHistory}
+            onSelectHistory={handleSelectHistory}
           />
         );
 
