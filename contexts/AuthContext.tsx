@@ -10,7 +10,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (userData: any) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (user: User) => void;
   // Recovery methods
   requestPasswordReset: (email: string) => Promise<boolean>;
@@ -86,10 +86,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    setUser(null);
+  const logout = async () => {
+    try {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            // Gọi API logout để hủy token trên server
+            await authService.logout(token);
+        }
+    } catch (error) {
+        console.error("Logout server error", error);
+    } finally {
+        // Luôn luôn xóa dữ liệu local dù API có lỗi hay không
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        setUser(null);
+    }
   };
 
   const updateUser = (updatedUser: User) => {

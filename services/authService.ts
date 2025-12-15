@@ -61,6 +61,16 @@ export const authService = {
     }
   },
 
+  // Đăng xuất
+  logout: async (token: string): Promise<void> => {
+      try {
+          await apiClient.post('/identity/auth/logout', { token });
+      } catch (error) {
+          console.error("Logout API Error:", error);
+          // Không throw lỗi ở đây để luồng logout ở client vẫn tiếp tục (xóa token ở localStorage)
+      }
+  },
+
   // Đăng ký (Mock)
   register: async (userData: any): Promise<AuthResponse> => {
     return new Promise((resolve) => {
