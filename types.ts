@@ -63,7 +63,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  roles: UserRole[]; // Changed from single role to array
   avatar?: string;
 }
 

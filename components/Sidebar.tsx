@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrainCircuit, LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, ChevronLeft, ChevronRight, HelpCircle, Shield } from 'lucide-react';
-import { ViewState, User } from '../types';
+import { ViewState, User, UserRole } from '../types';
 import { useTranslation } from 'react-i18next';
 
 interface SidebarProps {
@@ -9,6 +9,14 @@ interface SidebarProps {
     onChangeView: (view: ViewState) => void;
     onLogout: () => void;
     onStartTour: () => void;
+}
+
+interface MenuItem {
+    id: string;
+    label: string;
+    icon: React.ElementType;
+    view: ViewState;
+    allowedRoles: UserRole[]; // Roles that can see this menu
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeView, onLogout, onStartTour }) => {
@@ -22,14 +30,43 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
     }
   }, []);
 
-  const menuItems = [
-    { id: 'DASHBOARD', label: t('sidebar.dashboard'), icon: LayoutDashboard, view: 'DASHBOARD' },
-    { id: 'CREATE', label: t('sidebar.create'), icon: PlusCircle, view: 'CREATE' },
-    { id: 'LIBRARY', label: t('sidebar.library'), icon: Library, view: 'LIBRARY' },
-    { id: 'CLASSES', label: t('sidebar.classes'), icon: Users, view: 'CLASSES' },
+  const menuItems: MenuItem[] = [
+    { 
+        id: 'DASHBOARD', 
+        label: t('sidebar.dashboard'), 
+        icon: LayoutDashboard, 
+        view: 'DASHBOARD',
+        allowedRoles: ['TEACHER', 'STUDENT'] 
+    },
+    { 
+        id: 'CREATE', 
+        label: t('sidebar.create'), 
+        icon: PlusCircle, 
+        view: 'CREATE',
+        allowedRoles: ['TEACHER', 'STUDENT']
+    },
+    { 
+        id: 'LIBRARY', 
+        label: t('sidebar.library'), 
+        icon: Library, 
+        view: 'LIBRARY',
+        allowedRoles: ['TEACHER', 'STUDENT'] 
+    },
+    { 
+        id: 'CLASSES', 
+        label: t('sidebar.classes'), 
+        icon: Users, 
+        view: 'CLASSES',
+        allowedRoles: ['TEACHER', 'STUDENT'] 
+    },
   ];
 
   if (!currentUser) return null; // Should not happen in main layout
+
+  // Filter menu items based on user roles
+  const filteredMenuItems = menuItems.filter(item => 
+      item.allowedRoles.some(role => currentUser.roles.includes(role))
+  );
 
   return (
     <aside 
@@ -69,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
             <p className="px-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 animate-fade-in">{t('sidebar.menu')}</p>
         )}
         
-        {menuItems.map((item) => (
+        {filteredMenuItems.map((item) => (
           <button
             key={item.id}
             id={`sidebar-${item.id.toLowerCase()}`}
@@ -183,7 +220,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
             <div className={`flex-1 min-w-0 transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 block'}`}>
                 <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{currentUser.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {currentUser.role === 'TEACHER' ? t('common.role_teacher') : t('common.role_student')}
+                    {currentUser.roles.map(r => r === 'TEACHER' ? t('common.role_teacher') : t('common.role_student')).join(', ')}
                 </p>
             </div>
         </div>

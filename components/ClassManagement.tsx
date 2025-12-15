@@ -275,7 +275,8 @@ const ClassManagement: React.FC<ClassManagementProps> = ({ currentUser, sets }) 
   };
 
   // --- View: Teacher Dashboard ---
-  if (currentUser.role === 'TEACHER') {
+  // Check if user has TEACHER role in their roles array
+  if (currentUser.roles.includes('TEACHER')) {
     if (selectedClass) {
         // Detailed Class View
         return (

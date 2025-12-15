@@ -117,7 +117,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
             </div>
             
             <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">{name}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{currentUser.role === 'TEACHER' ? 'Giáo viên' : 'Học sinh'}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                {currentUser.roles.map(r => r === 'TEACHER' ? 'Giáo viên' : 'Học sinh').join(', ')}
+            </p>
             
             <button 
                 onClick={handleRandomAvatar}
@@ -208,7 +210,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vai trò (Không thể thay đổi)</label>
                         <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300">
                             <Shield size={18} />
-                            <span className="font-medium">{currentUser.role === 'TEACHER' ? 'Giáo viên' : 'Học sinh'}</span>
+                            <span className="font-medium">
+                                {currentUser.roles.map(r => r === 'TEACHER' ? 'Giáo viên' : 'Học sinh').join(', ')}
+                            </span>
                         </div>
                     </div>
 

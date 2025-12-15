@@ -73,7 +73,7 @@ export const authService = {
                     id: `u${Date.now()}`,
                     name: userData.name,
                     email: userData.email,
-                    role: userData.role,
+                    roles: ['STUDENT'], // Default role for registration mock
                     avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=random&color=fff`
                 },
                 accessToken: 'mock-jwt-token-register',
@@ -90,14 +90,24 @@ export const authService = {
         const result = response.data.result;
 
         // Ánh xạ Role từ Backend sang Frontend
-        // Backend trả về mảng roles: [{name: "ADMIN", ...}]
-        // Frontend cần: "TEACHER" hoặc "STUDENT"
-        let role: UserRole = 'STUDENT';
-        if (result.roles && result.roles.length > 0) {
-            const roleName = result.roles[0].name;
-            if (roleName === 'ADMIN' || roleName === 'TEACHER') {
-                role = 'TEACHER';
-            }
+        // Backend trả về mảng roles: [{name: "ADMIN", ...}, {name: "USER", ...}]
+        // Frontend cần mảng: ["TEACHER", "STUDENT"]
+        const mappedRoles: UserRole[] = [];
+        
+        if (result.roles && Array.isArray(result.roles)) {
+            result.roles.forEach((r: any) => {
+                if (r.name === 'ADMIN' || r.name === 'TEACHER') {
+                    if (!mappedRoles.includes('TEACHER')) mappedRoles.push('TEACHER');
+                }
+                if (r.name === 'USER' || r.name === 'STUDENT') {
+                    if (!mappedRoles.includes('STUDENT')) mappedRoles.push('STUDENT');
+                }
+            });
+        }
+
+        // Default role nếu không có
+        if (mappedRoles.length === 0) {
+            mappedRoles.push('STUDENT');
         }
 
         // Tạo tên hiển thị (ưu tiên Full Name, nếu null thì dùng Username)
@@ -109,7 +119,7 @@ export const authService = {
             id: result.id,
             name: displayName,
             email: result.username, // Dùng username làm định danh email
-            role: role,
+            roles: mappedRoles,
             avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`
         };
     } catch (error) {
@@ -127,7 +137,7 @@ export const authService = {
                     id: 'g1',
                     name: 'Nguyễn Google',
                     email: 'nguyen.google@gmail.com',
-                    role: 'STUDENT',
+                    roles: ['STUDENT'],
                     avatar: 'https://lh3.googleusercontent.com/a/default-user'
                 },
                 accessToken: 'mock-google-token-xyz',
