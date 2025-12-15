@@ -1,34 +1,46 @@
 import React, { useState } from 'react';
-import { UserRole, User } from '../types';
-import { BrainCircuit, GraduationCap, School, ArrowRight } from 'lucide-react';
+import { UserRole } from '../types';
+import { BrainCircuit, GraduationCap, School, ArrowRight, Loader2 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useApp } from '../contexts/AppContext';
 
 interface LoginProps {
-  onLogin: (user: User) => void;
   onBack: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
+const Login: React.FC<LoginProps> = ({ onBack }) => {
+  const { login } = useAuth();
+  const { addNotification } = useApp();
+  
   const [selectedRole, setSelectedRole] = useState<UserRole>('STUDENT');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = () => {
-    // Mock Login Data
-    const mockUser: User = selectedRole === 'TEACHER' 
-      ? {
-          id: 't1',
-          name: 'Cô Thu Lan',
-          email: 'lan.gv@schools.edu',
-          role: 'TEACHER',
-          avatar: 'https://ui-avatars.com/api/?name=Thu+Lan&background=6366f1&color=fff'
-        }
-      : {
-          id: 's1',
-          name: 'Nguyễn Văn Nam',
-          email: 'nam.hs@schools.edu',
-          role: 'STUDENT',
-          avatar: 'https://ui-avatars.com/api/?name=Van+Nam&background=10b981&color=fff'
-        };
-    
-    onLogin(mockUser);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+        await login({ email, password });
+        addNotification('Đăng nhập thành công!', 'success');
+    } catch (error) {
+        addNotification('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.', 'error');
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  // Helper to fill mock data for easier testing
+  const fillMockData = (role: UserRole) => {
+      setSelectedRole(role);
+      if (role === 'TEACHER') {
+          setEmail('lan.gv@schools.edu');
+          setPassword('password123');
+      } else {
+          setEmail('nam.hs@schools.edu');
+          setPassword('password123');
+      }
   };
 
   return (
@@ -69,7 +81,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
 
             <div className="grid grid-cols-2 gap-4 mb-8">
                 <button 
-                    onClick={() => setSelectedRole('STUDENT')}
+                    type="button"
+                    onClick={() => fillMockData('STUDENT')}
                     className={`p-4 rounded-xl border-2 flex flex-col items-center gap-3 transition-all ${
                         selectedRole === 'STUDENT' 
                         ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
@@ -80,7 +93,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
                     <span className="font-bold">Học sinh</span>
                 </button>
                 <button 
-                    onClick={() => setSelectedRole('TEACHER')}
+                    type="button"
+                    onClick={() => fillMockData('TEACHER')}
                     className={`p-4 rounded-xl border-2 flex flex-col items-center gap-3 transition-all ${
                         selectedRole === 'TEACHER' 
                         ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
@@ -92,12 +106,15 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
                 </button>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email / Tên đăng nhập</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                     <input 
                         type="email" 
-                        defaultValue={selectedRole === 'TEACHER' ? 'lan.gv@schools.edu' : 'nam.hs@schools.edu'}
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="example@schools.edu"
                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                     />
                 </div>
@@ -105,16 +122,20 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mật khẩu</label>
                     <input 
                         type="password" 
-                        defaultValue="password123"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                     />
                 </div>
 
                 <button 
                     type="submit"
-                    className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 mt-4"
+                    disabled={isSubmitting}
+                    className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                    Đăng nhập ngay <ArrowRight size={18} />
+                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <>Đăng nhập ngay <ArrowRight size={18} /></>}
                 </button>
             </form>
 

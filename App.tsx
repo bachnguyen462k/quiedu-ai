@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
@@ -14,11 +14,12 @@ import AiTextbookCreator from './components/AiTextbookCreator';
 import SettingsView from './components/SettingsView';
 import UserTour from './components/UserTour';
 import { StudySet, ViewState, User, AiGenerationRecord, Review } from './types';
-import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Loader2 } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 
-// Mock data generation function
+// Mock data generation function (Giữ nguyên mock data cho content)
 const generateMockSets = (count: number): StudySet[] => {
     const subjects = ['Toán', 'Lý', 'Hóa', 'Sinh', 'Sử', 'Địa', 'Anh', 'GDCD'];
     const authors = ['Cô Thu Lan', 'Thầy Hùng', 'Cô Mai', 'Bạn'];
@@ -42,7 +43,7 @@ const generateMockSets = (count: number): StudySet[] => {
         subject: subjects[i % subjects.length],
         level: 'Lớp 12',
         school: 'THPT Chu Văn An',
-        isFavorite: Math.random() > 0.8 // Randomly mark some as favorites
+        isFavorite: Math.random() > 0.8 
     }));
 };
 
@@ -118,41 +119,44 @@ const BASE_SETS: StudySet[] = [
   }
 ];
 
-// Combine base sets with generated sets for testing infinity scroll
 const INITIAL_SETS = [...BASE_SETS, ...generateMockSets(50)];
 
-// Inner App Component to access Context
+// Inner App Component
 const AppContent: React.FC = () => {
   const [view, setView] = useState<ViewState>('LANDING'); 
   const [sets, setSets] = useState<StudySet[]>(INITIAL_SETS);
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [aiHistory, setAiHistory] = useState<AiGenerationRecord[]>([]);
   const [runTour, setRunTour] = useState(false);
   
   const { addNotification } = useApp();
+  const { user, isAuthenticated, isLoading, logout, updateUser } = useAuth();
 
   const activeSet = sets.find(s => s.id === activeSetId);
 
-  const handleLogin = (user: User) => {
-    setCurrentUser(user);
-    setView('DASHBOARD');
-    addNotification(`Chào mừng ${user.name} đã quay trở lại!`, 'success');
-  };
+  // Sync Auth State with View
+  useEffect(() => {
+      if (!isLoading) {
+          if (isAuthenticated && (view === 'LANDING' || view === 'LOGIN')) {
+              setView('DASHBOARD');
+          } else if (!isAuthenticated && view !== 'LANDING' && view !== 'LOGIN') {
+              setView('LANDING');
+          }
+      }
+  }, [isAuthenticated, isLoading, view]);
 
   const handleLogout = () => {
-    setCurrentUser(null);
-    setView('LANDING');
+    logout();
     addNotification('Đã đăng xuất thành công.', 'info');
   };
 
   const handleUpdateUser = (updatedUser: User) => {
-    setCurrentUser(updatedUser);
+    updateUser(updatedUser);
     addNotification('Cập nhật thông tin thành công!', 'success');
   };
 
   const handleSaveSet = (newSet: StudySet) => {
-    const setWithAuthor = { ...newSet, author: currentUser?.name || 'Bạn' };
+    const setWithAuthor = { ...newSet, author: user?.name || 'Bạn' };
     setSets([setWithAuthor, ...sets]);
     setView('DASHBOARD');
     addNotification('Đã tạo học phần mới thành công!', 'success');
@@ -208,6 +212,14 @@ const AppContent: React.FC = () => {
       }
   };
 
+  if (isLoading) {
+      return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+              <Loader2 className="animate-spin text-indigo-600" size={48} />
+          </div>
+      );
+  }
+
   // Render Landing Page
   if (view === 'LANDING') {
     return <LandingPage onStart={() => setView('LOGIN')} />;
@@ -215,12 +227,12 @@ const AppContent: React.FC = () => {
 
   // Render Login Page
   if (view === 'LOGIN') {
-    return <Login onLogin={handleLogin} onBack={() => setView('LANDING')} />;
+    return <Login onBack={() => setView('LANDING')} />;
   }
 
   // Ensure user is logged in for other views
-  if (!currentUser) {
-      setView('LOGIN');
+  if (!user) {
+      // This is handled by the useEffect above, but just in case
       return null;
   }
 
@@ -228,7 +240,6 @@ const AppContent: React.FC = () => {
   const renderMainContent = () => {
     switch (view) {
       case 'DASHBOARD':
-        // Dashboard displays ALL sets (Global/Community View)
         return (
           <Dashboard 
             sets={sets} 
@@ -239,13 +250,11 @@ const AppContent: React.FC = () => {
           />
         );
       case 'LIBRARY':
-        // Library view now needs all sets to filter by "Favorites" which might include others' sets.
-        // We pass 'currentUser' so Dashboard can filter "My Sets".
         return (
           <Dashboard 
             sets={sets} 
             uploads={aiHistory}
-            currentUser={currentUser}
+            currentUser={user}
             onCreateNew={() => setView('CREATE')}
             onSelectSet={handleSelectSet}
             onSelectUpload={handleSelectHistory}
@@ -255,7 +264,7 @@ const AppContent: React.FC = () => {
         );
       
       case 'CLASSES':
-        return <ClassManagement currentUser={currentUser} sets={sets} />;
+        return <ClassManagement currentUser={user} sets={sets} />;
 
       case 'CREATE':
         return (
@@ -281,7 +290,7 @@ const AppContent: React.FC = () => {
       case 'SETTINGS':
         return (
             <SettingsView 
-                currentUser={currentUser}
+                currentUser={user}
                 onUpdateUser={handleUpdateUser}
             />
         );
@@ -332,7 +341,7 @@ const AppContent: React.FC = () => {
              ) : (
                 <QuizView 
                     set={activeSet} 
-                    currentUser={currentUser}
+                    currentUser={user}
                     onBack={() => setView('SET_DETAILS')} 
                     onAddReview={handleAddReview}
                 />
@@ -349,7 +358,7 @@ const AppContent: React.FC = () => {
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300 overflow-hidden">
       <Sidebar 
         currentView={view} 
-        currentUser={currentUser}
+        currentUser={user}
         onChangeView={handleNavigation}
         onLogout={handleLogout}
         onStartTour={() => setRunTour(true)}
@@ -367,11 +376,13 @@ const AppContent: React.FC = () => {
       </div>
       
       {/* User Guide Tour */}
-      <UserTour 
-        currentUser={currentUser} 
-        run={runTour}
-        onStop={() => setRunTour(false)}
-      />
+      {user && (
+        <UserTour 
+            currentUser={user} 
+            run={runTour}
+            onStop={() => setRunTour(false)}
+        />
+      )}
     </div>
   );
 };
@@ -410,8 +421,10 @@ const NotificationContainer = () => {
 const App: React.FC = () => {
   return (
     <AppProvider>
-      <AppContent />
-      <NotificationContainer />
+      <AuthProvider>
+        <AppContent />
+        <NotificationContainer />
+      </AuthProvider>
     </AppProvider>
   );
 };

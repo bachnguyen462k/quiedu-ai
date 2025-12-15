@@ -70,7 +70,7 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
+# .env (Commented out to allow tracking in git)
 .env.test
 .env.production
 .env.local

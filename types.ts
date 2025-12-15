@@ -3,9 +3,9 @@ export interface Flashcard {
   id: string;
   term: string;
   definition: string;
-  options?: string[]; // Optional: Store specific distractors for quiz mode
-  explanation?: string; // New: Explanation for the correct answer
-  relatedLink?: string; // New: Link to external article/resource
+  options?: string[]; 
+  explanation?: string; 
+  relatedLink?: string; 
 }
 
 export interface Review {
@@ -13,7 +13,7 @@ export interface Review {
   userId: string;
   userName: string;
   userAvatar?: string;
-  rating: number; // 1 to 5
+  rating: number; 
   comment: string;
   createdAt: number;
 }
@@ -27,18 +27,17 @@ export interface StudySet {
   author: string;
   createdAt: number;
   plays?: number;
-  averageScore?: number; // Academic score (percentage)
+  averageScore?: number; 
   cards: Flashcard[];
-  reviews?: Review[]; // User ratings
-  isFavorite?: boolean; // New: Track if the current user favorited this set
+  reviews?: Review[]; 
+  isFavorite?: boolean; 
   
-  // New Metadata Fields
   privacy: PrivacyStatus;
-  level?: string;      // e.g., "Lớp 12", "Đại học"
-  school?: string;     // e.g., "THPT Chuyên...", "Đại học Bách Khoa"
-  major?: string;      // e.g., "Công nghệ thông tin"
-  subject?: string;    // e.g., "Toán học", "Tiếng Anh"
-  topic?: string;      // e.g., "Hàm số", "Thì hiện tại đơn"
+  level?: string;      
+  school?: string;     
+  major?: string;      
+  subject?: string;    
+  topic?: string;      
 }
 
 export interface QuizQuestion {
@@ -46,7 +45,7 @@ export interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswer: string;
-  relatedLink?: string; // New: Link to external article/resource
+  relatedLink?: string; 
 }
 
 export type ViewState = 'LANDING' | 'LOGIN' | 'DASHBOARD' | 'LIBRARY' | 'CLASSES' | 'CREATE' | 'SET_DETAILS' | 'STUDY' | 'QUIZ' | 'AI_CREATOR' | 'SETTINGS';
@@ -68,6 +67,17 @@ export interface User {
   avatar?: string;
 }
 
+export interface LoginCredentials {
+  email: string;
+  password?: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  accessToken: string;
+  refreshToken?: string;
+}
+
 export interface StudentQuizDetail {
   questionTerm: string;
   userAnswer: string;
@@ -81,12 +91,11 @@ export interface StudentResult {
   score: number;
   totalQuestions: number;
   completedAt: number;
-  details?: StudentQuizDetail[]; // Optional: for viewing detailed answers
+  details?: StudentQuizDetail[]; 
   
-  // File upload features
-  submissionUrl?: string; // Base64 string of the uploaded file/image
+  submissionUrl?: string; 
   submissionType?: 'image' | 'pdf';
-  aiFeedback?: string; // AI analysis of the submission
+  aiFeedback?: string; 
 }
 
 export interface ClassAssignment {
@@ -96,7 +105,6 @@ export interface ClassAssignment {
   assignedAt: number;
   results: StudentResult[];
   
-  // Teacher attachment
   attachmentUrl?: string;
   attachmentName?: string;
 }
@@ -118,37 +126,34 @@ export interface AIQuestion {
   type: 'QUIZ' | 'ESSAY';
   difficulty: QuestionDifficulty;
   question: string;
-  // For Quiz
   options?: string[];
   correctAnswer?: string;
-  // For Essay & Teacher Guide
-  solutionGuide: string; // Step-by-step guide or final answer
-  knowledgeApplied: string; // Specific formula or concept used (e.g. "Hằng đẳng thức số 1")
+  solutionGuide: string; 
+  knowledgeApplied: string; 
 }
 
 export interface AITopic {
-  topicName: string; // e.g., "Bài 1: Căn bậc hai"
+  topicName: string; 
   summary: string;
-  keyPoints: string[]; // Bullet points of theory
-  formulas: string[]; // Mathematical formulas or key rules identified
-  questions: AIQuestion[]; // Sorted from Easy to Hard
+  keyPoints: string[]; 
+  formulas: string[]; 
+  questions: AIQuestion[]; 
 }
 
 export interface TextbookAnalysisResult {
-  subject: string; // Detected subject
-  grade: string;   // Detected grade level
-  overallSummary: string; // Summary of the whole file
-  topics: AITopic[]; // List of extracted lessons/topics
+  subject: string; 
+  grade: string;   
+  overallSummary: string; 
+  topics: AITopic[]; 
 }
 
 export interface AiGenerationRecord {
   id: string;
   createdAt: number;
-  fileName: string; // Name of the uploaded file
+  fileName: string; 
   result: TextbookAnalysisResult;
 }
 
-// --- New Types for Notifications ---
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 
 export interface Notification {
