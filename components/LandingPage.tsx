@@ -3,9 +3,10 @@ import { BrainCircuit, BookOpen, GraduationCap, Zap, ArrowRight, Users } from 'l
 
 interface LandingPageProps {
   onStart: () => void;
+  onRegister: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Navigation */}
@@ -21,12 +22,20 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
             <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">Dành cho Giáo viên</a>
             <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">Trường học</a>
         </div>
-        <button 
-          onClick={onStart}
-          className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 px-5 py-2 rounded-full font-bold transition-colors"
-        >
-          Đăng nhập
-        </button>
+        <div className="flex items-center gap-3">
+            <button 
+              onClick={onStart}
+              className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-white font-medium transition-colors"
+            >
+              Đăng nhập
+            </button>
+            <button 
+              onClick={onRegister}
+              className="bg-indigo-600 text-white px-5 py-2 rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 dark:shadow-none"
+            >
+              Đăng ký
+            </button>
+        </div>
       </nav>
 
       {/* Hero Section */}

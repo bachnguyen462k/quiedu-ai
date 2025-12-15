@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -128,6 +127,7 @@ const AppContent: React.FC = () => {
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
   const [aiHistory, setAiHistory] = useState<AiGenerationRecord[]>([]);
   const [runTour, setRunTour] = useState(false);
+  const [initialAuthMode, setInitialAuthMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   
   const { addNotification } = useApp();
   const { user, isAuthenticated, isLoading, logout, updateUser } = useAuth();
@@ -222,12 +222,15 @@ const AppContent: React.FC = () => {
 
   // Render Landing Page
   if (view === 'LANDING') {
-    return <LandingPage onStart={() => setView('LOGIN')} />;
+    return <LandingPage 
+        onStart={() => { setInitialAuthMode('LOGIN'); setView('LOGIN'); }} 
+        onRegister={() => { setInitialAuthMode('REGISTER'); setView('LOGIN'); }} 
+    />;
   }
 
   // Render Login Page
   if (view === 'LOGIN') {
-    return <Login onBack={() => setView('LANDING')} />;
+    return <Login onBack={() => setView('LANDING')} initialMode={initialAuthMode} />;
   }
 
   // Ensure user is logged in for other views

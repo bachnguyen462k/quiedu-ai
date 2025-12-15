@@ -8,8 +8,14 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
+  register: (userData: any) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
+  // Recovery methods
+  requestPasswordReset: (email: string) => Promise<boolean>;
+  verifyResetCode: (email: string, code: string) => Promise<boolean>;
+  confirmPasswordReset: (email: string, newPassword: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,18 +31,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const savedUser = localStorage.getItem('user');
 
       if (token && savedUser) {
-        // Cách 1: Tin tưởng localStorage (nhanh nhưng kém bảo mật nếu token hết hạn mà client không biết)
         setUser(JSON.parse(savedUser));
-        
-        // Cách 2: Gọi API /me để verify token (an toàn hơn)
-        try {
-           // Uncomment dòng dưới khi có API thực tế
-           // const userData = await authService.getCurrentUser();
-           // setUser(userData);
-        } catch (error) {
-           console.error("Token invalid", error);
-           logout();
-        }
+        // Optional: Call verify token API here
       }
       setIsLoading(false);
     };
@@ -47,21 +43,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
-      // 1. Gọi API login (Sử dụng mockLogin nếu chưa có BE, đổi thành login để gọi thật)
-      // const data = await authService.login(credentials); 
-      const data = await authService.mockLogin(credentials); // Tạm thời dùng Mock để UI hoạt động
+      // Sử dụng mockLogin cho demo
+      const data = await authService.mockLogin(credentials); 
 
-      // 2. Lưu token & user info
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('user', JSON.stringify(data.user));
-      
-      // 3. Cập nhật state
       setUser(data.user);
     } catch (error) {
       console.error("Login failed", error);
       throw error;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const register = async (userData: any) => {
+      setIsLoading(true);
+      try {
+          const data = await authService.register(userData);
+          localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          setUser(data.user);
+      } catch (error) {
+          console.error("Register failed", error);
+          throw error;
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
+  const loginWithGoogle = async () => {
+    setIsLoading(true);
+    try {
+        const data = await authService.mockGoogleLogin();
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setUser(data.user);
+    } catch (error) {
+        console.error("Google Login failed", error);
+        throw error;
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -76,8 +98,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
+  // --- Password Recovery Wrappers ---
+  const requestPasswordReset = async (email: string) => {
+      return await authService.sendVerificationCode(email);
+  };
+
+  const verifyResetCode = async (email: string, code: string) => {
+      return await authService.verifyCode(email, code);
+  };
+
+  const confirmPasswordReset = async (email: string, newPassword: string) => {
+      return await authService.resetPassword(email, newPassword);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ 
+        user, 
+        isAuthenticated: !!user, 
+        isLoading, 
+        login, 
+        register,
+        loginWithGoogle, 
+        logout, 
+        updateUser,
+        requestPasswordReset,
+        verifyResetCode,
+        confirmPasswordReset
+    }}>
       {children}
     </AuthContext.Provider>
   );

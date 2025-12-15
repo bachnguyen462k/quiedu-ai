@@ -1,37 +1,151 @@
 import React, { useState } from 'react';
 import { UserRole } from '../types';
-import { BrainCircuit, GraduationCap, School, ArrowRight, Loader2 } from 'lucide-react';
+import { BrainCircuit, GraduationCap, School, ArrowRight, Loader2, Mail, Lock, User, CheckCircle, ChevronLeft, KeyRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 
 interface LoginProps {
   onBack: () => void;
+  initialMode?: 'LOGIN' | 'REGISTER';
 }
 
-const Login: React.FC<LoginProps> = ({ onBack }) => {
-  const { login } = useAuth();
+type AuthMode = 'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD';
+type ForgotStep = 'EMAIL' | 'OTP' | 'NEW_PASSWORD';
+
+const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
+  const { login, register, loginWithGoogle, requestPasswordReset, verifyResetCode, confirmPasswordReset } = useAuth();
   const { addNotification } = useApp();
   
+  // Global State
+  const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+
+  // Login & Register Form State
   const [selectedRole, setSelectedRole] = useState<UserRole>('STUDENT');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Register specific
+  const [fullName, setFullName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Forgot Password Flow State
+  const [forgotStep, setForgotStep] = useState<ForgotStep>('EMAIL');
+  const [resetEmail, setResetEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newResetPassword, setNewResetPassword] = useState('');
+  const [confirmResetPassword, setConfirmResetPassword] = useState('');
+
+  // --- Handlers ---
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
+    setIsLoading(true);
     try {
         await login({ email, password });
         addNotification('Đăng nhập thành công!', 'success');
     } catch (error) {
         addNotification('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.', 'error');
     } finally {
-        setIsSubmitting(false);
+        setIsLoading(false);
     }
   };
 
-  // Helper to fill mock data for easier testing
+  const handleRegister = async (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      if (password !== confirmPassword) {
+          addNotification('Mật khẩu xác nhận không khớp.', 'warning');
+          return;
+      }
+
+      setIsLoading(true);
+      try {
+          await register({
+              email,
+              password,
+              name: fullName,
+              role: selectedRole
+          });
+          addNotification('Đăng ký tài khoản thành công!', 'success');
+      } catch (error) {
+          addNotification('Đăng ký thất bại. Vui lòng thử lại.', 'error');
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
+  const handleGoogleLogin = async () => {
+      setIsGoogleSubmitting(true);
+      try {
+          await loginWithGoogle();
+          addNotification('Đăng nhập bằng Google thành công!', 'success');
+      } catch (error) {
+          addNotification('Có lỗi xảy ra khi đăng nhập bằng Google.', 'error');
+      } finally {
+          setIsGoogleSubmitting(false);
+      }
+  };
+
+  // --- Forgot Password Handlers ---
+
+  const handleSendResetEmail = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!resetEmail.trim()) return;
+      
+      setIsLoading(true);
+      try {
+          await requestPasswordReset(resetEmail);
+          addNotification(`Mã xác thực đã được gửi tới ${resetEmail} (Check Console)`, 'success');
+          setForgotStep('OTP');
+      } catch (error) {
+          addNotification('Không thể gửi email. Vui lòng thử lại.', 'error');
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!otpCode.trim()) return;
+
+      setIsLoading(true);
+      try {
+          await verifyResetCode(resetEmail, otpCode);
+          addNotification('Xác thực thành công!', 'success');
+          setForgotStep('NEW_PASSWORD');
+      } catch (error) {
+          addNotification('Mã xác thực không đúng.', 'error');
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (newResetPassword !== confirmResetPassword) {
+          addNotification('Mật khẩu không khớp.', 'warning');
+          return;
+      }
+
+      setIsLoading(true);
+      try {
+          await confirmPasswordReset(resetEmail, newResetPassword);
+          addNotification('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
+          setAuthMode('LOGIN');
+          // Reset states
+          setResetEmail('');
+          setOtpCode('');
+          setForgotStep('EMAIL');
+      } catch (error) {
+          addNotification('Lỗi khi đổi mật khẩu.', 'error');
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
+  // Helper to fill mock data
   const fillMockData = (role: UserRole) => {
       setSelectedRole(role);
       if (role === 'TEACHER') {
@@ -41,6 +155,292 @@ const Login: React.FC<LoginProps> = ({ onBack }) => {
           setEmail('nam.hs@schools.edu');
           setPassword('password123');
       }
+  };
+
+  // --- RENDERERS ---
+
+  const renderLogin = () => (
+      <>
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Đăng nhập</h3>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">Chào mừng bạn quay trở lại với QuizEdu</p>
+
+        {/* Role Selection Mock Helper (Hidden in Real App or kept for testing) */}
+        <div className="flex gap-2 mb-6">
+             <button onClick={() => fillMockData('STUDENT')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">Mock HS</button>
+             <button onClick={() => fillMockData('TEACHER')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">Mock GV</button>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                        type="email" 
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@school.edu.vn"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    />
+                </div>
+            </div>
+            <div>
+                <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Mật khẩu</label>
+                    <button 
+                        type="button"
+                        onClick={() => { setAuthMode('FORGOT_PASSWORD'); setForgotStep('EMAIL'); setResetEmail(''); }}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                    >
+                        Quên mật khẩu?
+                    </button>
+                </div>
+                <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                        type="password" 
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    />
+                </div>
+            </div>
+
+            <button 
+                type="submit"
+                disabled={isLoading || isGoogleSubmitting}
+                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>Đăng nhập <ArrowRight size={18} /></>}
+            </button>
+        </form>
+      </>
+  );
+
+  const renderRegister = () => (
+      <>
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Tạo tài khoản</h3>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">Tham gia cộng đồng học tập thông minh ngay hôm nay</p>
+
+        {/* Role Selection */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+            <button 
+                type="button"
+                onClick={() => setSelectedRole('STUDENT')}
+                className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
+                    selectedRole === 'STUDENT' 
+                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-500 text-gray-500 dark:text-gray-400'
+                }`}
+            >
+                <GraduationCap size={24} />
+                <span className="font-bold text-sm">Học sinh</span>
+            </button>
+            <button 
+                type="button"
+                onClick={() => setSelectedRole('TEACHER')}
+                className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
+                    selectedRole === 'TEACHER' 
+                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
+                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-500 text-gray-500 dark:text-gray-400'
+                }`}
+            >
+                <School size={24} />
+                <span className="font-bold text-sm">Giáo viên</span>
+            </button>
+        </div>
+
+        <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Họ và tên</label>
+                <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                        type="text" 
+                        required
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Nguyễn Văn A"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    />
+                </div>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                        type="email" 
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@school.edu.vn"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    />
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mật khẩu</label>
+                    <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input 
+                            type="password" 
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••"
+                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Xác nhận</label>
+                    <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input 
+                            type="password" 
+                            required
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="••••••"
+                            className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <button 
+                type="submit"
+                disabled={isLoading || isGoogleSubmitting}
+                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>Đăng ký ngay <ArrowRight size={18} /></>}
+            </button>
+        </form>
+      </>
+  );
+
+  const renderForgotPassword = () => {
+      return (
+          <div className="space-y-6 animate-fade-in">
+              <button 
+                  onClick={() => setAuthMode('LOGIN')}
+                  className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors mb-2"
+              >
+                  <ChevronLeft size={16} /> Quay lại đăng nhập
+              </button>
+
+              <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      {forgotStep === 'EMAIL' && 'Khôi phục mật khẩu'}
+                      {forgotStep === 'OTP' && 'Xác thực Email'}
+                      {forgotStep === 'NEW_PASSWORD' && 'Đặt lại mật khẩu'}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                      {forgotStep === 'EMAIL' && 'Nhập email đã đăng ký để nhận mã xác thực.'}
+                      {forgotStep === 'OTP' && `Chúng tôi đã gửi mã đến ${resetEmail}. Nhập mã gồm 6 chữ số.`}
+                      {forgotStep === 'NEW_PASSWORD' && 'Tạo mật khẩu mới cho tài khoản của bạn.'}
+                  </p>
+              </div>
+
+              {/* Step 1: Input Email */}
+              {forgotStep === 'EMAIL' && (
+                  <form onSubmit={handleSendResetEmail} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                type="email" 
+                                required
+                                value={resetEmail}
+                                onChange={(e) => setResetEmail(e.target.value)}
+                                placeholder="name@example.com"
+                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                            />
+                        </div>
+                      </div>
+                      <button type="submit" disabled={isLoading} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                         {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Gửi mã xác thực'}
+                      </button>
+                  </form>
+              )}
+
+              {/* Step 2: Input OTP */}
+              {forgotStep === 'OTP' && (
+                  <form onSubmit={handleVerifyOtp} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mã xác thực (OTP)</label>
+                        <div className="relative">
+                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                type="text" 
+                                required
+                                maxLength={6}
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value)}
+                                placeholder="123456"
+                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all tracking-widest font-bold text-lg"
+                            />
+                        </div>
+                      </div>
+                      <button type="submit" disabled={isLoading} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                         {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Xác nhận'}
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setForgotStep('EMAIL')}
+                        className="w-full text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                      >
+                          Gửi lại mã?
+                      </button>
+                  </form>
+              )}
+
+              {/* Step 3: New Password */}
+              {forgotStep === 'NEW_PASSWORD' && (
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mật khẩu mới</label>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                type="password" 
+                                required
+                                value={newResetPassword}
+                                onChange={(e) => setNewResetPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                            />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Xác nhận mật khẩu</label>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input 
+                                type="password" 
+                                required
+                                value={confirmResetPassword}
+                                onChange={(e) => setConfirmResetPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                            />
+                        </div>
+                      </div>
+                      <button type="submit" disabled={isLoading} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                         {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Đổi mật khẩu'}
+                      </button>
+                  </form>
+              )}
+          </div>
+      );
   };
 
   return (
@@ -56,8 +456,17 @@ const Login: React.FC<LoginProps> = ({ onBack }) => {
                 </div>
                 <span className="text-2xl font-bold tracking-tight">QuizEdu</span>
               </div>
-              <h2 className="text-4xl font-bold mb-4">Chào mừng trở lại!</h2>
-              <p className="text-indigo-100 text-lg">Nền tảng học tập và kiểm tra trực tuyến thông minh dành cho nhà trường.</p>
+              <h2 className="text-4xl font-bold mb-4">
+                  {authMode === 'LOGIN' ? 'Chào mừng trở lại!' : authMode === 'REGISTER' ? 'Bắt đầu hành trình!' : 'Khôi phục tài khoản'}
+              </h2>
+              <p className="text-indigo-100 text-lg">
+                  {authMode === 'LOGIN' 
+                    ? 'Nền tảng học tập và kiểm tra trực tuyến thông minh dành cho nhà trường.'
+                    : authMode === 'REGISTER'
+                    ? 'Tạo tài khoản miễn phí để truy cập kho tài liệu và công cụ AI hỗ trợ học tập.'
+                    : 'Đừng lo lắng, chúng tôi sẽ giúp bạn lấy lại quyền truy cập chỉ trong vài bước.'
+                  }
+              </p>
            </div>
            
            <div className="relative z-10 mt-12">
@@ -74,72 +483,60 @@ const Login: React.FC<LoginProps> = ({ onBack }) => {
            <div className="absolute top-12 -left-12 w-48 h-48 bg-purple-500 rounded-full opacity-30 blur-2xl"></div>
         </div>
 
-        {/* Right Side: Form */}
-        <div className="md:w-1/2 p-12 flex flex-col justify-center">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Đăng nhập</h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-8">Chọn vai trò của bạn để tiếp tục</p>
+        {/* Right Side: Dynamic Form */}
+        <div className="md:w-1/2 p-12 flex flex-col justify-center animate-slide-in">
+            
+            {authMode === 'LOGIN' && renderLogin()}
+            {authMode === 'REGISTER' && renderRegister()}
+            {authMode === 'FORGOT_PASSWORD' && renderForgotPassword()}
 
-            <div className="grid grid-cols-2 gap-4 mb-8">
-                <button 
-                    type="button"
-                    onClick={() => fillMockData('STUDENT')}
-                    className={`p-4 rounded-xl border-2 flex flex-col items-center gap-3 transition-all ${
-                        selectedRole === 'STUDENT' 
-                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
-                        : 'border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-500 text-gray-500 dark:text-gray-400'
-                    }`}
-                >
-                    <GraduationCap size={32} />
-                    <span className="font-bold">Học sinh</span>
-                </button>
-                <button 
-                    type="button"
-                    onClick={() => fillMockData('TEACHER')}
-                    className={`p-4 rounded-xl border-2 flex flex-col items-center gap-3 transition-all ${
-                        selectedRole === 'TEACHER' 
-                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
-                        : 'border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-500 text-gray-500 dark:text-gray-400'
-                    }`}
-                >
-                    <School size={32} />
-                    <span className="font-bold">Giáo viên</span>
-                </button>
-            </div>
+            {/* Divider (Only show for Login/Register) */}
+            {authMode !== 'FORGOT_PASSWORD' && (
+                <>
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Hoặc tiếp tục với</span>
+                        </div>
+                    </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                    <input 
-                        type="email" 
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="example@schools.edu"
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mật khẩu</label>
-                    <input 
-                        type="password" 
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                    />
-                </div>
+                    {/* Google Login Button */}
+                    <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        disabled={isLoading || isGoogleSubmitting}
+                        className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-white py-3 rounded-lg font-bold hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {isGoogleSubmitting ? (
+                            <Loader2 className="animate-spin" size={20} />
+                        ) : (
+                            <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                            </svg>
+                        )}
+                        <span>{authMode === 'LOGIN' ? 'Đăng nhập' : 'Đăng ký'} bằng Google</span>
+                    </button>
+                    
+                    <div className="mt-6 text-center text-sm">
+                        {authMode === 'LOGIN' ? (
+                            <p className="text-gray-500 dark:text-gray-400">
+                                Chưa có tài khoản? <button onClick={() => setAuthMode('REGISTER')} className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Đăng ký ngay</button>
+                            </p>
+                        ) : (
+                            <p className="text-gray-500 dark:text-gray-400">
+                                Đã có tài khoản? <button onClick={() => setAuthMode('LOGIN')} className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Đăng nhập</button>
+                            </p>
+                        )}
+                    </div>
+                </>
+            )}
 
-                <button 
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <>Đăng nhập ngay <ArrowRight size={18} /></>}
-                </button>
-            </form>
-
-            <button onClick={onBack} className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">
+            <button onClick={onBack} className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 block w-full">
                 Quay lại trang chủ
             </button>
         </div>
