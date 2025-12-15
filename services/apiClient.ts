@@ -3,7 +3,7 @@ import i18n from '../i18n';
 
 // Lấy URL API từ biến môi trường
 const metaEnv = (import.meta as any).env || {};
-const API_URL = metaEnv.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = metaEnv.VITE_API_URL || 'http://localhost:8081';
 
 const apiClient = axios.create({
   baseURL: API_URL,
