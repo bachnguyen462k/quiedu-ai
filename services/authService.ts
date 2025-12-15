@@ -1,21 +1,19 @@
 import apiClient from './apiClient';
-import { User, LoginCredentials, AuthResponse } from '../types';
+import { User, LoginCredentials, AuthResponse, UserRole } from '../types';
 
 export const authService = {
   // Đăng nhập thực tế với API
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-        // Gọi API login: POST /identity/auth/token
+        // 1. Gọi API login để lấy Token
         const response = await apiClient.post('/identity/auth/token', {
-            username: credentials.email, // Form dùng biến 'email' nhưng gửi lên là 'username'
+            username: credentials.email,
             password: credentials.password
         });
 
         const responseData = response.data;
 
-        // Kiểm tra logic code thành công (1000)
         if (responseData.code !== 1000) {
-            // Xử lý các mã lỗi cụ thể nếu server trả về HTTP 200 OK
             if (responseData.code === 1005) {
                 throw new Error("Tài khoản không tồn tại");
             }
@@ -29,25 +27,23 @@ export const authService = {
             throw new Error("Xác thực thất bại hoặc không có token");
         }
 
-        // Vì API login hiện tại chỉ trả về token, ta tạo thông tin user giả định từ username
-        // Trong thực tế, bạn sẽ dùng token này để gọi API /users/myInfo lấy thông tin chi tiết
-        const mockUserFromLogin: User = {
-            id: 'user-' + credentials.email,
-            name: credentials.email, // Dùng username làm tên
-            email: credentials.email.includes('@') ? credentials.email : `${credentials.email}@local.dev`,
-            role: 'TEACHER', // Mặc định quyền TEACHER để demo full tính năng
-            avatar: `https://ui-avatars.com/api/?name=${credentials.email}&background=random&color=fff`
-        };
+        // Lưu tạm token để apiClient có thể dùng nó cho request tiếp theo
+        localStorage.setItem('accessToken', token);
+
+        // 2. Gọi API lấy thông tin User chi tiết
+        const user = await authService.getCurrentUser();
 
         return {
-            user: mockUserFromLogin,
+            user: user,
             accessToken: token,
-            refreshToken: '' // API này chưa trả về refresh token
+            refreshToken: '' 
         };
     } catch (error: any) {
         console.error("Login API Error:", error);
         
-        // Xử lý lỗi trả về từ server (HTTP 4xx, 5xx)
+        // Xóa token nếu quá trình đăng nhập bị lỗi giữa chừng
+        localStorage.removeItem('accessToken');
+
         if (error.response?.data) {
             const errorData = error.response.data;
             if (errorData.code === 1005) {
@@ -55,8 +51,6 @@ export const authService = {
             }
             throw errorData.message || "Lỗi hệ thống";
         }
-
-        // Xử lý lỗi ném ra thủ công trong khối try
         throw error.message || "Lỗi kết nối máy chủ";
     }
   },
@@ -67,11 +61,10 @@ export const authService = {
           await apiClient.post('/identity/auth/logout', { token });
       } catch (error) {
           console.error("Logout API Error:", error);
-          // Không throw lỗi ở đây để luồng logout ở client vẫn tiếp tục (xóa token ở localStorage)
       }
   },
 
-  // Đăng ký (Mock)
+  // Đăng ký (Mock - giữ nguyên để không ảnh hưởng luồng khác)
   register: async (userData: any): Promise<AuthResponse> => {
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -90,14 +83,42 @@ export const authService = {
     });
   },
 
-  // Lấy thông tin user hiện tại (Sử dụng token đã lưu)
+  // Lấy thông tin user hiện tại từ API /identity/users/my-info
   getCurrentUser: async (): Promise<User> => {
-    // API lấy thông tin user của bạn, ví dụ: /identity/users/myInfo
-    const response = await apiClient.get<User>('/identity/users/myInfo');
-    return response.data;
+    try {
+        const response = await apiClient.get('/identity/users/my-info');
+        const result = response.data.result;
+
+        // Ánh xạ Role từ Backend sang Frontend
+        // Backend trả về mảng roles: [{name: "ADMIN", ...}]
+        // Frontend cần: "TEACHER" hoặc "STUDENT"
+        let role: UserRole = 'STUDENT';
+        if (result.roles && result.roles.length > 0) {
+            const roleName = result.roles[0].name;
+            if (roleName === 'ADMIN' || roleName === 'TEACHER') {
+                role = 'TEACHER';
+            }
+        }
+
+        // Tạo tên hiển thị (ưu tiên Full Name, nếu null thì dùng Username)
+        const displayName = (result.firstName || result.lastName) 
+            ? `${result.lastName || ''} ${result.firstName || ''}`.trim() 
+            : result.username;
+
+        return {
+            id: result.id,
+            name: displayName,
+            email: result.username, // Dùng username làm định danh email
+            role: role,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`
+        };
+    } catch (error) {
+        console.error("Get User Info Error:", error);
+        throw error;
+    }
   },
 
-  // Các hàm Mock khác giữ nguyên để app không bị lỗi
+  // Các hàm Mock khác giữ nguyên
   mockGoogleLogin: async (): Promise<AuthResponse> => {
     return new Promise((resolve) => {
         setTimeout(() => {

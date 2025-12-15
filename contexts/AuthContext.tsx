@@ -28,10 +28,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('accessToken');
-      const savedUser = localStorage.getItem('user');
-
-      if (token && savedUser) {
-        setUser(JSON.parse(savedUser));
+      
+      if (token) {
+        try {
+            // Gọi API để lấy thông tin user mới nhất thay vì dùng localStorage cũ
+            const userData = await authService.getCurrentUser();
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData)); // Cập nhật cache local
+        } catch (error) {
+            console.error("Session expired or invalid", error);
+            // Nếu token hết hạn hoặc lỗi, xóa session
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            setUser(null);
+        }
       }
       setIsLoading(false);
     };
@@ -42,7 +52,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
-      // Sử dụng hàm login thực tế thay vì mock
       const data = await authService.login(credentials); 
 
       localStorage.setItem('accessToken', data.accessToken);
@@ -90,13 +99,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
         const token = localStorage.getItem('accessToken');
         if (token) {
-            // Gọi API logout để hủy token trên server
             await authService.logout(token);
         }
     } catch (error) {
         console.error("Logout server error", error);
     } finally {
-        // Luôn luôn xóa dữ liệu local dù API có lỗi hay không
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
         setUser(null);
