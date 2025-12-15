@@ -1,7 +1,7 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User } from '../types';
 import { Plus, Search, ArrowUpRight, Book, GraduationCap, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface DashboardProps {
   sets: StudySet[];
@@ -19,6 +19,7 @@ const GRADES = ['Tất cả', 'Lớp 10', 'Lớp 11', 'Lớp 12', 'Đại học'
 const ITEMS_PER_PAGE = 10;
 
 const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCreateNew, onSelectSet, onSelectUpload, onToggleFavorite, isLibrary }) => {
+  const { t } = useTranslation();
   const [filterSubject, setFilterSubject] = useState('Tất cả');
   const [filterGrade, setFilterGrade] = useState('Tất cả');
   const [sortBy, setSortBy] = useState<'POPULAR' | 'NEWEST'>('POPULAR');
@@ -131,7 +132,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
       {!isLibrary && (
         <section className="mb-10">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <Flame className="text-orange-500" fill="currentColor" /> Đang xu hướng
+                <Flame className="text-orange-500" fill="currentColor" /> {t('dashboard.trending')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {trendingSets.map((set, idx) => (
@@ -204,15 +205,15 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                <div>
                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {isLibrary ? 'Thư viện cá nhân' : 'Khám phá cộng đồng'}
+                        {isLibrary ? t('dashboard.library') : t('dashboard.explore')}
                    </h1>
                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                         {isLibrary 
                             ? (libraryTab === 'FILES' 
-                                ? `Danh sách ${filteredUploads.length} tài liệu đã tải lên`
-                                : `Danh sách ${filteredSets.length} học phần`
+                                ? `${filteredUploads.length} ${t('dashboard.tab_files').toLowerCase()}`
+                                : `${filteredSets.length} ${t('common.search').replace('...', '').toLowerCase()}`
                               )
-                            : 'Học phần nổi bật từ cộng đồng giáo viên và học sinh'
+                            : t('landing.hero_desc')
                         }
                    </p>
                </div>
@@ -220,7 +221,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                 onClick={onCreateNew}
                 className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap w-full md:w-auto justify-center"
                >
-                <Plus size={18} /> Soạn bài mới
+                <Plus size={18} /> {t('dashboard.create_btn')}
                </button>
             </div>
 
@@ -235,7 +236,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                        <Book size={18} /> Học phần của tôi
+                        <Book size={18} /> {t('dashboard.tab_sets')}
                     </button>
                     <button 
                         onClick={() => setLibraryTab('FAVORITES')}
@@ -245,7 +246,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                        <Heart size={18} /> Đã thích
+                        <Heart size={18} /> {t('dashboard.tab_favorites')}
                     </button>
                     <button 
                         onClick={() => setLibraryTab('FILES')}
@@ -255,7 +256,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                        <FileText size={18} /> Tài liệu đã tải
+                        <FileText size={18} /> {t('dashboard.tab_files')}
                     </button>
                 </div>
             )}
@@ -267,7 +268,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input 
                         type="text" 
-                        placeholder={libraryTab === 'FILES' ? "Tìm kiếm tài liệu theo tên..." : "Tìm kiếm theo tên bài, tác giả..."}
+                        placeholder={libraryTab === 'FILES' ? t('dashboard.search_lib') : t('dashboard.search_comm')}
                         className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-600 dark:text-white transition-all text-sm placeholder-gray-500"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -285,7 +286,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                                     value={filterSubject}
                                     onChange={(e) => setFilterSubject(e.target.value)}
                                 >
-                                    {SUBJECTS.map(s => <option key={s} value={s} className="bg-white dark:bg-gray-800">{s}</option>)}
+                                    {SUBJECTS.map(s => <option key={s} value={s} className="bg-white dark:bg-gray-800">{s === 'Tất cả' ? t('dashboard.filter_all') : s}</option>)}
                                 </select>
                             </div>
 
@@ -296,7 +297,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                                     value={filterGrade}
                                     onChange={(e) => setFilterGrade(e.target.value)}
                                 >
-                                    {GRADES.map(g => <option key={g} value={g} className="bg-white dark:bg-gray-800">{g}</option>)}
+                                    {GRADES.map(g => <option key={g} value={g} className="bg-white dark:bg-gray-800">{g === 'Tất cả' ? t('dashboard.filter_all') : g}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -308,13 +309,13 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                                 onClick={() => setSortBy('POPULAR')}
                                 className={`flex-1 sm:flex-none px-3 py-2 rounded-lg text-sm font-medium transition-all ${sortBy === 'POPULAR' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                             >
-                                Phổ biến
+                                {t('dashboard.sort_popular')}
                             </button>
                             <button 
                                 onClick={() => setSortBy('NEWEST')}
                                 className={`flex-1 sm:flex-none px-3 py-2 rounded-lg text-sm font-medium transition-all ${sortBy === 'NEWEST' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                             >
-                                Mới nhất
+                                {t('dashboard.sort_newest')}
                             </button>
                         </div>
                     </div>
@@ -327,13 +328,13 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
             displayedUploads.length === 0 ? (
                 <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 border-dashed transition-colors">
                     <FileText size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Chưa có tài liệu nào</h3>
-                    <p className="text-gray-500 dark:text-gray-400 mb-6">Bạn chưa tải lên tài liệu nào hoặc không tìm thấy kết quả.</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('dashboard.empty_library')}</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">{t('dashboard.empty_library_desc')}</p>
                     <button 
                         onClick={onCreateNew}
                         className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
                     >
-                        Tải lên ngay
+                        {t('dashboard.upload_now')}
                     </button>
                 </div>
             ) : (
@@ -361,12 +362,12 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{file.result.subject} - {file.result.grade}</p>
                                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
                                     <Layers size={14} />
-                                    <span>{file.result.topics.length} chủ đề đã tạo</span>
+                                    <span>{file.result.topics.length} topics</span>
                                 </div>
                             </div>
 
                             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-end text-sm font-medium text-indigo-600 dark:text-indigo-400 group-hover:underline items-center gap-1">
-                                Xem chi tiết <ChevronRight size={14} />
+                                {t('common.start')} <ChevronRight size={14} />
                             </div>
                         </div>
                     ))}
@@ -378,7 +379,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                 {filteredSets.length === 0 ? (
                     <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 border-dashed transition-colors">
                         <Search size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Không tìm thấy kết quả</h3>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('dashboard.no_results')}</h3>
                         <p className="text-gray-500 dark:text-gray-400 mb-6">
                             {libraryTab === 'FAVORITES' ? 'Bạn chưa thêm học phần nào vào danh sách yêu thích.' : 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.'}
                         </p>
@@ -386,7 +387,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                             onClick={() => {setFilterSubject('Tất cả'); setFilterGrade('Tất cả'); setSearchQuery('');}}
                             className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
                         >
-                            Xóa bộ lọc
+                            {t('dashboard.clear_filter')}
                         </button>
                     </div>
                 ) : (
@@ -409,12 +410,12 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                         <div className="p-5 flex-1">
                             <div className="flex justify-between items-start mb-3">
                                 <div className="inline-flex items-center px-2 py-1 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold uppercase tracking-wide">
-                                    {set.cards.length} thuật ngữ
+                                    {set.cards.length} cards
                                 </div>
                                 {/* Auto-detect subject badge based on title (Mock logic) */}
-                                {set.title.includes('Anh') && <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-bold px-2 py-1 rounded-md mr-8">Tiếng Anh</span>}
-                                {set.title.includes('Sử') && <span className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-[10px] font-bold px-2 py-1 rounded-md mr-8">Lịch Sử</span>}
-                                {set.title.includes('Hóa') && <span className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold px-2 py-1 rounded-md mr-8">Hóa Học</span>}
+                                {set.title.includes('Anh') && <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-[10px] font-bold px-2 py-1 rounded-md mr-8">English</span>}
+                                {set.title.includes('Sử') && <span className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 text-[10px] font-bold px-2 py-1 rounded-md mr-8">History</span>}
+                                {set.title.includes('Hóa') && <span className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold px-2 py-1 rounded-md mr-8">Chemistry</span>}
                             </div>
                             
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 mb-2 leading-tight pr-6">
@@ -434,7 +435,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                             <div className="flex items-center gap-3 text-xs">
                                 {set.createdAt > Date.now() - 86400000 * 3 && (
                                     <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-bold">
-                                        <Clock size={12} /> Mới
+                                        <Clock size={12} /> New
                                     </span>
                                 )}
                                 <span className="flex items-center gap-1">
@@ -453,7 +454,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
         {hasMore && (
             <div ref={loadMoreRef} className="py-8 flex justify-center w-full">
                 <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-full text-sm">
-                    <Loader2 className="animate-spin" size={18} /> Đang tải thêm...
+                    <Loader2 className="animate-spin" size={18} /> {t('dashboard.loading')}
                 </div>
             </div>
         )}

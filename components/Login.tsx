@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { UserRole } from '../types';
-import { BrainCircuit, GraduationCap, School, ArrowRight, Loader2, Mail, Lock, User, CheckCircle, ChevronLeft, KeyRound } from 'lucide-react';
+import { BrainCircuit, GraduationCap, School, ArrowRight, Loader2, Mail, Lock, User, CheckCircle, ChevronLeft, KeyRound, Globe } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
+import { useTranslation } from 'react-i18next';
 
 interface LoginProps {
   onBack: () => void;
@@ -15,6 +16,7 @@ type ForgotStep = 'EMAIL' | 'OTP' | 'NEW_PASSWORD';
 const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   const { login, register, loginWithGoogle, requestPasswordReset, verifyResetCode, confirmPasswordReset } = useAuth();
   const { addNotification } = useApp();
+  const { t, i18n } = useTranslation();
   
   // Global State
   const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
@@ -37,6 +39,11 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   const [newResetPassword, setNewResetPassword] = useState('');
   const [confirmResetPassword, setConfirmResetPassword] = useState('');
 
+  const changeLanguage = () => {
+      const newLang = i18n.language === 'vi' ? 'en' : 'vi';
+      i18n.changeLanguage(newLang);
+  };
+
   // --- Handlers ---
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -44,9 +51,9 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
     setIsLoading(true);
     try {
         await login({ email, password });
-        addNotification('Đăng nhập thành công!', 'success');
+        addNotification(t('login.success_login'), 'success');
     } catch (error) {
-        addNotification('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.', 'error');
+        addNotification(t('login.error_login'), 'error');
     } finally {
         setIsLoading(false);
     }
@@ -56,7 +63,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
       e.preventDefault();
       
       if (password !== confirmPassword) {
-          addNotification('Mật khẩu xác nhận không khớp.', 'warning');
+          addNotification(t('login.error_password_mismatch'), 'warning');
           return;
       }
 
@@ -68,9 +75,9 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
               name: fullName,
               role: selectedRole
           });
-          addNotification('Đăng ký tài khoản thành công!', 'success');
+          addNotification(t('login.success_register'), 'success');
       } catch (error) {
-          addNotification('Đăng ký thất bại. Vui lòng thử lại.', 'error');
+          addNotification(t('login.error_register'), 'error');
       } finally {
           setIsLoading(false);
       }
@@ -80,9 +87,9 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
       setIsGoogleSubmitting(true);
       try {
           await loginWithGoogle();
-          addNotification('Đăng nhập bằng Google thành công!', 'success');
+          addNotification(t('login.success_google'), 'success');
       } catch (error) {
-          addNotification('Có lỗi xảy ra khi đăng nhập bằng Google.', 'error');
+          addNotification(t('login.error_google'), 'error');
       } finally {
           setIsGoogleSubmitting(false);
       }
@@ -97,10 +104,10 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
       setIsLoading(true);
       try {
           await requestPasswordReset(resetEmail);
-          addNotification(`Mã xác thực đã được gửi tới ${resetEmail} (Check Console)`, 'success');
+          addNotification(t('login.success_otp_sent', { email: resetEmail }), 'success');
           setForgotStep('OTP');
       } catch (error) {
-          addNotification('Không thể gửi email. Vui lòng thử lại.', 'error');
+          addNotification(t('login.error_send_email'), 'error');
       } finally {
           setIsLoading(false);
       }
@@ -113,10 +120,10 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
       setIsLoading(true);
       try {
           await verifyResetCode(resetEmail, otpCode);
-          addNotification('Xác thực thành công!', 'success');
+          addNotification(t('login.success_verify'), 'success');
           setForgotStep('NEW_PASSWORD');
       } catch (error) {
-          addNotification('Mã xác thực không đúng.', 'error');
+          addNotification(t('login.error_otp'), 'error');
       } finally {
           setIsLoading(false);
       }
@@ -125,21 +132,21 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   const handleResetPassword = async (e: React.FormEvent) => {
       e.preventDefault();
       if (newResetPassword !== confirmResetPassword) {
-          addNotification('Mật khẩu không khớp.', 'warning');
+          addNotification(t('login.error_password_mismatch'), 'warning');
           return;
       }
 
       setIsLoading(true);
       try {
           await confirmPasswordReset(resetEmail, newResetPassword);
-          addNotification('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
+          addNotification(t('login.success_reset'), 'success');
           setAuthMode('LOGIN');
           // Reset states
           setResetEmail('');
           setOtpCode('');
           setForgotStep('EMAIL');
       } catch (error) {
-          addNotification('Lỗi khi đổi mật khẩu.', 'error');
+          addNotification(t('login.error_reset'), 'error');
       } finally {
           setIsLoading(false);
       }
@@ -161,8 +168,8 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
 
   const renderLogin = () => (
       <>
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Đăng nhập</h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-8">Chào mừng bạn quay trở lại với QuizEdu</p>
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('login.login_title')}</h3>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">{t('login.welcome_back')}</p>
 
         {/* Role Selection Mock Helper (Hidden in Real App or kept for testing) */}
         <div className="flex gap-2 mb-6">
@@ -172,7 +179,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
 
         <form onSubmit={handleLogin} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.email_label')}</label>
                 <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input 
@@ -187,13 +194,13 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
             </div>
             <div>
                 <div className="flex justify-between items-center mb-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Mật khẩu</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('login.password_label')}</label>
                     <button 
                         type="button"
                         onClick={() => { setAuthMode('FORGOT_PASSWORD'); setForgotStep('EMAIL'); setResetEmail(''); }}
                         className="text-xs font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
                     >
-                        Quên mật khẩu?
+                        {t('login.forgot_link')}
                     </button>
                 </div>
                 <div className="relative">
@@ -214,7 +221,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                 disabled={isLoading || isGoogleSubmitting}
                 className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>Đăng nhập <ArrowRight size={18} /></>}
+                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>{t('login.btn_login')} <ArrowRight size={18} /></>}
             </button>
         </form>
       </>
@@ -222,8 +229,8 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
 
   const renderRegister = () => (
       <>
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Tạo tài khoản</h3>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">Tham gia cộng đồng học tập thông minh ngay hôm nay</p>
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('login.register_title')}</h3>
+        <p className="text-gray-500 dark:text-gray-400 mb-6">{t('login.welcome_join')}</p>
 
         {/* Role Selection */}
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -237,7 +244,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                 }`}
             >
                 <GraduationCap size={24} />
-                <span className="font-bold text-sm">Học sinh</span>
+                <span className="font-bold text-sm">{t('login.role_student')}</span>
             </button>
             <button 
                 type="button"
@@ -249,13 +256,13 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                 }`}
             >
                 <School size={24} />
-                <span className="font-bold text-sm">Giáo viên</span>
+                <span className="font-bold text-sm">{t('login.role_teacher')}</span>
             </button>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Họ và tên</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.name_label')}</label>
                 <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input 
@@ -270,7 +277,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.email_label')}</label>
                 <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input 
@@ -286,7 +293,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
             
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mật khẩu</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.password_label')}</label>
                     <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input 
@@ -300,7 +307,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                     </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Xác nhận</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.confirm_password_label')}</label>
                     <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input 
@@ -320,7 +327,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                 disabled={isLoading || isGoogleSubmitting}
                 className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>Đăng ký ngay <ArrowRight size={18} /></>}
+                {isLoading ? <Loader2 className="animate-spin" size={20} /> : <>{t('login.btn_register')} <ArrowRight size={18} /></>}
             </button>
         </form>
       </>
@@ -333,19 +340,19 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                   onClick={() => setAuthMode('LOGIN')}
                   className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors mb-2"
               >
-                  <ChevronLeft size={16} /> Quay lại đăng nhập
+                  <ChevronLeft size={16} /> {t('login.back_login')}
               </button>
 
               <div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                      {forgotStep === 'EMAIL' && 'Khôi phục mật khẩu'}
-                      {forgotStep === 'OTP' && 'Xác thực Email'}
-                      {forgotStep === 'NEW_PASSWORD' && 'Đặt lại mật khẩu'}
+                      {forgotStep === 'EMAIL' && t('login.forgot_title')}
+                      {forgotStep === 'OTP' && t('login.otp_label')}
+                      {forgotStep === 'NEW_PASSWORD' && t('login.change_password')}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400">
-                      {forgotStep === 'EMAIL' && 'Nhập email đã đăng ký để nhận mã xác thực.'}
-                      {forgotStep === 'OTP' && `Chúng tôi đã gửi mã đến ${resetEmail}. Nhập mã gồm 6 chữ số.`}
-                      {forgotStep === 'NEW_PASSWORD' && 'Tạo mật khẩu mới cho tài khoản của bạn.'}
+                      {forgotStep === 'EMAIL' && t('login.step_email_desc')}
+                      {forgotStep === 'OTP' && t('login.step_otp_desc')}
+                      {forgotStep === 'NEW_PASSWORD' && t('login.step_new_pass_desc')}
                   </p>
               </div>
 
@@ -353,7 +360,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
               {forgotStep === 'EMAIL' && (
                   <form onSubmit={handleSendResetEmail} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.email_label')}</label>
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input 
@@ -367,7 +374,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                         </div>
                       </div>
                       <button type="submit" disabled={isLoading} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
-                         {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Gửi mã xác thực'}
+                         {isLoading ? <Loader2 className="animate-spin" size={20} /> : t('login.send_code')}
                       </button>
                   </form>
               )}
@@ -376,7 +383,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
               {forgotStep === 'OTP' && (
                   <form onSubmit={handleVerifyOtp} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mã xác thực (OTP)</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.otp_label')}</label>
                         <div className="relative">
                             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input 
@@ -391,14 +398,14 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                         </div>
                       </div>
                       <button type="submit" disabled={isLoading} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
-                         {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Xác nhận'}
+                         {isLoading ? <Loader2 className="animate-spin" size={20} /> : t('login.verify')}
                       </button>
                       <button 
                         type="button" 
                         onClick={() => setForgotStep('EMAIL')}
                         className="w-full text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
                       >
-                          Gửi lại mã?
+                          {t('login.resend_code')}
                       </button>
                   </form>
               )}
@@ -407,7 +414,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
               {forgotStep === 'NEW_PASSWORD' && (
                   <form onSubmit={handleResetPassword} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mật khẩu mới</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.new_password')}</label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input 
@@ -421,7 +428,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Xác nhận mật khẩu</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('login.confirm_password_label')}</label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input 
@@ -435,7 +442,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                         </div>
                       </div>
                       <button type="submit" disabled={isLoading} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
-                         {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Đổi mật khẩu'}
+                         {isLoading ? <Loader2 className="animate-spin" size={20} /> : t('login.change_password')}
                       </button>
                   </form>
               )}
@@ -444,7 +451,18 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4 transition-colors relative">
+      <div className="absolute top-4 right-4 z-50">
+        <button
+            onClick={changeLanguage}
+            className="p-2 rounded-full bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-700 transition-colors flex items-center gap-1"
+            title={t('common.language')}
+        >
+            <Globe size={20} />
+            <span className="text-xs font-bold uppercase">{i18n.language}</span>
+        </button>
+      </div>
+
       <div className="max-w-4xl w-full bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row transition-colors">
         
         {/* Left Side: Branding */}
@@ -457,14 +475,14 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                 <span className="text-2xl font-bold tracking-tight">QuizEdu</span>
               </div>
               <h2 className="text-4xl font-bold mb-4">
-                  {authMode === 'LOGIN' ? 'Chào mừng trở lại!' : authMode === 'REGISTER' ? 'Bắt đầu hành trình!' : 'Khôi phục tài khoản'}
+                  {authMode === 'LOGIN' ? t('login.welcome_back') : authMode === 'REGISTER' ? t('login.welcome_join') : t('login.forgot_title')}
               </h2>
               <p className="text-indigo-100 text-lg">
                   {authMode === 'LOGIN' 
-                    ? 'Nền tảng học tập và kiểm tra trực tuyến thông minh dành cho nhà trường.'
+                    ? t('landing.hero_desc')
                     : authMode === 'REGISTER'
-                    ? 'Tạo tài khoản miễn phí để truy cập kho tài liệu và công cụ AI hỗ trợ học tập.'
-                    : 'Đừng lo lắng, chúng tôi sẽ giúp bạn lấy lại quyền truy cập chỉ trong vài bước.'
+                    ? t('login.welcome_join')
+                    : t('login.welcome_forgot')
                   }
               </p>
            </div>
@@ -475,7 +493,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                     <div key={i} className="w-10 h-10 rounded-full border-2 border-indigo-600 bg-indigo-400"></div>
                 ))}
              </div>
-             <p className="text-sm text-indigo-200">Được tin dùng bởi hơn 500+ giáo viên.</p>
+             <p className="text-sm text-indigo-200">{t('landing.user_count')}</p>
            </div>
 
            {/* Decor circle */}
@@ -498,7 +516,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                             <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Hoặc tiếp tục với</span>
+                            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">{t('common.or_continue')}</span>
                         </div>
                     </div>
 
@@ -519,17 +537,17 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                             </svg>
                         )}
-                        <span>{authMode === 'LOGIN' ? 'Đăng nhập' : 'Đăng ký'} bằng Google</span>
+                        <span>{authMode === 'LOGIN' ? t('login.google_login') : t('login.google_register')}</span>
                     </button>
                     
                     <div className="mt-6 text-center text-sm">
                         {authMode === 'LOGIN' ? (
                             <p className="text-gray-500 dark:text-gray-400">
-                                Chưa có tài khoản? <button onClick={() => setAuthMode('REGISTER')} className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Đăng ký ngay</button>
+                                {t('login.no_account')} <button onClick={() => setAuthMode('REGISTER')} className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">{t('login.btn_register')}</button>
                             </p>
                         ) : (
                             <p className="text-gray-500 dark:text-gray-400">
-                                Đã có tài khoản? <button onClick={() => setAuthMode('LOGIN')} className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Đăng nhập</button>
+                                {t('login.has_account')} <button onClick={() => setAuthMode('LOGIN')} className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">{t('login.btn_login')}</button>
                             </p>
                         )}
                     </div>
@@ -537,7 +555,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
             )}
 
             <button onClick={onBack} className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 block w-full">
-                Quay lại trang chủ
+                {t('common.back_home')}
             </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import axios from 'axios';
+import i18n from '../i18n';
 
-// Lấy URL API từ biến môi trường (cần tạo file .env: VITE_API_URL=http://localhost:your-port/api)
-// Sử dụng fallback an toàn nếu import.meta.env không tồn tại để tránh lỗi runtime
+// Lấy URL API từ biến môi trường
 const metaEnv = (import.meta as any).env || {};
 const API_URL = metaEnv.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -13,13 +13,19 @@ const apiClient = axios.create({
   timeout: 10000, // 10s timeout
 });
 
-// Request Interceptor: Tự động gắn Token vào Header
+// Request Interceptor: Tự động gắn Token và Ngôn ngữ vào Header
 apiClient.interceptors.request.use(
   (config) => {
+    // 1. Gắn Token
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // 2. Gắn Ngôn ngữ hiện tại
+    const currentLanguage = i18n.language || 'vi';
+    config.headers['Accept-Language'] = currentLanguage;
+
     return config;
   },
   (error) => {
@@ -27,18 +33,15 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Xử lý lỗi toàn cục (ví dụ: 401 Unauthorized)
+// Response Interceptor: Xử lý lỗi toàn cục
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Nếu lỗi 401 (Unauthorized) và chưa thử retry
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Xử lý logout hoặc refresh token tại đây
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
-      // Có thể chuyển hướng về trang login hoặc dispatch một event logout
       window.location.href = '/'; 
     }
     

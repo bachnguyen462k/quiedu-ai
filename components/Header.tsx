@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Bell, Moon, Sun, X, FileText, User, GraduationCap, Clock, Trash2 } from 'lucide-react';
+import { Search, Bell, Moon, Sun, X, FileText, User, GraduationCap, Clock, Trash2, Globe } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { StudySet, AiGenerationRecord } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
     sets: StudySet[];
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHistory }) => {
   const { theme, toggleTheme, notifications, removeNotification } = useApp();
+  const { t, i18n } = useTranslation();
   
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,6 +38,11 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const changeLanguage = () => {
+      const newLang = i18n.language === 'vi' ? 'en' : 'vi';
+      i18n.changeLanguage(newLang);
+  };
 
   // --- SEARCH LOGIC ---
   const filteredResults = useMemo(() => {
@@ -85,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                         setShowSearchResults(true);
                     }}
                     onFocus={() => setShowSearchResults(true)}
-                    placeholder="Tìm kiếm bài học, giáo viên, tài liệu..." 
+                    placeholder={t('header.search_placeholder')}
                     className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl leading-5 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
                 />
                 
@@ -174,6 +181,16 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
         {/* --- RIGHT: ACTIONS --- */}
         <div className="flex items-center gap-2 sm:gap-4">
             
+            {/* Language Switcher */}
+            <button
+                onClick={changeLanguage}
+                className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
+                title={t('common.language')}
+            >
+                <Globe size={20} />
+                <span className="text-xs font-bold uppercase">{i18n.language}</span>
+            </button>
+
             {/* Notification Bell */}
             <div className="relative" ref={notifRef}>
                 <button 
@@ -194,13 +211,13 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                 {showNotifications && (
                     <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-fade-in origin-top-right">
                         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-750">
-                            <h3 className="font-bold text-gray-900 dark:text-white text-sm">Thông báo</h3>
+                            <h3 className="font-bold text-gray-900 dark:text-white text-sm">{t('header.notifications')}</h3>
                             {notifications.length > 0 && (
                                 <button 
                                     onClick={() => notifications.forEach(n => removeNotification(n.id))}
                                     className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
                                 >
-                                    <Trash2 size={12} /> Xóa tất cả
+                                    <Trash2 size={12} /> {t('header.clear_all')}
                                 </button>
                             )}
                         </div>
@@ -209,7 +226,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                             {notifications.length === 0 ? (
                                 <div className="p-8 text-center">
                                     <Bell className="mx-auto text-gray-300 dark:text-gray-600 mb-2" size={32} />
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm">Bạn chưa có thông báo nào.</p>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">{t('header.no_notifications')}</p>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -243,7 +260,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
             <button 
                 onClick={toggleTheme}
                 className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                title={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+                title={theme === 'dark' ? t('header.light_mode') : t('header.dark_mode')}
             >
                 {theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}
             </button>

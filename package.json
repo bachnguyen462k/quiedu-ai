@@ -11,10 +11,13 @@
   "dependencies": {
     "@google/genai": "^1.33.0",
     "axios": "^1.6.7",
+    "i18next": "^23.10.0",
+    "i18next-browser-languagedetector": "^7.2.0",
     "lucide-react": "^0.561.0",
     "mammoth": "^1.8.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "react-i18next": "^14.0.5",
     "recharts": "^3.5.1",
     "uuid": "^13.0.0"
   },

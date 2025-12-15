@@ -2,6 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Flashcard, TextbookAnalysisResult } from "../types";
 // @ts-ignore
 import mammoth from "mammoth";
+import i18n from "../i18n"; // Import i18n to get current language
 
 // Validate API Key
 const apiKey = process.env.API_KEY;
@@ -10,6 +11,11 @@ if (!apiKey || (apiKey.startsWith("AIzaSy") && apiKey.length < 30)) {
 }
 
 const ai = new GoogleGenAI({ apiKey: apiKey || '' });
+
+// Helper to get current language name for prompts
+const getLanguageName = () => {
+    return i18n.language === 'en' ? 'English' : 'Vietnamese';
+};
 
 const cleanJson = (text: string) => {
   // Remove markdown code blocks if present
@@ -39,11 +45,12 @@ const base64ToArrayBuffer = (base64: string) => {
 // Generate a study set based on a topic
 export const generateStudySetWithAI = async (topic: string, count: number = 10): Promise<{ title: string; description: string; cards: Omit<Flashcard, 'id'>[] }> => {
   try {
+    const lang = getLanguageName();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Create a study set for the topic: "${topic}". The set should have ${count} terms. Language: Vietnamese.`,
+      contents: `Create a study set for the topic: "${topic}". The set should have ${count} terms. Language: ${lang}.`,
       config: {
-        systemInstruction: "You are a helpful educational assistant. You create study flashcards. For each term, provide 4 multiple choice options (one correct, 3 distractors) AND a short explanation for the correct answer.",
+        systemInstruction: `You are a helpful educational assistant. You create study flashcards in ${lang}. For each term, provide 4 multiple choice options (one correct, 3 distractors) AND a short explanation for the correct answer.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -89,6 +96,7 @@ export const generateStudySetWithAI = async (topic: string, count: number = 10):
 // Generate Study Set from File (PDF/Image) specifically for Q&A extraction
 export const generateStudySetFromFile = async (base64File: string, fileName: string): Promise<{ title: string; description: string; cards: Omit<Flashcard, 'id'>[] }> => {
   try {
+    const lang = getLanguageName();
     // Extract mime type dynamically
     const mimeTypeMatch = base64File.match(/^data:([^;]+);base64,/);
     const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/pdf';
@@ -102,13 +110,13 @@ export const generateStudySetFromFile = async (base64File: string, fileName: str
         // Extract raw text using mammoth
         const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
         const textContent = result.value;
-        contentPart = { text: `Đây là nội dung được trích xuất từ file Word (${fileName}):\n\n${textContent}` };
+        contentPart = { text: `File content extracted from (${fileName}):\n\n${textContent}` };
     } 
     // Handle Text files
     else if (mimeType === 'text/plain') {
         const arrayBuffer = base64ToArrayBuffer(base64Data);
         const textContent = new TextDecoder().decode(arrayBuffer);
-        contentPart = { text: `Đây là nội dung từ file văn bản (${fileName}):\n\n${textContent}` };
+        contentPart = { text: `File content from (${fileName}):\n\n${textContent}` };
     }
     // Handle PDF / Images (Native Support)
     else {
@@ -126,18 +134,19 @@ export const generateStudySetFromFile = async (base64File: string, fileName: str
         parts: [
           contentPart,
           {
-            text: `Bạn là trợ lý giáo viên. Hãy trích xuất TẤT CẢ các câu hỏi trắc nghiệm từ tài liệu này để tạo thành bộ đề thi (Quiz) và Flashcards.
+            text: `You are a teacher's assistant. Extract ALL multiple choice questions from this document to create a Quiz and Flashcards.
+            OUTPUT LANGUAGE: ${lang}.
 
-            QUY TẮC NHẬN DIỆN QUAN TRỌNG:
-            1. Trích xuất MỌI câu hỏi trắc nghiệm tìm thấy, KHÔNG bỏ qua câu nào.
-            2. "term": Nội dung câu hỏi.
-            3. "options": Mảng chứa các lựa chọn (A, B, C, D...). Nếu trong file không có lựa chọn, hãy tự tạo ra 3 phương án nhiễu hợp lý.
-            4. "definition": Là đáp án ĐÚNG. 
-               - Nếu file có đánh dấu (dấu *, in đậm, gạch chân, hoặc bảng đáp án), hãy điền đáp án đúng vào đây.
-               - Nếu KHÔNG tìm thấy dấu hiệu đáp án đúng, hãy ĐỂ TRỐNG chuỗi này ("") để người dùng tự chọn sau.
-            5. "explanation": Hãy tạo ra một lời giải thích ngắn gọn (dưới 30 từ) giải thích tại sao đáp án đó đúng, hoặc tóm tắt kiến thức liên quan.
+            RULES:
+            1. Extract EVERY multiple choice question found.
+            2. "term": The question text.
+            3. "options": Array of choices (A, B, C, D...). If no options exist, generate 3 plausible distractors.
+            4. "definition": The CORRECT answer. 
+               - If the file marks the answer (asterisk, bold, answer key), put it here.
+               - If NO answer is found, leave it EMPTY ("") for the user to select.
+            5. "explanation": Create a short explanation (under 30 words) why the answer is correct.
 
-            Yêu cầu trả về JSON hợp lệ.`
+            Return valid JSON.`
           }
         ]
       },
@@ -177,7 +186,7 @@ export const generateStudySetFromFile = async (base64File: string, fileName: str
   } catch (error: any) {
     console.error("Error generating from file:", error);
     if (error.toString().includes("400") || error.toString().includes("API key")) {
-        throw new Error("Lỗi API Key: Vui lòng kiểm tra lại cấu hình key trong file .env hoặc Vercel.");
+        throw new Error("API Key Error.");
     }
     throw error;
   }
@@ -186,11 +195,9 @@ export const generateStudySetFromFile = async (base64File: string, fileName: str
 // Analyze student submission (image/pdf) for grading
 export const gradeSubmissionWithAI = async (base64File: string, assignmentTitle: string): Promise<string> => {
   try {
-    // Extract mime type dynamically
+    const lang = getLanguageName();
     const mimeTypeMatch = base64File.match(/^data:([^;]+);base64,/);
     const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/jpeg';
-    
-    // Remove data prefix if present
     const base64Data = base64File.replace(/^data:([^;]+);base64,/, '');
 
     const response = await ai.models.generateContent({
@@ -204,37 +211,37 @@ export const gradeSubmissionWithAI = async (base64File: string, assignmentTitle:
             }
           },
           {
-            text: `Bạn là trợ lý giáo viên. Hãy phân tích bài làm của học sinh (được cung cấp dưới dạng file) cho bài tập chủ đề: "${assignmentTitle}". 
+            text: `You are a teacher assistant. Analyze this student submission for the assignment: "${assignmentTitle}".
+            LANGUAGE: ${lang}.
             
-            Nhiệm vụ:
-            1. Đọc và trích xuất nội dung chính mà học sinh đã viết.
-            2. Nhận xét về độ chính xác so với chủ đề.
-            3. Đề xuất số điểm (trên thang 100) dựa trên nội dung.
+            Tasks:
+            1. Extract main content written by the student.
+            2. Comment on accuracy regarding the topic.
+            3. Suggest a score (0-100).
             
-            Hãy trả về kết quả dưới dạng Markdown ngắn gọn, dễ đọc.`
+            Return result in concise Markdown.`
           }
         ]
       }
     });
 
-    return response.text || "Không thể phân tích bài làm.";
+    return response.text || "Unable to analyze.";
   } catch (error) {
     console.error("Error grading submission:", error);
-    return "Có lỗi xảy ra khi AI chấm bài. Vui lòng kiểm tra API Key.";
+    return "AI Grading Error.";
   }
 };
 
 // Analyze Textbook/File content (PDF/Image)
 export const analyzeTextbookWithAI = async (base64File: string): Promise<TextbookAnalysisResult> => {
     try {
-        // Extract mime type dynamically
+        const lang = getLanguageName();
         const mimeTypeMatch = base64File.match(/^data:([^;]+);base64,/);
-        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/pdf'; // Default to PDF if generic
+        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/pdf'; 
         const base64Data = base64File.replace(/^data:([^;]+);base64,/, '');
 
         let contentPart: any;
 
-        // Handle DOCX for Textbook Analysis too
         if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
              const arrayBuffer = base64ToArrayBuffer(base64Data);
              const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
@@ -248,40 +255,40 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
              };
         }
 
-        // Use a more restrictive prompt to ensure JSON validity and manage token usage
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: {
                 parts: [
                     contentPart,
                     {
-                        text: `Bạn là chuyên gia giáo dục. Hãy phân tích tài liệu được cung cấp và tạo nội dung bài học.
+                        text: `You are an education expert. Analyze the provided document and create lesson content.
+                        OUTPUT LANGUAGE: ${lang}.
 
-                        QUAN TRỌNG - TUÂN THỦ NGHIÊM NGẶT:
-                        1. Tóm tắt nội dung chính của tài liệu (ngắn gọn).
-                        2. Trích xuất TỐI ĐA 3 chủ đề (Topics) quan trọng nhất.
-                        3. Với mỗi chủ đề, tạo 10 câu hỏi trắc nghiệm (QUIZ) và 5 câu hỏi tự luận (ESSAY).
+                        IMPORTANT - STRICTLY FOLLOW:
+                        1. Summarize main content (concise).
+                        2. Extract MAX 3 important topics.
+                        3. For each topic, create 10 multiple choice questions (QUIZ) and 5 essay questions (ESSAY).
                         
-                        TRẢ VỀ JSON DUY NHẤT theo định dạng sau (đảm bảo JSON hợp lệ):
+                        RETURN JSON ONLY (Valid format):
                         {
-                          "subject": "Tên môn học (Ngắn gọn)",
-                          "grade": "Lớp/Trình độ",
-                          "overallSummary": "Tóm tắt chung ngắn gọn",
+                          "subject": "Subject Name",
+                          "grade": "Grade Level",
+                          "overallSummary": "Concise summary",
                           "topics": [
                             {
-                              "topicName": "Tên chủ đề",
-                              "summary": "Tóm tắt chủ đề (dưới 50 từ)",
-                              "keyPoints": ["Ý chính 1", "Ý chính 2", "Ý chính 3"],
-                              "formulas": ["Công thức quan trọng (nếu có)"],
+                              "topicName": "Topic Name",
+                              "summary": "Topic summary (under 50 words)",
+                              "keyPoints": ["Point 1", "Point 2", "Point 3"],
+                              "formulas": ["Important formulas (if any)"],
                               "questions": [
                                 {
                                   "type": "QUIZ",
                                   "difficulty": "Thông hiểu",
-                                  "question": "Câu hỏi ngắn gọn",
+                                  "question": "Question text",
                                   "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
                                   "correctAnswer": "A. ...",
-                                  "solutionGuide": "Giải thích ngắn",
-                                  "knowledgeApplied": "Kiến thức áp dụng"
+                                  "solutionGuide": "Explanation",
+                                  "knowledgeApplied": "Applied Knowledge"
                                 }
                               ]
                             }
@@ -291,7 +298,6 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
                 ]
             },
             config: {
-                // Force JSON response to minimize formatting errors
                 responseMimeType: "application/json"
             }
         });
@@ -303,14 +309,13 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
             return JSON.parse(cleanJson(text));
         } catch (e) {
             console.error("Failed to parse JSON:", e);
-            console.log("Raw Text Sample:", text.substring(0, 500) + "..."); // Log start of text for debug
-            throw new Error("Dữ liệu trả về từ AI không đúng định dạng. Vui lòng thử lại hoặc dùng file nhỏ hơn.");
+            throw new Error("AI response format error. Please try again.");
         }
 
     } catch (error: any) {
         console.error("Error analyzing textbook:", error);
         if (error.toString().includes("400") || error.toString().includes("API key")) {
-            throw new Error("Lỗi API Key: Vui lòng kiểm tra lại cấu hình key trong file .env hoặc Vercel.");
+            throw new Error("API Key Error.");
         }
         throw error;
     }

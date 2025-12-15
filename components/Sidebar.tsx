@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BrainCircuit, LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, Sparkles, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
 import { ViewState, User } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface SidebarProps {
     currentView: ViewState;
@@ -12,6 +13,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeView, onLogout, onStartTour }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { t } = useTranslation();
 
   // Tự động thu gọn sidebar trên thiết bị di động/tablet khi tải trang
   useEffect(() => {
@@ -21,10 +23,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
   }, []);
 
   const menuItems = [
-    { id: 'DASHBOARD', label: 'Trang chủ', icon: LayoutDashboard, view: 'DASHBOARD' },
-    { id: 'CREATE', label: 'Tạo học phần', icon: PlusCircle, view: 'CREATE' },
-    { id: 'LIBRARY', label: 'Thư viện', icon: Library, view: 'LIBRARY' },
-    { id: 'CLASSES', label: 'Lớp học', icon: Users, view: 'CLASSES' },
+    { id: 'DASHBOARD', label: t('sidebar.dashboard'), icon: LayoutDashboard, view: 'DASHBOARD' },
+    { id: 'CREATE', label: t('sidebar.create'), icon: PlusCircle, view: 'CREATE' },
+    { id: 'LIBRARY', label: t('sidebar.library'), icon: Library, view: 'LIBRARY' },
+    { id: 'CLASSES', label: t('sidebar.classes'), icon: Users, view: 'CLASSES' },
   ];
 
   if (!currentUser) return null; // Should not happen in main layout
@@ -64,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
       {/* Navigation Links */}
       <div className="flex-1 py-6 px-3 space-y-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
         {!isCollapsed && (
-            <p className="px-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 animate-fade-in">Menu</p>
+            <p className="px-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 animate-fade-in">{t('sidebar.menu')}</p>
         )}
         
         {menuItems.map((item) => (
@@ -98,31 +100,31 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
 
         <div className="mt-8 border-t border-gray-100 dark:border-gray-700 pt-4">
             {!isCollapsed && (
-                <p className="px-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 animate-fade-in">Cá nhân</p>
+                <p className="px-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 animate-fade-in">{t('sidebar.personal')}</p>
             )}
             
             {/* Tour Button */}
              <button 
                 onClick={onStartTour}
-                title={isCollapsed ? "Hướng dẫn sử dụng" : ''}
+                title={isCollapsed ? t('sidebar.help') : ''}
                 className={`w-full flex items-center rounded-lg font-medium transition-all duration-200 group relative text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 ${isCollapsed ? 'justify-center py-3 px-0' : 'gap-3 px-4 py-3'}`}
             >
                 <HelpCircle size={20} className="shrink-0" />
                 <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
                     isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100 static'
                 }`}>
-                    Hướng dẫn sử dụng
+                    {t('sidebar.help')}
                 </span>
                  {isCollapsed && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                        Hướng dẫn sử dụng
+                        {t('sidebar.help')}
                     </div>
                 )}
             </button>
 
             <button 
                 onClick={() => onChangeView('SETTINGS')}
-                title={isCollapsed ? "Cài đặt" : ''}
+                title={isCollapsed ? t('sidebar.settings') : ''}
                 className={`w-full flex items-center rounded-lg font-medium transition-all duration-200 group relative ${
                   currentView === 'SETTINGS'
                     ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 shadow-sm'
@@ -133,11 +135,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
                 <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
                     isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100 static'
                 }`}>
-                    Cài đặt
+                    {t('sidebar.settings')}
                 </span>
                  {isCollapsed && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                        Cài đặt
+                        {t('sidebar.settings')}
                     </div>
                 )}
             </button>
@@ -163,13 +165,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
             <div className={`flex-1 min-w-0 transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 block'}`}>
                 <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{currentUser.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {currentUser.role === 'TEACHER' ? 'Giáo viên' : 'Học sinh'}
+                    {currentUser.role === 'TEACHER' ? t('common.role_teacher') : t('common.role_student')}
                 </p>
             </div>
         </div>
         <button 
             onClick={onLogout}
-            title={isCollapsed ? "Đăng xuất" : ''}
+            title={isCollapsed ? t('sidebar.logout') : ''}
             className={`w-full flex items-center justify-center text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors ${
                 isCollapsed ? 'p-3' : 'gap-2 py-2'
             }`}
@@ -178,7 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
             <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${
                 isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 block'
             }`}>
-                Đăng xuất
+                {t('sidebar.logout')}
             </span>
         </button>
       </div>
