@@ -49,7 +49,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setTheme(prev => {
         const newTheme = prev === 'light' ? 'dark' : 'light';
         
-        // Call API to update theme preference if user is logged in
+        // 1. Save to localStorage IMMEDIATELY to prevent FOUC on reload
+        localStorage.setItem('theme', newTheme);
+
+        // 2. Call API to update theme preference if user is logged in
         // Fire and forget, don't await
         if (localStorage.getItem('accessToken')) {
             authService.updateTheme(newTheme);
