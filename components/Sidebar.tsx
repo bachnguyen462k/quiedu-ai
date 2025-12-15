@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, currentUser, onChangeVie
 
       {/* Logo Area */}
       <div 
-        className={`h-16 flex items-center border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors ${
+        className={`h-16 flex items-center border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
             isCollapsed ? 'justify-center px-2' : 'px-6 gap-3'
         }`}
         onClick={() => onChangeView('DASHBOARD')}

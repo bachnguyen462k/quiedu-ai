@@ -75,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
         <div className="flex-1 flex items-center max-w-xl gap-4 relative" ref={searchRef}>
             <div className="relative w-full max-w-md hidden md:block">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search size={18} className="text-gray-400" />
+                    <Search size={18} className="text-gray-400 dark:text-gray-500" />
                 </div>
                 <input 
                     type="text" 
@@ -86,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                     }}
                     onFocus={() => setShowSearchResults(true)}
                     placeholder="Tìm kiếm bài học, giáo viên, tài liệu..." 
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl leading-5 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white dark:focus:bg-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl leading-5 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
                 />
                 
                 {/* Search Results Dropdown */}
@@ -108,7 +108,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                                 onClick={() => { onSelectSet(set); setShowSearchResults(false); }}
                                                 className="w-full text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                                             >
-                                                <div className="w-8 h-8 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center shrink-0">
+                                                <div className="w-8 h-8 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                                                     <GraduationCap size={16} />
                                                 </div>
                                                 <div className="min-w-0">
@@ -146,7 +146,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                                 onClick={() => { onSelectHistory(file); setShowSearchResults(false); }}
                                                 className="w-full text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                                             >
-                                                <div className="w-8 h-8 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-600 flex items-center justify-center shrink-0">
+                                                <div className="w-8 h-8 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
                                                     <FileText size={16} />
                                                 </div>
                                                 <div className="min-w-0">
