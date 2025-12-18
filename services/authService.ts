@@ -1,3 +1,4 @@
+
 import apiClient from './apiClient';
 import { User, LoginCredentials, AuthResponse, UserRole, ThemeMode } from '../types';
 
@@ -6,7 +7,7 @@ export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
         // 1. Gọi API login để lấy Token
-        const response = await apiClient.post('/identity/auth/token', {
+        const response = await apiClient.post('/api/auth/token', {
             username: credentials.email,
             password: credentials.password
         });
@@ -58,7 +59,7 @@ export const authService = {
   // Đăng xuất
   logout: async (token: string): Promise<void> => {
       try {
-          await apiClient.post('/identity/auth/logout', { token });
+          await apiClient.post('/api/auth/logout', { token });
       } catch (error) {
           console.error("Logout API Error:", error);
       }
@@ -85,10 +86,10 @@ export const authService = {
     });
   },
 
-  // Lấy thông tin user hiện tại từ API /identity/users/my-info
+  // Lấy thông tin user hiện tại từ API /api/users/my-info
   getCurrentUser: async (): Promise<User> => {
     try {
-        const response = await apiClient.get('/identity/users/my-info');
+        const response = await apiClient.get('/api/users/my-info');
         const result = response.data.result;
 
         const mappedRoles: UserRole[] = [];
@@ -143,7 +144,7 @@ export const authService = {
   // Cập nhật Theme Mode cho user - Fire and forget
   updateTheme: (theme: ThemeMode): void => {
       // Không await để tránh chặn UI, không throw lỗi để tránh spam log nếu thất bại
-      apiClient.put(`/identity/users/theme/${theme}`).catch(() => {
+      apiClient.put(`/api/users/theme/${theme}`).catch(() => {
           // Silent failure: Không làm gì nếu lỗi để tránh làm phiền user
       });
   },
