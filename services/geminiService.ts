@@ -1,16 +1,13 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Flashcard, TextbookAnalysisResult } from "../types";
 // @ts-ignore
 import mammoth from "mammoth";
 import i18n from "../i18n"; // Import i18n to get current language
 
-// Validate API Key
-const apiKey = process.env.API_KEY;
-if (!apiKey || (apiKey.startsWith("AIzaSy") && apiKey.length < 30)) {
-    console.warn("Warning: API Key is missing or appears to be a placeholder.");
-}
-
-const ai = new GoogleGenAI({ apiKey: apiKey || '' });
+// Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Helper to get current language name for prompts
 const getLanguageName = () => {
@@ -46,8 +43,9 @@ const base64ToArrayBuffer = (base64: string) => {
 export const generateStudySetWithAI = async (topic: string, count: number = 10): Promise<{ title: string; description: string; cards: Omit<Flashcard, 'id'>[] }> => {
   try {
     const lang = getLanguageName();
+    // Use gemini-3-flash-preview for basic text tasks
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: 'gemini-3-flash-preview',
       contents: `Create a study set for the topic: "${topic}". The set should have ${count} terms. Language: ${lang}.`,
       config: {
         systemInstruction: `You are a helpful educational assistant. You create study flashcards in ${lang}. For each term, provide 4 multiple choice options (one correct, 3 distractors) AND a short explanation for the correct answer.`,
@@ -80,6 +78,7 @@ export const generateStudySetWithAI = async (topic: string, count: number = 10):
       }
     });
 
+    // The GenerateContentResponse object features a text property (not a method, so do not call text())
     const text = response.text;
     if (!text) throw new Error("No response from AI");
     
@@ -128,8 +127,9 @@ export const generateStudySetFromFile = async (base64File: string, fileName: str
         };
     }
 
+    // Use gemini-3-flash-preview for document analysis
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: 'gemini-3-flash-preview',
       contents: {
         parts: [
           contentPart,
@@ -200,8 +200,9 @@ export const gradeSubmissionWithAI = async (base64File: string, assignmentTitle:
     const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/jpeg';
     const base64Data = base64File.replace(/^data:([^;]+);base64,/, '');
 
+    // Use gemini-3-flash-preview for analysis tasks
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: 'gemini-3-flash-preview',
       contents: {
         parts: [
           {
@@ -255,8 +256,9 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
              };
         }
 
+        // Use gemini-3-pro-preview for complex reasoning tasks
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: 'gemini-3-pro-preview',
             contents: {
                 parts: [
                     contentPart,
@@ -269,36 +271,50 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
                         2. Extract MAX 3 important topics.
                         3. For each topic, create 10 multiple choice questions (QUIZ) and 5 essay questions (ESSAY).
                         
-                        RETURN JSON ONLY (Valid format):
-                        {
-                          "subject": "Subject Name",
-                          "grade": "Grade Level",
-                          "overallSummary": "Concise summary",
-                          "topics": [
-                            {
-                              "topicName": "Topic Name",
-                              "summary": "Topic summary (under 50 words)",
-                              "keyPoints": ["Point 1", "Point 2", "Point 3"],
-                              "formulas": ["Important formulas (if any)"],
-                              "questions": [
-                                {
-                                  "type": "QUIZ",
-                                  "difficulty": "Thông hiểu",
-                                  "question": "Question text",
-                                  "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
-                                  "correctAnswer": "A. ...",
-                                  "solutionGuide": "Explanation",
-                                  "knowledgeApplied": "Applied Knowledge"
-                                }
-                              ]
-                            }
-                          ]
-                        }`
+                        RETURN JSON ONLY.`
                     }
                 ]
             },
             config: {
-                responseMimeType: "application/json"
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: Type.OBJECT,
+                  properties: {
+                    subject: { type: Type.STRING, description: "Subject Name" },
+                    grade: { type: Type.STRING, description: "Grade Level" },
+                    overallSummary: { type: Type.STRING, description: "Concise summary" },
+                    topics: {
+                      type: Type.ARRAY,
+                      items: {
+                        type: Type.OBJECT,
+                        properties: {
+                          topicName: { type: Type.STRING, description: "Topic Name" },
+                          summary: { type: Type.STRING, description: "Topic summary (under 50 words)" },
+                          keyPoints: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Main points" },
+                          formulas: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Important formulas (if any)" },
+                          questions: {
+                            type: Type.ARRAY,
+                            items: {
+                              type: Type.OBJECT,
+                              properties: {
+                                type: { type: Type.STRING, description: "QUIZ or ESSAY" },
+                                difficulty: { type: Type.STRING, description: "Thông hiểu, Vận dụng..." },
+                                question: { type: Type.STRING },
+                                options: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Options (if QUIZ)" },
+                                correctAnswer: { type: Type.STRING, description: "Correct choice (if QUIZ)" },
+                                solutionGuide: { type: Type.STRING, description: "Explanation" },
+                                knowledgeApplied: { type: Type.STRING, description: "Applied Knowledge" }
+                              },
+                              required: ["type", "difficulty", "question", "solutionGuide", "knowledgeApplied"]
+                            }
+                          }
+                        },
+                        required: ["topicName", "summary", "keyPoints", "formulas", "questions"]
+                      }
+                    }
+                  },
+                  required: ["subject", "grade", "overallSummary", "topics"]
+                }
             }
         });
 
