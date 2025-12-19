@@ -23,52 +23,57 @@ import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
 
 // --- Global Event Theme Overlay Component ---
-const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
-    const { isAnimationEnabled } = useApp();
+const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => {
+    const { isAnimationEnabled, theme: uiTheme } = useApp();
     
     // Generate items based on theme
     const items = useMemo(() => {
-        if (theme === 'DEFAULT' || !isAnimationEnabled) return [];
+        if (eventType === 'DEFAULT' || !isAnimationEnabled) return [];
         
         let count = 40;
-        if (theme === 'AUTUMN') count = 25; // Less leaves for focus
-        if (theme === 'CHRISTMAS') count = 50; // More snowflakes
+        if (eventType === 'AUTUMN') count = 25; // Less leaves for focus
+        if (eventType === 'CHRISTMAS') count = 50; // More snowflakes
 
         return Array.from({ length: count }).map((_, i) => ({
             id: i,
             left: `${Math.random() * 100}%`,
             delay: `${Math.random() * 20}s`,
             duration: `${10 + Math.random() * 15}s`,
-            size: theme === 'CHRISTMAS' ? `${4 + Math.random() * 8}px` : `${12 + Math.random() * 18}px`,
+            size: eventType === 'CHRISTMAS' ? `${4 + Math.random() * 8}px` : `${12 + Math.random() * 18}px`,
             swayDuration: `${3 + Math.random() * 5}s`,
             opacity: 0.4 + Math.random() * 0.5,
             // Subtypes for variety
             variant: Math.random() > 0.5 ? 'A' : 'B'
         }));
-    }, [theme, isAnimationEnabled]);
+    }, [eventType, isAnimationEnabled]);
 
-    if (theme === 'DEFAULT' || !isAnimationEnabled) return null;
+    if (eventType === 'DEFAULT' || !isAnimationEnabled) return null;
 
     return (
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden select-none">
             {items.map((item) => {
                 let style: React.CSSProperties = {};
 
-                if (theme === 'CHRISTMAS') {
+                if (eventType === 'CHRISTMAS') {
+                    const isDarkMode = uiTheme === 'dark';
                     style = {
                         backgroundColor: '#FFF',
                         borderRadius: '50%',
-                        boxShadow: '0 0 10px rgba(255,255,255,0.8)',
-                        filter: 'blur(1px)'
+                        // Enhance visibility in Light Mode with a subtle border-shadow or light blue tint
+                        boxShadow: isDarkMode 
+                            ? '0 0 10px rgba(255,255,255,0.8)' 
+                            : '0 0 4px rgba(0,0,0,0.1), 0 0 2px rgba(59, 130, 246, 0.2)',
+                        filter: isDarkMode ? 'blur(1px)' : 'none',
+                        border: isDarkMode ? 'none' : '0.5px solid rgba(226, 232, 240, 0.8)'
                     };
-                } else if (theme === 'TET') {
+                } else if (eventType === 'TET') {
                     style = {
                         backgroundColor: item.variant === 'A' ? '#FFD700' : '#FFB7C5',
                         borderRadius: '50% 0 50% 50%',
                         boxShadow: `0 0 8px ${item.variant === 'A' ? '#FFD700' : '#FFB7C5'}`,
                         transform: `rotate(${Math.random() * 360}deg)`
                     };
-                } else if (theme === 'AUTUMN') {
+                } else if (eventType === 'AUTUMN') {
                     style = {
                         backgroundColor: item.variant === 'A' ? '#D97706' : '#92400E',
                         borderRadius: '80% 10% 80% 10%',
@@ -100,14 +105,14 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
                 );
             })}
 
-            {/* Corner Decorations - show even if animations are light, but follow the toggle */}
-            {theme === 'TET' && (
+            {/* Corner Decorations */}
+            {eventType === 'TET' && (
                 <>
                     <div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse">🧧</div>
                     <div className="absolute top-0 right-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse" style={{ animationDelay: '1s' }}>🏮</div>
                 </>
             )}
-            {theme === 'CHRISTMAS' && (
+            {eventType === 'CHRISTMAS' && (
                 <div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse">🎄</div>
             )}
         </div>
