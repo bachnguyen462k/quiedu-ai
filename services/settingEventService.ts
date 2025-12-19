@@ -41,7 +41,7 @@ export const settingEventService = {
   updateGlobalEventStatus: async (isOn: boolean): Promise<void> => {
     try {
       const mode = isOn ? 'on' : 'off';
-      await apiClient.put(`/event/${mode}`);
+      await apiClient.put(`/users/event/${mode}`);
     } catch (error) {
       console.error("SettingEventService: Failed to update event status", error);
       throw error;
