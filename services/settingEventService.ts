@@ -28,13 +28,13 @@ export const settingEventService = {
 
   /**
    * Cập nhật trạng thái bật/tắt sự kiện toàn hệ thống.
-   * Endpoint: /api/event/{mode}
+   * Endpoint: /api/users/event/{mode}
    */
   updateGlobalEventStatus: async (isOn: boolean): Promise<void> => {
     try {
       const mode = isOn ? 'on' : 'off';
-      // Sử dụng đúng endpoint /event/{mode} như yêu cầu
-      await apiClient.put(`/event/${mode}`);
+      // Cập nhật endpoint thành /users/event/{mode}
+      await apiClient.put(`/users/event/${mode}`);
     } catch (error) {
       console.error("SettingEventService: Failed to update event status", error);
       throw error;
