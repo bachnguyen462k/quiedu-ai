@@ -124,7 +124,14 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
             <div>
                 <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">{t('login.password_label')}</label>
-                    <button type="button" onClick={() => { setAuthMode('FORGOT_PASSWORD'); setForgotStep('EMAIL'); }} className="text-xs font-black text-brand-blue hover:text-blue-700 dark:text-blue-400">{t('login.forgot_link')}</button>
+                    <button 
+                      type="button" 
+                      tabIndex={-1}
+                      onClick={() => { setAuthMode('FORGOT_PASSWORD'); setForgotStep('EMAIL'); }} 
+                      className="text-xs font-black text-brand-blue hover:text-blue-700 dark:text-blue-400 outline-none"
+                    >
+                      {t('login.forgot_link')}
+                    </button>
                 </div>
                 <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-blue transition-colors" size={20} />
