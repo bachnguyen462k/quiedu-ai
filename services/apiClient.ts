@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import i18n from '../i18n';
 
@@ -39,7 +40,11 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Chỉ tự động redirect nếu không phải là request đăng nhập
+    // Nếu là đăng nhập sai (401), chúng ta muốn trả lỗi về cho component xử lý để hiện thông báo
+    const isLoginRequest = originalRequest.url?.includes('/api/auth/token');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isLoginRequest) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       window.location.href = '/'; 

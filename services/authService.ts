@@ -13,6 +13,7 @@ export const authService = {
 
         const responseData = response.data;
 
+        // Xử lý trường hợp server trả về 200 nhưng code khác 1000
         if (responseData.code !== 1000) {
             throw new Error(responseData.message || "Đăng nhập thất bại");
         }
@@ -37,11 +38,19 @@ export const authService = {
         };
     } catch (error: any) {
         console.error("Login API Error:", error);
-        localStorage.removeItem('accessToken');
+        
+        // Nếu lỗi đến từ phía server (có response)
         if (error.response?.data) {
-            throw error.response.data.message || "Lỗi đăng nhập";
+            const serverData = error.response.data;
+            // Nếu là lỗi 1006 (Unauthenticated) từ server của bạn
+            if (serverData.code === 1006) {
+                throw new Error("Tên đăng nhập hoặc mật khẩu không chính xác");
+            }
+            throw new Error(serverData.message || "Lỗi đăng nhập");
         }
-        throw error.message || "Lỗi kết nối máy chủ";
+        
+        // Nếu không có response (lỗi mạng, timeout...)
+        throw new Error(error.message || "Lỗi kết nối máy chủ");
     }
   },
 
