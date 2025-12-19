@@ -13,13 +13,65 @@ import SetDetailView from './components/SetDetailView';
 import ClassManagement from './components/ClassManagement';
 import AiTextbookCreator from './components/AiTextbookCreator';
 import SettingsView from './components/SettingsView';
+import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
-import { StudySet, User, AiGenerationRecord, Review } from './types';
+import { StudySet, User, AiGenerationRecord, Review, EventTheme } from './types';
 import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Loader2 } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
+
+// --- Global Event Theme Overlay Component ---
+const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
+    if (theme === 'DEFAULT') return null;
+
+    return (
+        <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden select-none">
+            {/* Christmas Theme: Simple Snowflakes */}
+            {theme === 'CHRISTMAS' && (
+                <div className="absolute inset-0">
+                    {[...Array(20)].map((_, i) => (
+                        <div key={i} className="absolute text-white/40 dark:text-white/20 animate-bounce" 
+                             style={{ 
+                                left: `${Math.random() * 100}%`, 
+                                top: `${Math.random() * 100}%`,
+                                animationDuration: `${3 + Math.random() * 5}s`,
+                                fontSize: `${10 + Math.random() * 20}px`
+                             }}>
+                            ❄
+                        </div>
+                    ))}
+                </div>
+            )}
+            
+            {/* Tet Theme: Lanterns/Blossoms */}
+            {theme === 'TET' && (
+                <>
+                    <div className="absolute top-0 left-0 w-32 h-32 text-red-500/20 opacity-50 dark:opacity-30">🧧</div>
+                    <div className="absolute top-0 right-0 w-32 h-32 text-orange-500/20 opacity-50 dark:opacity-30">🏮</div>
+                </>
+            )}
+
+            {/* Autumn Theme: Falling Leaves */}
+            {theme === 'AUTUMN' && (
+                <div className="absolute inset-0">
+                    {[...Array(15)].map((_, i) => (
+                        <div key={i} className="absolute text-amber-500/20 animate-pulse" 
+                             style={{ 
+                                left: `${Math.random() * 100}%`, 
+                                top: `${Math.random() * 100}%`,
+                                transform: `rotate(${Math.random() * 360}deg)`,
+                                fontSize: `${15 + Math.random() * 25}px`
+                             }}>
+                            🍂
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 // --- Mock Data Helpers ---
 const generateMockSets = (count: number): StudySet[] => {
@@ -80,6 +132,7 @@ const MainLayout: React.FC<{
   setRunTour: (val: boolean) => void
 }> = ({ children, sets, aiHistory, handleLogout, runTour, setRunTour }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { eventTheme } = useApp();
   const location = useLocation();
 
   if (isLoading) {
@@ -95,7 +148,8 @@ const MainLayout: React.FC<{
   }
   
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300 overflow-hidden relative">
+      <EventOverlay theme={eventTheme} />
       <Sidebar 
         currentPath={location.pathname}
         currentUser={user}
@@ -183,6 +237,8 @@ const AppRoutes: React.FC = () => {
       );
   }
 
+  const isAdmin = user?.roles.includes('ADMIN');
+
   return (
     <Routes>
       {/* Public Routes */}
@@ -197,6 +253,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/ai-planner" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><AiTextbookCreator onSaveToLibrary={handleSaveSet} history={aiHistory} onAddToHistory={handleAddToAiHistory} onBack={() => navigate('/create')} /></MainLayout>} />
       <Route path="/settings" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SettingsView currentUser={user!} onUpdateUser={handleUpdateUser} /></MainLayout>} />
       
+      {/* Admin Specific Routes */}
+      <Route path="/admin/theme" element={isAdmin ? <MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><AdminThemeSettings /></MainLayout> : <Navigate to="/dashboard" replace />} />
+
       {/* Detail Routes */}
       <Route path="/set/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SetDetailRoute sets={sets} onToggleFavorite={handleToggleFavorite} /></MainLayout>} />
       <Route path="/study/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode="FLASHCARD" /></MainLayout>} />

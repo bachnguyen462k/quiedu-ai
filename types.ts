@@ -165,3 +165,6 @@ export interface Notification {
 }
 
 export type ThemeMode = 'light' | 'dark';
+
+// --- Event Themes ---
+export type EventTheme = 'DEFAULT' | 'CHRISTMAS' | 'TET' | 'AUTUMN';

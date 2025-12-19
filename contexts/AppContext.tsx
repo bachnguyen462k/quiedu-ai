@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
-import { Notification, NotificationType, ThemeMode } from '../types';
+import { Notification, NotificationType, ThemeMode, EventTheme } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { authService } from '../services/authService';
 
@@ -8,7 +8,10 @@ interface AppContextType {
   // Theme
   theme: ThemeMode;
   toggleTheme: () => void;
-  setThemeMode: (mode: ThemeMode) => void; // Allow setting theme explicitly (e.g. from API data)
+  setThemeMode: (mode: ThemeMode) => void;
+  // Event Theme
+  eventTheme: EventTheme;
+  setEventTheme: (theme: EventTheme) => void;
   // Notifications
   notifications: Notification[];
   addNotification: (message: string, type: NotificationType) => void;
@@ -18,17 +21,28 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // --- Theme Logic ---
+  // --- UI Theme Logic ---
   const [theme, setTheme] = useState<ThemeMode>(() => {
-    // Check local storage or default to light
     if (typeof window !== 'undefined') {
         const savedTheme = localStorage.getItem('theme') as ThemeMode;
         if (savedTheme) return savedTheme;
-        // Default to 'light' regardless of system preference
         return 'light';
     }
     return 'light';
   });
+
+  // --- Event Theme Logic ---
+  const [eventTheme, setEventThemeState] = useState<EventTheme>(() => {
+    if (typeof window !== 'undefined') {
+        return (localStorage.getItem('eventTheme') as EventTheme) || 'DEFAULT';
+    }
+    return 'DEFAULT';
+  });
+
+  const setEventTheme = useCallback((newTheme: EventTheme) => {
+    setEventThemeState(newTheme);
+    localStorage.setItem('eventTheme', newTheme);
+  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -40,25 +54,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Set theme without calling API (used for syncing with backend data on load)
-  // Wrapped in useCallback to maintain stable reference preventing AuthContext re-runs
   const setThemeMode = useCallback((mode: ThemeMode) => {
       setTheme(mode);
   }, []);
 
-  // Toggle theme and call API (user action)
   const toggleTheme = useCallback(() => {
     setTheme(prev => {
         const newTheme = prev === 'light' ? 'dark' : 'light';
-        
-        // 1. Save to localStorage IMMEDIATELY to prevent FOUC on reload
         localStorage.setItem('theme', newTheme);
-
-        // 2. Call API to update theme preference if user is logged in
         if (localStorage.getItem('accessToken')) {
             authService.updateTheme(newTheme);
         }
-        
         return newTheme;
     });
   }, []);
@@ -73,8 +79,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addNotification = useCallback((message: string, type: NotificationType) => {
     const id = uuidv4();
     setNotifications(prev => [...prev, { id, message, type }]);
-    
-    // Auto dismiss
     setTimeout(() => {
       setNotifications(current => current.filter(n => n.id !== id));
     }, 4000);
@@ -84,10 +88,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     theme, 
     toggleTheme, 
     setThemeMode, 
+    eventTheme,
+    setEventTheme,
     notifications, 
     addNotification, 
     removeNotification
-  }), [theme, toggleTheme, setThemeMode, notifications, addNotification, removeNotification]);
+  }), [theme, toggleTheme, setThemeMode, eventTheme, setEventTheme, notifications, addNotification, removeNotification]);
 
   return (
     <AppContext.Provider value={contextValue}>

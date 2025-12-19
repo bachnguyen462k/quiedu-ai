@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, ChevronLeft, ChevronRight, HelpCircle, Palette } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { useTranslation } from 'react-i18next';
 import BrandLogo from './BrandLogo';
@@ -46,6 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, currentUser, onLogout, o
     { id: 'CREATE', label: t('sidebar.create'), icon: PlusCircle, path: '/create', allowedRoles: ['TEACHER', 'USER', 'ADMIN'] },
     { id: 'LIBRARY', label: t('sidebar.library'), icon: Library, path: '/library', allowedRoles: ['TEACHER', 'USER', 'ADMIN'] },
     { id: 'CLASSES', label: t('sidebar.classes'), icon: Users, path: '/classes', allowedRoles: ['TEACHER', 'USER', 'ADMIN'] },
+    { id: 'ADMIN_THEME', label: "Quản lý sự kiện", icon: Palette, path: '/admin/theme', allowedRoles: ['ADMIN'] },
   ];
 
   if (!currentUser) return null;
