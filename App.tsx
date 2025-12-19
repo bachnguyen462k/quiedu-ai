@@ -24,18 +24,24 @@ import { useTranslation } from 'react-i18next';
 
 // --- Global Event Theme Overlay Component ---
 const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
-    // Memoize petals to avoid re-calculating on every parent render
-    const tetPetals = useMemo(() => {
-        if (theme !== 'TET') return [];
-        return Array.from({ length: 40 }).map((_, i) => ({
+    // Generate items based on theme
+    const items = useMemo(() => {
+        if (theme === 'DEFAULT') return [];
+        
+        let count = 40;
+        if (theme === 'AUTUMN') count = 25; // Less leaves for focus
+        if (theme === 'CHRISTMAS') count = 50; // More snowflakes
+
+        return Array.from({ length: count }).map((_, i) => ({
             id: i,
             left: `${Math.random() * 100}%`,
-            delay: `${Math.random() * 15}s`,
-            duration: `${8 + Math.random() * 12}s`,
-            size: `${10 + Math.random() * 15}px`,
-            swayDuration: `${3 + Math.random() * 4}s`,
-            type: Math.random() > 0.5 ? 'MAI' : 'DAO',
-            opacity: 0.4 + Math.random() * 0.5
+            delay: `${Math.random() * 20}s`,
+            duration: `${10 + Math.random() * 15}s`,
+            size: theme === 'CHRISTMAS' ? `${4 + Math.random() * 8}px` : `${12 + Math.random() * 18}px`,
+            swayDuration: `${3 + Math.random() * 5}s`,
+            opacity: 0.4 + Math.random() * 0.5,
+            // Subtypes for variety
+            variant: Math.random() > 0.5 ? 'A' : 'B'
         }));
     }, [theme]);
 
@@ -43,71 +49,65 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
 
     return (
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden select-none">
-            {/* Christmas Theme: Simple Snowflakes */}
-            {theme === 'CHRISTMAS' && (
-                <div className="absolute inset-0">
-                    {[...Array(30)].map((_, i) => (
-                        <div key={i} className="absolute text-white/40 dark:text-white/20 animate-bounce" 
-                             style={{ 
-                                left: `${Math.random() * 100}%`, 
-                                top: `${Math.random() * 100}%`,
-                                animationDuration: `${3 + Math.random() * 5}s`,
-                                fontSize: `${10 + Math.random() * 20}px`
-                             }}>
-                            ❄
-                        </div>
-                    ))}
-                </div>
-            )}
-            
-            {/* Tet Theme: Smooth Falling Apricot and Peach Blossoms */}
-            {theme === 'TET' && (
-                <div className="absolute inset-0">
-                    {tetPetals.map((petal) => (
+            {items.map((item) => {
+                let style: React.CSSProperties = {};
+                let contentClass = "";
+
+                if (theme === 'CHRISTMAS') {
+                    style = {
+                        backgroundColor: '#FFF',
+                        borderRadius: '50%',
+                        boxShadow: '0 0 10px rgba(255,255,255,0.8)',
+                        filter: 'blur(1px)'
+                    };
+                } else if (theme === 'TET') {
+                    style = {
+                        backgroundColor: item.variant === 'A' ? '#FFD700' : '#FFB7C5',
+                        borderRadius: '50% 0 50% 50%',
+                        boxShadow: `0 0 8px ${item.variant === 'A' ? '#FFD700' : '#FFB7C5'}`,
+                        transform: `rotate(${Math.random() * 360}deg)`
+                    };
+                } else if (theme === 'AUTUMN') {
+                    style = {
+                        backgroundColor: item.variant === 'A' ? '#D97706' : '#92400E',
+                        borderRadius: '80% 10% 80% 10%',
+                        transform: `rotate(${Math.random() * 360}deg)`
+                    };
+                }
+
+                return (
+                    <div 
+                        key={item.id}
+                        className="falling-item"
+                        style={{
+                            left: item.left,
+                            width: item.size,
+                            height: item.size,
+                            opacity: item.opacity,
+                            animation: `global-fall ${item.duration} linear infinite`,
+                            animationDelay: item.delay,
+                        }}
+                    >
                         <div 
-                            key={petal.id}
-                            className="tet-petal"
+                            className="w-full h-full"
                             style={{
-                                left: petal.left,
-                                width: petal.size,
-                                height: petal.size,
-                                opacity: petal.opacity,
-                                animation: `flower-fall ${petal.duration} linear infinite`,
-                                animationDelay: petal.delay,
+                                ...style,
+                                animation: `global-sway ${item.swayDuration} ease-in-out infinite alternate`,
                             }}
-                        >
-                            <div 
-                                className="w-full h-full rounded-full"
-                                style={{
-                                    backgroundColor: petal.type === 'MAI' ? '#FFD700' : '#FFB7C5',
-                                    boxShadow: `0 0 8px ${petal.type === 'MAI' ? '#FFD700' : '#FFB7C5'}`,
-                                    animation: `flower-sway ${petal.swayDuration} ease-in-out infinite alternate`,
-                                    transform: `rotate(${Math.random() * 360}deg)`
-                                }}
-                            ></div>
-                        </div>
-                    ))}
-                    {/* Corner Decorations */}
+                        ></div>
+                    </div>
+                );
+            })}
+
+            {/* Corner Decorations for visual flair */}
+            {theme === 'TET' && (
+                <>
                     <div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse">🧧</div>
                     <div className="absolute top-0 right-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse" style={{ animationDelay: '1s' }}>🏮</div>
-                </div>
+                </>
             )}
-
-            {/* Autumn Theme: Falling Leaves */}
-            {theme === 'AUTUMN' && (
-                <div className="absolute inset-0">
-                    {[...Array(15)].map((_, i) => (
-                        <div key={i} className="absolute text-amber-500/20 animate-pulse" 
-                             style={{ 
-                                left: `${Math.random() * 100}%`, 
-                                top: `${Math.random() * 100}%`,
-                                transform: `rotate(${Math.random() * 360}deg)`,
-                                fontSize: `${15 + Math.random() * 25}px`
-                             }}>
-                            🍂
-                        </div>
-                    ))}
-                </div>
+            {theme === 'CHRISTMAS' && (
+                <div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse">🎄</div>
             )}
         </div>
     );
