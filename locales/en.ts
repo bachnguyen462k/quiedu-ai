@@ -488,7 +488,15 @@ export const en = {
       step_4_title: "Library",
       step_4_desc: "Manage all your sets, documents, and favorites here.",
       step_5_title: "Classes",
-      step_5_desc: "Join classes, do assigned homework, and view your progress."
+      step_5_desc: "Join classes, do assigned homework, and view your progress.",
+      step_lang_title: "Multi-language",
+      step_lang_desc: "Switch between Vietnamese and English interfaces with just one tap.",
+      step_effects_title: "Toggle Effects",
+      step_effects_desc: "Enable or disable festive falling effects like blossoms or snow for a focused study experience.",
+      step_notif_title: "Notifications",
+      step_notif_desc: "Stay updated with the latest info on classes, assignments, and teacher feedback.",
+      step_theme_title: "Dark/Light Mode",
+      step_theme_desc: "Switch to Dark Mode to protect your eyes during late-night study sessions."
     }
   }
 };

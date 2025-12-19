@@ -192,7 +192,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                                                 className="w-full text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                                             >
                                                 <div className="w-8 h-8 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                                                    <GraduationCap size={16} />
+                                                    < GraduationCap size={16} />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{set.title}</div>
@@ -266,6 +266,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
             
             {/* Language Switcher */}
             <button
+                id="header-language"
                 onClick={changeLanguage}
                 className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
                 title={t('common.language')}
@@ -276,6 +277,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
 
             {/* Animation Toggle */}
             <button 
+                id="header-effects"
                 onClick={() => setIsAnimationEnabled(!isAnimationEnabled)}
                 className={`p-2 rounded-full transition-colors ${
                     isAnimationEnabled 
@@ -290,6 +292,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
             {/* Notification Bell */}
             <div className="relative" ref={notifRef}>
                 <button 
+                    id="header-notifications"
                     onClick={() => setShowNotifications(!showNotifications)}
                     className={`p-2 rounded-full transition-colors relative ${
                         showNotifications 
@@ -361,6 +364,7 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
 
             {/* Dark Mode Toggle */}
             <button 
+                id="header-theme"
                 onClick={toggleTheme}
                 className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title={theme === 'dark' ? t('header.light_mode') : t('header.dark_mode')}

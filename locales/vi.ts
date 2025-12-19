@@ -490,7 +490,15 @@ export const vi = {
       step_4_title: "Thư viện",
       step_4_desc: "Quản lý tất cả các học phần, tài liệu và danh sách yêu thích của bạn tại đây.",
       step_5_title: "Lớp học",
-      step_5_desc: "Tham gia lớp học, làm bài tập được giao và xem kết quả học tập."
+      step_5_desc: "Tham gia lớp học, làm bài tập được giao và xem kết quả học tập.",
+      step_lang_title: "Đa ngôn ngữ",
+      step_lang_desc: "Chuyển đổi linh hoạt giao diện giữa Tiếng Việt và Tiếng Anh chỉ với một chạm.",
+      step_effects_title: "Bật/Tắt hiệu ứng",
+      step_effects_desc: "Tùy chỉnh bật hoặc tắt các hiệu ứng hoa đào, hoa mai hay tuyết rơi để tập trung học tập.",
+      step_notif_title: "Quả chuông thông báo",
+      step_notif_desc: "Nơi cập nhật những thông tin mới nhất về lớp học, bài tập và phản hồi từ giáo viên.",
+      step_theme_title: "Giao diện Sáng/Tối",
+      step_theme_desc: "Chuyển đổi sang chế độ tối (Dark Mode) để bảo vệ mắt khi học bài vào ban đêm."
     }
   }
 };

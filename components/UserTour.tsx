@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { X, ChevronRight, ChevronLeft, Check } from 'lucide-react';
@@ -41,6 +42,26 @@ const UserTour: React.FC<UserTourProps> = ({ currentUser, run, onStop }) => {
           target: '#sidebar-classes',
           title: t('tour.step_5_title'),
           content: t('tour.step_5_desc'),
+        },
+        {
+          target: '#header-language',
+          title: t('tour.step_lang_title'),
+          content: t('tour.step_lang_desc'),
+        },
+        {
+          target: '#header-effects',
+          title: t('tour.step_effects_title'),
+          content: t('tour.step_effects_desc'),
+        },
+        {
+          target: '#header-notifications',
+          title: t('tour.step_notif_title'),
+          content: t('tour.step_notif_desc'),
+        },
+        {
+          target: '#header-theme',
+          title: t('tour.step_theme_title'),
+          content: t('tour.step_theme_desc'),
         },
       ];
       
@@ -104,7 +125,6 @@ const UserTour: React.FC<UserTourProps> = ({ currentUser, run, onStop }) => {
   if (!run || !currentStep) return null;
 
   // Calculate Tooltip Position
-  // Default: To the right of the element
   let tooltipStyle: React.CSSProperties = {
       left: '50%',
       top: '50%',
@@ -114,9 +134,19 @@ const UserTour: React.FC<UserTourProps> = ({ currentUser, run, onStop }) => {
 
   if (coords) {
       const spaceRight = window.innerWidth - (coords.x + coords.w);
+      const spaceLeft = coords.x;
       
+      // Check for header items specifically to position them properly (bottom right aligned)
+      if (currentStep.target.startsWith('#header-')) {
+          tooltipStyle = {
+            left: coords.x + coords.w / 2,
+            top: coords.y + coords.h + 20,
+            transform: 'translateX(-80%)',
+            position: 'absolute'
+          };
+      }
       // If enough space on right, place right
-      if (spaceRight > 350) {
+      else if (spaceRight > 350) {
           tooltipStyle = {
               left: coords.x + coords.w + 20,
               top: coords.y,
