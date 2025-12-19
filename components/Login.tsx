@@ -46,8 +46,10 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
     try {
         await login({ email, password });
         addNotification(t('login.success_login'), 'success');
-    } catch (error) {
-        addNotification(typeof error === 'string' ? error : t('login.error_login'), 'error');
+    } catch (error: any) {
+        // Lấy thông báo lỗi từ Error object nếu có, ngược lại dùng i18n mặc định
+        const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : t('login.error_login'));
+        addNotification(errorMessage, 'error');
     } finally {
         setIsLoading(false);
     }
@@ -63,8 +65,9 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
       try {
           await register({ email, password, name: fullName, role: selectedRole });
           addNotification(t('login.success_register'), 'success');
-      } catch (error) {
-          addNotification(t('login.error_register'), 'error');
+      } catch (error: any) {
+          const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : t('login.error_register'));
+          addNotification(errorMessage, 'error');
       } finally {
           setIsLoading(false);
       }
@@ -92,7 +95,8 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
               setAuthMode('LOGIN');
           }
       } catch (error: any) {
-          addNotification(error.message || t('login.error_otp'), 'error');
+          const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : t('login.error_otp'));
+          addNotification(errorMessage, 'error');
       } finally {
           setIsLoading(false);
       }

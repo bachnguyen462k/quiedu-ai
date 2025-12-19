@@ -40,14 +40,20 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Chỉ tự động redirect nếu không phải là request đăng nhập
-    // Nếu là đăng nhập sai (401), chúng ta muốn trả lỗi về cho component xử lý để hiện thông báo
-    const isLoginRequest = originalRequest.url?.includes('/api/auth/token');
+    // Kiểm tra xem đây có phải là request xác thực (đăng nhập) không
+    // Chúng ta kiểm tra cả đường dẫn tương đối và tuyệt đối để đảm bảo an toàn
+    const url = originalRequest.url || '';
+    const isLoginRequest = url.includes('/api/auth/token') || url.endsWith('/auth/token');
 
-    if (error.response?.status === 401 && !originalRequest._retry && !isLoginRequest) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      window.location.href = '/'; 
+    // Nếu gặp lỗi 401 (Unauthorized)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Nếu KHÔNG PHẢI request đăng nhập, thì mới thực hiện logout và redirect
+      // Vì nếu là request đăng nhập bị 401, nghĩa là sai user/pass, ta cần giữ user ở lại trang login
+      if (!isLoginRequest) {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        window.location.href = '/'; 
+      }
     }
     
     return Promise.reject(error);
