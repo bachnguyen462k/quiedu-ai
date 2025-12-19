@@ -1,1 +1,13 @@
+node_modules
+dist
+.git
+.env
+.env.*
+Dockerfile
+README.md
+*.log
+.vscode
+/.idea
+src/**/*.map
+package-lock.json
 ��^�j�W�v+-����Zj��ؠ���D@0t:��ߊW��)��'|
