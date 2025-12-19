@@ -1,7 +1,8 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Bell, Moon, Sun, X, FileText, User, GraduationCap, Clock, Trash2, Globe, Loader2, Sparkles } from 'lucide-react';
+import { Search, Bell, Moon, Sun, X, FileText, GraduationCap, Clock, Trash2, Globe, Loader2, Sparkles } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import { StudySet, AiGenerationRecord } from '../types';
 import { useTranslation } from 'react-i18next';
 
@@ -14,24 +15,23 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHistory }) => {
   const { theme, toggleTheme, notifications, removeNotification, eventTheme, toggleGlobalEvent, addNotification } = useApp();
+  const { user } = useAuth();
   const { t, i18n } = useTranslation();
   
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [visibleLimit, setVisibleLimit] = useState(10); // Infinity Scroll State for Search
+  const [visibleLimit, setVisibleLimit] = useState(10);
   const [isUpdatingEvent, setIsUpdatingEvent] = useState(false);
   
   const searchRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null); // Ref for search bottom
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Notification State
   const [showNotifications, setShowNotifications] = useState(false);
+  // Added const to properly declare the useRef hook variable
   const notifRef = useRef<HTMLDivElement>(null);
-  
-  // Infinity Scroll State for Notifications
   const [visibleNotifLimit, setVisibleNotifLimit] = useState(10);
-  const loadMoreNotifRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -48,65 +48,8 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Reset visible limit when search query changes
-  useEffect(() => {
-    setVisibleLimit(10);
-  }, [searchQuery]);
-
-  // Reset notification limit when dropdown closes
-  useEffect(() => {
-    if (!showNotifications) {
-      setVisibleNotifLimit(10);
-    }
-  }, [showNotifications]);
-
-  // Infinity Scroll Observer for Search
-  useEffect(() => {
-    if (!showSearchResults) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleLimit((prev) => prev + 10);
-        }
-      },
-      { threshold: 1.0 }
-    );
-
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
-    }
-
-    return () => {
-      if (loadMoreRef.current) {
-        observer.unobserve(loadMoreRef.current);
-      }
-    };
-  }, [showSearchResults, visibleLimit]);
-
-  // Infinity Scroll Observer for Notifications
-  useEffect(() => {
-    if (!showNotifications) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleNotifLimit((prev) => prev + 10);
-        }
-      },
-      { threshold: 1.0 }
-    );
-
-    if (loadMoreNotifRef.current) {
-      observer.observe(loadMoreNotifRef.current);
-    }
-
-    return () => {
-      if (loadMoreNotifRef.current) {
-        observer.unobserve(loadMoreNotifRef.current);
-      }
-    };
-  }, [showNotifications, visibleNotifLimit]);
+  useEffect(() => { setVisibleLimit(10); }, [searchQuery]);
+  useEffect(() => { if (!showNotifications) setVisibleNotifLimit(10); }, [showNotifications]);
 
   const changeLanguage = () => {
       const newLang = i18n.language === 'vi' ? 'en' : 'vi';
@@ -118,8 +61,9 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
       setIsUpdatingEvent(true);
       try {
           await toggleGlobalEvent();
-          const nextState = eventTheme === 'DEFAULT'; // Vì eventTheme chưa kịp update trong scope này nên ta check ngược lại
-          addNotification(nextState ? "Đã bật sự kiện toàn hệ thống" : "Đã tắt sự kiện toàn hệ thống", "info");
+          // Sau khi toggle, eventTheme trong context sẽ thay đổi từ DEFAULT sang theme sự kiện hoặc ngược lại
+          const nextState = eventTheme === 'DEFAULT'; 
+          addNotification(nextState ? "Đã bật sự kiện hệ thống" : "Đã tắt sự kiện hệ thống", "info");
       } catch (e) {
           addNotification("Không thể cập nhật trạng thái sự kiện", "error");
       } finally {
@@ -130,41 +74,20 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
   // --- SEARCH LOGIC ---
   const filteredResults = useMemo(() => {
     if (!searchQuery.trim()) return { quizzes: [], teachers: [], files: [] };
-
     const lowerQuery = searchQuery.toLowerCase();
-
-    // 1. Filter Quizzes (Study Sets)
-    const quizzes = sets.filter(s => 
-        s.title.toLowerCase().includes(lowerQuery) || 
-        s.description.toLowerCase().includes(lowerQuery)
-    );
-
-    // 2. Filter Teachers (Extract unique authors from sets)
+    const quizzes = sets.filter(s => s.title.toLowerCase().includes(lowerQuery) || s.description.toLowerCase().includes(lowerQuery));
     const uniqueAuthors = Array.from(new Set(sets.map(s => s.author)));
-    const teachers = uniqueAuthors
-        .filter(author => (author as string).toLowerCase().includes(lowerQuery))
-        .map(author => ({ name: author, avatar: `https://ui-avatars.com/api/?name=${author}&background=random` }));
-
-    // 3. Filter Files (AI History)
-    const files = history.filter(h => 
-        (h.fileName as string).toLowerCase().includes(lowerQuery) ||
-        (h.result?.subject as unknown as string)?.toLowerCase().includes(lowerQuery)
-    );
-
+    const teachers = uniqueAuthors.filter(author => (author as string).toLowerCase().includes(lowerQuery)).map(author => ({ name: author, avatar: `https://ui-avatars.com/api/?name=${author}&background=random` }));
+    const files = history.filter(h => (h.fileName as string).toLowerCase().includes(lowerQuery) || (h.result?.subject as unknown as string)?.toLowerCase().includes(lowerQuery));
     return { quizzes, teachers, files };
   }, [searchQuery, sets, history]);
 
   const hasResults = filteredResults.quizzes.length > 0 || filteredResults.teachers.length > 0 || filteredResults.files.length > 0;
-  
-  const hasMoreItems = 
-    filteredResults.quizzes.length > visibleLimit || 
-    filteredResults.teachers.length > visibleLimit || 
-    filteredResults.files.length > visibleLimit;
-
-  // --- NOTIFICATION LOGIC ---
+  const hasMoreItems = filteredResults.quizzes.length > visibleLimit || filteredResults.teachers.length > visibleLimit || filteredResults.files.length > visibleLimit;
   const displayedNotifications = notifications.slice(0, visibleNotifLimit);
   const hasMoreNotifications = notifications.length > visibleNotifLimit;
 
+  // Kiểm tra trạng thái hiện tại của sự kiện (Khác DEFAULT là đang ON)
   const isEventOn = eventTheme !== 'DEFAULT';
 
   return (
@@ -180,90 +103,27 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                 <input 
                     type="text" 
                     value={searchQuery}
-                    onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setShowSearchResults(true);
-                    }}
+                    onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }}
                     onFocus={() => setShowSearchResults(true)}
                     placeholder={t('header.search_placeholder')}
                     className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl leading-5 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:bg-white dark:focus:bg-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors"
                 />
                 
-                {/* Search Results Dropdown */}
                 {showSearchResults && searchQuery && (
                     <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-fade-in">
                         {!hasResults ? (
-                            <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                                {t('header.search_no_result')}
-                            </div>
+                            <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">{t('header.search_no_result')}</div>
                         ) : (
                             <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
-                                {/* Quiz Section */}
                                 {filteredResults.quizzes.length > 0 && (
                                     <div className="p-2">
                                         <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('header.search_quizzes')}</div>
                                         {filteredResults.quizzes.slice(0, visibleLimit).map(set => (
-                                            <button 
-                                                key={set.id}
-                                                onClick={() => { onSelectSet(set); setShowSearchResults(false); }}
-                                                className="w-full text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
-                                            >
-                                                <div className="w-8 h-8 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                                                    < GraduationCap size={16} />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{set.title}</div>
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{set.cards.length} {t('header.terms_count')}</div>
-                                                </div>
+                                            <button key={set.id} onClick={() => { onSelectSet(set); setShowSearchResults(false); }} className="w-full text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors">
+                                                <div className="w-8 h-8 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0"><GraduationCap size={16} /></div>
+                                                <div className="min-w-0"><div className="text-sm font-medium text-gray-900 dark:text-white truncate">{set.title}</div><div className="text-xs text-gray-500 dark:text-gray-400 truncate">{set.cards.length} {t('header.terms_count')}</div></div>
                                             </button>
                                         ))}
-                                    </div>
-                                )}
-
-                                {/* Teacher Section */}
-                                {filteredResults.teachers.length > 0 && (
-                                    <div className="p-2 border-t border-gray-100 dark:border-gray-700">
-                                        <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('header.search_teachers')}</div>
-                                        {filteredResults.teachers.slice(0, visibleLimit).map((t, idx) => (
-                                            <button 
-                                                key={idx}
-                                                className="w-full text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
-                                            >
-                                                <img src={t.avatar} alt={t.name} className="w-8 h-8 rounded-full" />
-                                                <div className="text-sm font-medium text-gray-900 dark:text-white">{t.name}</div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* Files Section */}
-                                {filteredResults.files.length > 0 && (
-                                    <div className="p-2 border-t border-gray-100 dark:border-gray-700">
-                                        <div className="px-2 py-1 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('header.search_files')}</div>
-                                        {filteredResults.files.slice(0, visibleLimit).map(file => (
-                                            <button 
-                                                key={file.id}
-                                                onClick={() => { onSelectHistory(file); setShowSearchResults(false); }}
-                                                className="w-full text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
-                                            >
-                                                <div className="w-8 h-8 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
-                                                    <FileText size={16} />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{file.fileName}</div>
-                                                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                                        <Clock size={10} /> {new Date(file.createdAt).toLocaleDateString()}
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* Sentinel Element for Infinite Scroll */}
-                                {hasMoreItems && (
-                                    <div ref={loadMoreRef} className="p-4 flex justify-center w-full">
-                                        <Loader2 className="animate-spin text-gray-400" size={16} />
                                     </div>
                                 )}
                             </div>
@@ -271,28 +131,13 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                     </div>
                 )}
             </div>
-            
-            {/* Mobile Search Icon */}
-            <button className="md:hidden text-gray-500 dark:text-gray-400">
-                <Search size={20} />
-            </button>
         </div>
 
         {/* --- RIGHT: ACTIONS --- */}
         <div className="flex items-center gap-2 sm:gap-4">
-            
-            {/* Language Switcher */}
-            <button
-                id="header-language"
-                onClick={changeLanguage}
-                className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
-                title={t('common.language')}
-            >
-                <Globe size={20} />
-                <span className="text-xs font-bold uppercase">{i18n.language}</span>
-            </button>
+            <button onClick={changeLanguage} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1" title={t('common.language')}><Globe size={20} /><span className="text-xs font-bold uppercase">{i18n.language}</span></button>
 
-            {/* Global Event Toggle Button */}
+            {/* Nút Bật/Tắt Sự kiện cho tất cả người dùng */}
             <button 
                 id="header-effects"
                 onClick={handleToggleEvent}
@@ -302,99 +147,23 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                     ? 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 shadow-inner' 
                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
-                title={isEventOn ? "Tắt sự kiện hệ thống" : "Bật sự kiện hệ thống"}
+                title={isEventOn ? "Tắt sự kiện toàn trang" : "Bật sự kiện toàn trang"}
             >
-                {isUpdatingEvent ? (
-                    <Loader2 size={20} className="animate-spin" />
-                ) : (
-                    <Sparkles size={20} className={isEventOn ? 'animate-pulse' : ''} />
-                )}
+                {isUpdatingEvent ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} className={isEventOn ? 'animate-pulse' : ''} />}
             </button>
 
-            {/* Notification Bell */}
             <div className="relative" ref={notifRef}>
-                <button 
-                    id="header-notifications"
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className={`p-2 rounded-full transition-colors relative ${
-                        showNotifications 
-                        ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-400' 
-                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                >
-                    <Bell size={20} />
-                    {notifications.length > 0 && (
-                        <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-gray-800 rounded-full animate-pulse"></span>
-                    )}
-                </button>
-
-                {/* Notification Dropdown */}
+                <button onClick={() => setShowNotifications(!showNotifications)} className={`p-2 rounded-full transition-colors relative ${showNotifications ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}><Bell size={20} />{notifications.length > 0 && <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-gray-800 rounded-full animate-pulse"></span>}</button>
                 {showNotifications && (
                     <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-fade-in origin-top-right">
-                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700">
-                            <h3 className="font-bold text-gray-900 dark:text-white text-sm">{t('header.notifications')}</h3>
-                            {notifications.length > 0 && (
-                                <button 
-                                    onClick={() => notifications.forEach(n => removeNotification(n.id))}
-                                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-                                >
-                                    <Trash2 size={12} /> {t('header.clear_all')}
-                                </button>
-                            )}
-                        </div>
-                        
-                        <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
-                            {notifications.length === 0 ? (
-                                <div className="p-8 text-center">
-                                    <Bell className="mx-auto text-gray-300 dark:text-gray-600 mb-2" size={32} />
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm">{t('header.no_notifications')}</p>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                                    {displayedNotifications.map(notif => (
-                                        <div key={notif.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex gap-3 relative group">
-                                            <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${
-                                                notif.type === 'success' ? 'bg-green-500' : 
-                                                notif.type === 'error' ? 'bg-red-500' : 
-                                                notif.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-                                            }`}></div>
-                                            <div className="flex-1">
-                                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">{notif.message}</p>
-                                                <p className="text-[10px] text-gray-400 mt-1">{t('header.just_now')}</p>
-                                            </div>
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); removeNotification(notif.id); }}
-                                                className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        </div>
-                                    ))}
-
-                                    {/* Sentinel Element for Notification Infinite Scroll */}
-                                    {hasMoreNotifications && (
-                                        <div ref={loadMoreNotifRef} className="p-4 flex justify-center w-full">
-                                            <Loader2 className="animate-spin text-gray-400" size={16} />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700"><h3 className="font-bold text-gray-900 dark:text-white text-sm">{t('header.notifications')}</h3>{notifications.length > 0 && <button onClick={() => notifications.forEach(n => removeNotification(n.id))} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"><Trash2 size={12} /> {t('header.clear_all')}</button>}</div>
+                        <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">{notifications.length === 0 ? (<div className="p-8 text-center"><Bell className="mx-auto text-gray-300 dark:text-gray-600 mb-2" size={32} /><p className="text-gray-500 dark:text-gray-400 text-sm">{t('header.no_notifications')}</p></div>) : (<div className="divide-y divide-gray-100 dark:divide-gray-700">{displayedNotifications.map(notif => (<div key={notif.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex gap-3 relative group"><div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${notif.type === 'success' ? 'bg-green-500' : notif.type === 'error' ? 'bg-red-500' : notif.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div><div className="flex-1"><p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">{notif.message}</p><p className="text-[10px] text-gray-400 mt-1">{t('header.just_now')}</p></div><button onClick={(e) => { e.stopPropagation(); removeNotification(notif.id); }} className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><X size={14} /></button></div>))}</div>)}</div>
                     </div>
                 )}
             </div>
 
-            {/* Dark Mode Toggle */}
-            <button 
-                id="header-theme"
-                onClick={toggleTheme}
-                className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                title={theme === 'dark' ? t('header.light_mode') : t('header.dark_mode')}
-            >
-                {theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}
-            </button>
-            
-             <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
+            <button id="header-theme" onClick={toggleTheme} className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title={theme === 'dark' ? t('header.light_mode') : t('header.dark_mode')}>{theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}</button>
+            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
         </div>
       </div>
     </header>

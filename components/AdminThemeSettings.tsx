@@ -1,18 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useApp } from '../contexts/AppContext';
 import { EventTheme } from '../types';
-import { Snowflake, Flame, Leaf, Globe, CheckCircle2, AlertCircle, Power } from 'lucide-react';
+import { Snowflake, Flame, Leaf, Globe, CheckCircle2, AlertCircle } from 'lucide-react';
 import { settingEventService } from '../services/settingEventService';
 
 const AdminThemeSettings: React.FC = () => {
     const { eventTheme, setEventTheme, addNotification } = useApp();
-    const [isGlobalEnabled, setIsGlobalEnabled] = useState(eventTheme !== 'DEFAULT');
-
-    // Sync local toggle state when eventTheme changes from elsewhere
-    useEffect(() => {
-        setIsGlobalEnabled(eventTheme !== 'DEFAULT');
-    }, [eventTheme]);
 
     const themes: { id: EventTheme; label: string; icon: React.ElementType; color: string; desc: string }[] = [
         { 
@@ -46,72 +40,40 @@ const AdminThemeSettings: React.FC = () => {
     ];
 
     const handleThemeSelect = async (id: EventTheme) => {
-        setEventTheme(id);
-        const shouldEnable = id !== 'DEFAULT';
-        
         try {
+            // Khi Admin chọn một theme, ta kích hoạt nó lên server
+            const shouldEnable = id !== 'DEFAULT';
             await settingEventService.updateGlobalEventStatus(shouldEnable);
-            setIsGlobalEnabled(shouldEnable);
+            
+            setEventTheme(id);
             addNotification(`Đã cập nhật chủ đề: ${id}`, 'success');
         } catch (error) {
-            addNotification('Lỗi khi cập nhật trạng thái sự kiện lên máy chủ', 'error');
-        }
-    };
-
-    const toggleGlobalStatus = async () => {
-        const nextState = !isGlobalEnabled;
-        try {
-            await settingEventService.updateGlobalEventStatus(nextState);
-            setIsGlobalEnabled(nextState);
-            
-            // If turning off, reset to DEFAULT theme locally
-            if (!nextState) {
-                setEventTheme('DEFAULT');
-            }
-            
-            addNotification(`Đã ${nextState ? 'bật' : 'tắt'} sự kiện toàn hệ thống`, nextState ? 'success' : 'info');
-        } catch (error) {
-            addNotification('Không thể cập nhật trạng thái sự kiện', 'error');
+            addNotification('Lỗi khi cập nhật chủ đề lên máy chủ', 'error');
         }
     };
 
     return (
         <div className="max-w-4xl mx-auto px-6 py-12 animate-fade-in pb-32">
-            <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight flex items-center gap-3">
-                        <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl text-indigo-600 dark:text-indigo-400">
-                            <Flame size={28} />
-                        </div>
-                        Quản lý Sự kiện & Giao diện
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">
-                        Thay đổi phong cách toàn website để chào đón các dịp đặc biệt.
-                    </p>
-                </div>
-
-                {/* Master Toggle */}
-                <button 
-                    onClick={toggleGlobalStatus}
-                    className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-black transition-all shadow-lg ${
-                        isGlobalEnabled 
-                        ? 'bg-green-600 text-white shadow-green-200 dark:shadow-none' 
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                    }`}
-                >
-                    <Power size={20} />
-                    {isGlobalEnabled ? 'SỰ KIỆN: ON' : 'SỰ KIỆN: OFF'}
-                </button>
+            <div className="mb-10">
+                <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight flex items-center gap-3">
+                    <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                        <Flame size={28} />
+                    </div>
+                    Cài đặt sự kiện hệ thống
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 font-medium">
+                    Chọn loại chủ đề trang trí sẽ hiển thị khi sự kiện được bật.
+                </p>
             </div>
 
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-2xl flex items-start gap-4 mb-10 transition-colors">
                 <AlertCircle className="text-yellow-600 shrink-0 mt-0.5" size={20} />
                 <p className="text-sm text-yellow-800 dark:text-yellow-200 leading-relaxed font-medium">
-                    <strong>Lưu ý:</strong> Việc thay đổi chủ đề tại đây sẽ có hiệu lực ngay lập tức cho tất cả các trang. Khi tắt sự kiện, hệ thống sẽ tự động quay về giao diện mặc định.
+                    Việc thay đổi chủ đề tại đây sẽ có hiệu lực ngay lập tức. Mọi người dùng hiện có thể bật/tắt hiển thị sự kiện này bằng nút <strong>Sparkles (Lấp lánh)</strong> trên thanh tiêu đề.
                 </p>
             </div>
 
-            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-6 transition-opacity duration-300 ${!isGlobalEnabled ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {themes.map((t) => (
                     <div 
                         key={t.id}
@@ -142,23 +104,6 @@ const AdminThemeSettings: React.FC = () => {
                         </div>
                     </div>
                 ))}
-            </div>
-
-            <div className="mt-16 p-8 rounded-[40px] bg-gradient-to-br from-indigo-600 to-purple-700 text-white shadow-2xl relative overflow-hidden">
-                <div className="relative z-10">
-                    <h3 className="text-2xl font-black mb-4">Preview Hiệu ứng</h3>
-                    <p className="text-indigo-100 font-medium mb-6 max-w-lg">
-                        Khi bật sự kiện, hệ thống sẽ tự động thêm các layer trang trí tinh tế ở các góc màn hình để không làm ảnh hưởng đến trải nghiệm học tập của người dùng.
-                    </p>
-                    <div className="flex gap-4">
-                        <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-xs font-bold uppercase tracking-widest italic">#AskingSmart</div>
-                        <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-xs font-bold uppercase tracking-widest italic">#LearningDeep</div>
-                    </div>
-                </div>
-                
-                {/* Decorative blobs */}
-                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute -top-20 -left-20 w-48 h-48 bg-purple-400/20 rounded-full blur-3xl"></div>
             </div>
         </div>
     );
