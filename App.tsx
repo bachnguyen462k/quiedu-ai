@@ -24,9 +24,11 @@ import { useTranslation } from 'react-i18next';
 
 // --- Global Event Theme Overlay Component ---
 const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
+    const { isAnimationEnabled } = useApp();
+    
     // Generate items based on theme
     const items = useMemo(() => {
-        if (theme === 'DEFAULT') return [];
+        if (theme === 'DEFAULT' || !isAnimationEnabled) return [];
         
         let count = 40;
         if (theme === 'AUTUMN') count = 25; // Less leaves for focus
@@ -43,15 +45,14 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
             // Subtypes for variety
             variant: Math.random() > 0.5 ? 'A' : 'B'
         }));
-    }, [theme]);
+    }, [theme, isAnimationEnabled]);
 
-    if (theme === 'DEFAULT') return null;
+    if (theme === 'DEFAULT' || !isAnimationEnabled) return null;
 
     return (
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden select-none">
             {items.map((item) => {
                 let style: React.CSSProperties = {};
-                let contentClass = "";
 
                 if (theme === 'CHRISTMAS') {
                     style = {
@@ -99,7 +100,7 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
                 );
             })}
 
-            {/* Corner Decorations for visual flair */}
+            {/* Corner Decorations - show even if animations are light, but follow the toggle */}
             {theme === 'TET' && (
                 <>
                     <div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse">🧧</div>

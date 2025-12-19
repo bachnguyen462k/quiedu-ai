@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Bell, Moon, Sun, X, FileText, User, GraduationCap, Clock, Trash2, Globe, Loader2 } from 'lucide-react';
+import { Search, Bell, Moon, Sun, X, FileText, User, GraduationCap, Clock, Trash2, Globe, Loader2, Sparkles } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { StudySet, AiGenerationRecord } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +13,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHistory }) => {
-  const { theme, toggleTheme, notifications, removeNotification } = useApp();
+  const { theme, toggleTheme, notifications, removeNotification, isAnimationEnabled, setIsAnimationEnabled } = useApp();
   const { t, i18n } = useTranslation();
   
   // Search State
@@ -271,6 +272,19 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
             >
                 <Globe size={20} />
                 <span className="text-xs font-bold uppercase">{i18n.language}</span>
+            </button>
+
+            {/* Animation Toggle */}
+            <button 
+                onClick={() => setIsAnimationEnabled(!isAnimationEnabled)}
+                className={`p-2 rounded-full transition-colors ${
+                    isAnimationEnabled 
+                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30' 
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+                title={isAnimationEnabled ? "Tắt hiệu ứng" : "Bật hiệu ứng"}
+            >
+                <Sparkles size={20} className={isAnimationEnabled ? 'animate-pulse' : ''} />
             </button>
 
             {/* Notification Bell */}

@@ -12,6 +12,9 @@ interface AppContextType {
   // Event Theme
   eventTheme: EventTheme;
   setEventTheme: (theme: EventTheme) => void;
+  // Animation Toggle
+  isAnimationEnabled: boolean;
+  setIsAnimationEnabled: (enabled: boolean) => void;
   // Notifications
   notifications: Notification[];
   addNotification: (message: string, type: NotificationType) => void;
@@ -38,6 +41,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     return 'DEFAULT';
   });
+
+  // --- Animation Toggle Logic ---
+  const [isAnimationEnabled, setIsAnimationEnabledState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('isAnimationEnabled');
+        return saved === null ? true : saved === 'true';
+    }
+    return true;
+  });
+
+  const setIsAnimationEnabled = useCallback((enabled: boolean) => {
+    setIsAnimationEnabledState(enabled);
+    localStorage.setItem('isAnimationEnabled', String(enabled));
+  }, []);
 
   const setEventTheme = useCallback((newTheme: EventTheme) => {
     setEventThemeState(newTheme);
@@ -90,10 +107,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setThemeMode, 
     eventTheme,
     setEventTheme,
+    isAnimationEnabled,
+    setIsAnimationEnabled,
     notifications, 
     addNotification, 
     removeNotification
-  }), [theme, toggleTheme, setThemeMode, eventTheme, setEventTheme, notifications, addNotification, removeNotification]);
+  }), [theme, toggleTheme, setThemeMode, eventTheme, setEventTheme, isAnimationEnabled, setIsAnimationEnabled, notifications, addNotification, removeNotification]);
 
   return (
     <AppContext.Provider value={contextValue}>
