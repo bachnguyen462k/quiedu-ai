@@ -5,10 +5,11 @@ import { authService } from './authService';
 
 // Lấy URL API từ biến môi trường
 const metaEnv = (import.meta as any).env || {};
-const API_URL = metaEnv.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = metaEnv.VITE_API_URL || 'http://localhost:3000';
 
 const apiClient = axios.create({
-  baseURL: API_URL,
+  // Cấu hình chung tiền tố /api tại đây
+  baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -51,10 +52,11 @@ apiClient.interceptors.response.use(
   (response) => {
     const originalRequest = response.config;
     const url = originalRequest.url || '';
-    const isLoginRequest = url.includes('/api/auth/token') || url.endsWith('/auth/token');
-    const isRefreshRequest = url.includes('/api/auth/refresh') || url.endsWith('/auth/refresh');
+    // Cập nhật: không còn tiền tố /api trong so sánh chuỗi vì url lúc này là tương đối
+    const isLoginRequest = url.includes('/auth/token');
+    const isRefreshRequest = url.includes('/auth/refresh');
 
-    // Kiểm tra mã code 1006 trong response body
+    // Kiểm tra mã code 1006 trong response body (Token hết hạn theo logic backend)
     if (response.data && response.data.code === 1006 && !isLoginRequest && !isRefreshRequest) {
       if (!isRefreshing) {
         isRefreshing = true;
@@ -88,8 +90,8 @@ apiClient.interceptors.response.use(
     }
 
     const url = originalRequest.url || '';
-    const isLoginRequest = url.includes('/api/auth/token') || url.endsWith('/auth/token');
-    const isRefreshRequest = url.includes('/api/auth/refresh') || url.endsWith('/auth/refresh');
+    const isLoginRequest = url.includes('/auth/token');
+    const isRefreshRequest = url.includes('/auth/refresh');
 
     // 1. Nếu gặp lỗi 401 khi đang gọi API Refresh -> Logout ngay
     if (error.response?.status === 401 && isRefreshRequest) {

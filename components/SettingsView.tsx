@@ -29,6 +29,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
   // Update local state if prop changes
   useEffect(() => {
     setName(currentUser.name);
+    // Fix: Using currentUser.email directly instead of undefined credentials_email
     setEmail(currentUser.email);
     setAvatar(currentUser.avatar || '');
   }, [currentUser]);
@@ -54,6 +55,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
 
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
+    // Fix: Using the setter setPasswordMessage instead of calling the state value passwordMessage
     setPasswordMessage(null);
 
     // Basic Validation

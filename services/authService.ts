@@ -13,7 +13,6 @@ export const authService = {
 
         const responseData = response.data;
 
-        // Xử lý trường hợp server trả về 200 nhưng code khác 1000
         if (responseData.code !== 1000) {
             throw new Error(responseData.message || "Đăng nhập thất bại");
         }
@@ -25,10 +24,8 @@ export const authService = {
             throw new Error("Xác thực thất bại hoặc không có token");
         }
 
-        // Lưu token để apiClient có thể dùng nó cho request lấy thông tin user
         localStorage.setItem('accessToken', token);
 
-        // Gọi API lấy thông tin User chi tiết
         const user = await authService.getCurrentUser();
 
         return {
@@ -41,7 +38,6 @@ export const authService = {
         
         if (error.response?.data) {
             const serverData = error.response.data;
-            // Nếu là lỗi 1006 (Unauthenticated) từ server đăng nhập -> Sai pass/user
             if (serverData.code === 1006) {
                 throw new Error("Tên đăng nhập hoặc mật khẩu không chính xác");
             }

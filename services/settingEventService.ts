@@ -9,6 +9,7 @@ export const settingEventService = {
    */
   getGlobalEventTheme: async (): Promise<EventTheme> => {
     try {
+      // Tiền tố /api đã được cấu hình trong baseURL của apiClient
       const response = await apiClient.get('/setting/event');
       const data = response.data;
 
