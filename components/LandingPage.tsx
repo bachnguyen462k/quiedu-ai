@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Zap, ArrowRight, Globe, ScanLine, Check, Star, BrainCircuit, Keyboard, FileText, Sparkles, ChevronRight, Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import BrandLogo from './BrandLogo';
+import { settingEventService } from '../services/settingEventService';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -38,10 +39,20 @@ const TESTIMONIALS = [
 
 const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
   const { t, i18n } = useTranslation();
-  const { theme, toggleTheme } = useApp();
+  const { theme, toggleTheme, setEventTheme } = useApp();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [isHeroCardFlipped, setIsHeroCardFlipped] = useState(false);
+
+  // Fetch global event theme on landing page load
+  useEffect(() => {
+      const fetchTheme = async () => {
+          const themeFromApi = await settingEventService.getGlobalEventTheme();
+          setEventTheme(themeFromApi);
+      };
+
+      fetchTheme();
+  }, [setEventTheme]);
 
   const changeLanguage = () => {
       const newLang = i18n.language === 'vi' ? 'en' : 'vi';
@@ -120,7 +131,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
             >
               {t('landing.btn_start')} <ArrowRight size={22} />
             </button>
-            <button className="px-8 py-4 rounded-2xl font-black text-lg text-gray-800 dark:text-gray-200 border-2 border-gray-200 dark:border-gray-700 hover:border-brand-blue dark:hover:border-blue-400 hover:text-brand-blue dark:hover:text-blue-400 transition-all">
+            <button className="px-8 py-4 rounded-2xl font-black text-lg text-gray-800 dark:text-gray-200 border-2 border-gray-200 dark:border-gray-700 hover:border-brand-blue dark:hover:border-blue-400 hover:text-brand-blue dark:hover:border-blue-400 transition-all">
               {t('landing.btn_demo')}
             </button>
           </div>

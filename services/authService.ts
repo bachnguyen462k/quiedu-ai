@@ -6,7 +6,7 @@ export const authService = {
   // Đăng nhập để lấy Token
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-        const response = await apiClient.post('/api/auth/token', {
+        const response = await apiClient.post('/auth/token', {
             username: credentials.email,
             password: credentials.password
         });
@@ -55,7 +55,7 @@ export const authService = {
   // Đăng ký tài khoản mới
   register: async (userData: any): Promise<AuthResponse> => {
     try {
-        const response = await apiClient.post('/api/users', {
+        const response = await apiClient.post('/users', {
             username: userData.email,
             password: userData.password,
             firstName: userData.name,
@@ -87,7 +87,7 @@ export const authService = {
     if (!currentToken) throw new Error("No token found");
 
     try {
-        const response = await apiClient.post('/api/auth/refresh', {
+        const response = await apiClient.post('/auth/refresh', {
             token: currentToken
         });
         
@@ -107,7 +107,7 @@ export const authService = {
   // Lấy thông tin user hiện tại
   getCurrentUser: async (): Promise<User> => {
     try {
-        const response = await apiClient.get('/api/users/my-info');
+        const response = await apiClient.get('/users/my-info');
         const result = response.data.result;
 
         const mappedRoles: UserRole[] = [];
@@ -159,7 +159,7 @@ export const authService = {
   // Đăng xuất
   logout: async (token: string): Promise<void> => {
       try {
-          await apiClient.post('/api/auth/logout', { token });
+          await apiClient.post('/auth/logout', { token });
       } catch (error) {
           console.error("Logout API Error:", error);
       }
@@ -167,13 +167,13 @@ export const authService = {
 
   // Cập nhật Theme Mode
   updateTheme: (theme: ThemeMode): void => {
-      apiClient.put(`/api/users/theme/${theme}`).catch(() => {});
+      apiClient.put(`/users/theme/${theme}`).catch(() => {});
   },
 
   // Quên mật khẩu
   sendVerificationCode: async (email: string): Promise<boolean> => {
     try {
-        const response = await apiClient.post('/api/auth/forgot-password', { email });
+        const response = await apiClient.post('/auth/forgot-password', { email });
         return response.data.code === 1000;
     } catch (error: any) {
         console.error("Send OTP Error:", error);
@@ -183,7 +183,7 @@ export const authService = {
 
   verifyCode: async (email: string, code: string): Promise<boolean> => {
     try {
-        const response = await apiClient.post('/api/auth/verify-otp', { email, otp: code });
+        const response = await apiClient.post('/auth/verify-otp', { email, otp: code });
         return response.data.code === 1000;
     } catch (error: any) {
         console.error("Verify OTP Error:", error);
@@ -193,7 +193,7 @@ export const authService = {
 
   resetPassword: async (email: string, newPassword: string): Promise<boolean> => {
     try {
-        const response = await apiClient.post('/api/auth/reset-password', { 
+        const response = await apiClient.post('/auth/reset-password', { 
             email, 
             password: newPassword 
         });
