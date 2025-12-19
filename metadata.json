@@ -1,6 +1,6 @@
 {
-  "name": "QuizEdu - Học tập thông minh",
-  "description": "Nền tảng học tập dạng thẻ ghi nhớ (Flashcards) và trắc nghiệm (Quiz) hỗ trợ AI, giúp học sinh và giáo viên tạo bài học nhanh chóng.",
+  "name": "BrainQnA - Hỏi trước, Nhớ lâu, Hiểu sâu",
+  "description": "Nền tảng học tập thông minh hỗ trợ AI. Hỏi trước - Nhớ lâu - Hiểu sâu. Giúp học sinh và giáo viên tạo Quiz và Flashcards nhanh chóng.",
   "requestFramePermissions": [
     "camera"
   ]

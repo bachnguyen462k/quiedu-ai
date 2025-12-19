@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserRole } from '../types';
 import { BrainCircuit, GraduationCap, School, ArrowRight, Loader2, Mail, Lock, User, CheckCircle, ChevronLeft, KeyRound, Globe } from 'lucide-react';
@@ -466,7 +467,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                 <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-indigo-600">
                   <BrainCircuit size={24} />
                 </div>
-                <span className="text-2xl font-bold tracking-tight">QuizEdu</span>
+                <span className="text-2xl font-bold tracking-tight">BrainQnA</span>
               </div>
               <h2 className="text-4xl font-bold mb-4">
                   {authMode === 'LOGIN' ? t('login.welcome_back') : authMode === 'REGISTER' ? t('login.welcome_join') : t('login.forgot_title')}

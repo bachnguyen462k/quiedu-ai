@@ -56,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, currentUser, onLogout, o
         <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm">
           <BrainCircuit size={20} />
         </div>
-        <span className={`text-xl font-bold text-indigo-900 dark:text-white tracking-tight whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>QuizEdu</span>
+        <span className={`text-xl font-bold text-indigo-900 dark:text-white tracking-tight whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>BrainQnA</span>
       </Link>
 
       <div className="flex-1 py-6 px-3 space-y-1 overflow-y-auto overflow-x-hidden custom-scrollbar">

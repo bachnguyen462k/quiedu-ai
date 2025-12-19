@@ -1,3 +1,4 @@
+
 export const en = {
   translation: {
     common: {
@@ -45,13 +46,13 @@ export const en = {
       create_btn: "Create New"
     },
     landing: {
-      hero_desc: "Smart learning platform helps you create flashcards and quizzes in seconds with AI support.",
+      hero_desc: "Smart learning platform helps you create flashcards and quizzes in seconds with AI support. Ask First - Remember Long - Understand Deep.",
       nav_features: "Features",
       nav_teachers: "Teachers",
       nav_schools: "Schools",
       nav_login: "Login",
       nav_register: "Register Free",
-      hero_badge: "✨ New AI 2.0 Version",
+      hero_badge: "✨ BrainQnA: Ask First - Remember Long - Understand Deep",
       hero_title_1: "Study smarter with",
       hero_title_highlight: "AI Assistant",
       btn_start: "Start Now",
@@ -65,7 +66,7 @@ export const en = {
       card_2_desc: "3000 most common vocabulary words",
       ready_title: "Ready to excel?",
       ready_desc: "Create your first lesson today.",
-      feature_title: "Why Choose QuizEdu?",
+      feature_title: "Why Choose BrainQnA?",
       feature_desc: "Powerful tools making teaching and learning easier and more effective than ever.",
       feature_flashcard: "Smart Flashcards",
       feature_flashcard_desc: "Automatically generate flashcards from text or images for better retention.",
@@ -461,8 +462,8 @@ export const en = {
       back: "Prev",
       next: "Next",
       finish: "Finish",
-      step_1_title: "Welcome to QuizEdu!",
-      step_1_desc: "This is a smart learning platform helping you create flashcards and quizzes quickly.",
+      step_1_title: "Welcome to BrainQnA!",
+      step_1_desc: "This is a smart learning platform helping you create flashcards and quizzes quickly. Ask First - Remember Long - Understand Deep.",
       step_2_title: "Dashboard",
       step_2_desc: "See trending sets, recent lessons, and explore the community.",
       step_3_title: "Create New",

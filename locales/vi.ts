@@ -1,3 +1,4 @@
+
 export const vi = {
   translation: {
     common: {
@@ -45,13 +46,13 @@ export const vi = {
       create_btn: "Tạo mới"
     },
     landing: {
-      hero_desc: "Nền tảng học tập thông minh giúp bạn tạo thẻ ghi nhớ và bài kiểm tra chỉ trong vài giây với sự hỗ trợ của AI.",
+      hero_desc: "Nền tảng học tập thông minh giúp bạn tạo thẻ ghi nhớ và bài kiểm tra chỉ trong vài giây với sự hỗ trợ của AI. Hỏi trước - Nhớ lâu - Hiểu sâu.",
       nav_features: "Tính năng",
       nav_teachers: "Giáo viên",
       nav_schools: "Trường học",
       nav_login: "Đăng nhập",
       nav_register: "Đăng ký miễn phí",
-      hero_badge: "✨ Phiên bản AI 2.0 mới nhất",
+      hero_badge: "✨ BrainQnA: Hỏi trước - Nhớ lâu - Hiểu sâu",
       hero_title_1: "Học tập thông minh hơn với",
       hero_title_highlight: "AI Trợ giảng",
       btn_start: "Bắt đầu ngay",
@@ -65,7 +66,7 @@ export const vi = {
       card_2_desc: "3000 từ vựng thông dụng nhất",
       ready_title: "Sẵn sàng bứt phá?",
       ready_desc: "Tạo bài học đầu tiên của bạn ngay hôm nay.",
-      feature_title: "Tại sao chọn QuizEdu?",
+      feature_title: "Tại sao chọn BrainQnA?",
       feature_desc: "Công cụ mạnh mẽ giúp việc dạy và học trở nên dễ dàng và hiệu quả hơn bao giờ hết.",
       feature_flashcard: "Flashcards Thông Minh",
       feature_flashcard_desc: "Tự động tạo thẻ ghi nhớ từ văn bản hoặc hình ảnh, giúp ghi nhớ lâu hơn.",
@@ -461,8 +462,8 @@ export const vi = {
       back: "Trước",
       next: "Tiếp",
       finish: "Xong",
-      step_1_title: "Chào mừng đến với QuizEdu!",
-      step_1_desc: "Đây là nền tảng học tập thông minh giúp bạn tạo thẻ ghi nhớ và bài kiểm tra nhanh chóng.",
+      step_1_title: "Chào mừng đến với BrainQnA!",
+      step_1_desc: "Đây là nền tảng học tập thông minh giúp bạn tạo thẻ ghi nhớ và bài kiểm tra nhanh chóng. Hỏi trước - Nhớ lâu - Hiểu sâu.",
       step_2_title: "Trang chủ (Dashboard)",
       step_2_desc: "Nơi bạn xem các học phần nổi bật, bài học gần đây và khám phá cộng đồng.",
       step_3_title: "Tạo mới",

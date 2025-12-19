@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrainCircuit, BookOpen, Zap, ArrowRight, Users, Globe, ScanLine, PenTool } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +24,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
           <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-200 dark:shadow-none">
             <BrainCircuit size={24} />
           </div>
-          <span className="text-2xl font-bold text-indigo-900 dark:text-white tracking-tight">QuizEdu</span>
+          <span className="text-2xl font-bold text-indigo-900 dark:text-white tracking-tight">BrainQnA</span>
         </div>
         <div className="hidden md:flex gap-8">
             <a href="#" className="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">{t('landing.nav_features')}</a>
@@ -58,11 +59,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center">
         <div>
-          <div className="inline-block px-4 py-1.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-bold text-sm mb-6">
-             {t('landing.hero_badge')}
+          <div className="inline-block px-4 py-1.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-bold text-sm mb-6 uppercase tracking-wider">
+             Hỏi trước - Nhớ lâu - Hiểu sâu
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight mb-6">
-            {t('landing.hero_title_1')} <span className="text-indigo-600 dark:text-indigo-400">{t('landing.hero_title_highlight')}</span>
+            {t('landing.hero_title_1')} <span className="text-indigo-600 dark:text-indigo-400">BrainQnA</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
             {t('landing.hero_desc')}
