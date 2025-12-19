@@ -25,7 +25,7 @@ export const authService = {
             throw new Error("Xác thực thất bại hoặc không có token");
         }
 
-        // Lưu tạm token để apiClient có thể dùng nó cho request lấy thông tin user
+        // Lưu token để apiClient có thể dùng nó cho request lấy thông tin user
         localStorage.setItem('accessToken', token);
 
         // Gọi API lấy thông tin User chi tiết
@@ -39,17 +39,15 @@ export const authService = {
     } catch (error: any) {
         console.error("Login API Error:", error);
         
-        // Nếu lỗi đến từ phía server (có response)
         if (error.response?.data) {
             const serverData = error.response.data;
-            // Nếu là lỗi 1006 (Unauthenticated) từ server của bạn
+            // Nếu là lỗi 1006 (Unauthenticated) từ server đăng nhập -> Sai pass/user
             if (serverData.code === 1006) {
                 throw new Error("Tên đăng nhập hoặc mật khẩu không chính xác");
             }
             throw new Error(serverData.message || "Lỗi đăng nhập");
         }
         
-        // Nếu không có response (lỗi mạng, timeout...)
         throw new Error(error.message || "Lỗi kết nối máy chủ");
     }
   },
@@ -61,8 +59,8 @@ export const authService = {
             username: userData.email,
             password: userData.password,
             firstName: userData.name,
-            lastName: "", // Bạn có thể tách name nếu cần
-            roles: [userData.role] // USER hoặc TEACHER
+            lastName: "",
+            roles: [userData.role]
         });
 
         const responseData = response.data;
@@ -70,7 +68,6 @@ export const authService = {
             throw new Error(responseData.message || "Đăng ký thất bại");
         }
 
-        // Sau khi đăng ký thành công, thực hiện đăng nhập luôn
         return await authService.login({ 
             email: userData.email, 
             password: userData.password 
@@ -81,6 +78,29 @@ export const authService = {
             throw error.response.data.message || "Lỗi đăng ký";
         }
         throw error.message || "Lỗi kết nối máy chủ";
+    }
+  },
+
+  // Làm mới token
+  refreshToken: async (): Promise<string> => {
+    const currentToken = localStorage.getItem('accessToken');
+    if (!currentToken) throw new Error("No token found");
+
+    try {
+        const response = await apiClient.post('/api/auth/refresh', {
+            token: currentToken
+        });
+        
+        const responseData = response.data;
+        if (responseData.code === 1000 && responseData.result?.token) {
+            const newToken = responseData.result.token;
+            localStorage.setItem('accessToken', newToken);
+            return newToken;
+        }
+        throw new Error("Refresh failed with code: " + responseData.code);
+    } catch (error) {
+        console.error("Refresh Token API Error:", error);
+        throw error;
     }
   },
 
@@ -95,7 +115,7 @@ export const authService = {
         
         if (result.roles && Array.isArray(result.roles)) {
             result.roles.forEach((r: any) => {
-                const roleName = r.name || r; // Hỗ trợ cả object role hoặc string role
+                const roleName = r.name || r;
                 
                 if (roleName === 'ADMIN') {
                     if (!mappedRoles.includes('ADMIN')) mappedRoles.push('ADMIN');
@@ -150,7 +170,7 @@ export const authService = {
       apiClient.put(`/api/users/theme/${theme}`).catch(() => {});
   },
 
-  // Quên mật khẩu: Gửi mã OTP
+  // Quên mật khẩu
   sendVerificationCode: async (email: string): Promise<boolean> => {
     try {
         const response = await apiClient.post('/api/auth/forgot-password', { email });
@@ -161,7 +181,6 @@ export const authService = {
     }
   },
 
-  // Quên mật khẩu: Xác thực mã OTP
   verifyCode: async (email: string, code: string): Promise<boolean> => {
     try {
         const response = await apiClient.post('/api/auth/verify-otp', { email, otp: code });
@@ -172,7 +191,6 @@ export const authService = {
     }
   },
 
-  // Quên mật khẩu: Đặt lại mật khẩu mới
   resetPassword: async (email: string, newPassword: string): Promise<boolean> => {
     try {
         const response = await apiClient.post('/api/auth/reset-password', { 
@@ -186,7 +204,6 @@ export const authService = {
     }
   },
 
-  // Mock Google Login (Giữ nguyên vì thường cần cấu hình OAuth2 riêng biệt)
   mockGoogleLogin: async (): Promise<AuthResponse> => {
     return new Promise((resolve) => {
         setTimeout(() => {

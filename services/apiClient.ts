@@ -1,6 +1,7 @@
 
-import axios from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import i18n from '../i18n';
+import { authService } from './authService';
 
 // Lấy URL API từ biến môi trường
 const metaEnv = (import.meta as any).env || {};
@@ -14,16 +15,27 @@ const apiClient = axios.create({
   timeout: 10000, // 10s timeout
 });
 
+// Biến điều hướng để tránh vòng lặp refresh
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+const onRefreshed = (token: string) => {
+  refreshSubscribers.map((cb) => cb(token));
+  refreshSubscribers = [];
+};
+
+const addRefreshSubscriber = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb);
+};
+
 // Request Interceptor: Tự động gắn Token và Ngôn ngữ vào Header
 apiClient.interceptors.request.use(
   (config) => {
-    // 1. Gắn Token
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // 2. Gắn Ngôn ngữ hiện tại
     const currentLanguage = i18n.language || 'vi';
     config.headers['Accept-Language'] = currentLanguage;
 
@@ -34,30 +46,95 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Xử lý lỗi toàn cục
+// Response Interceptor: Xử lý làm mới token (1006) và lỗi 401
 apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    // Kiểm tra xem đây có phải là request xác thực (đăng nhập) không
-    // Chúng ta kiểm tra cả đường dẫn tương đối và tuyệt đối để đảm bảo an toàn
+  (response) => {
+    const originalRequest = response.config;
     const url = originalRequest.url || '';
     const isLoginRequest = url.includes('/api/auth/token') || url.endsWith('/auth/token');
+    const isRefreshRequest = url.includes('/api/auth/refresh') || url.endsWith('/auth/refresh');
 
-    // Nếu gặp lỗi 401 (Unauthorized)
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      // Nếu KHÔNG PHẢI request đăng nhập, thì mới thực hiện logout và redirect
-      // Vì nếu là request đăng nhập bị 401, nghĩa là sai user/pass, ta cần giữ user ở lại trang login
-      if (!isLoginRequest) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
-        window.location.href = '/'; 
+    // Kiểm tra mã code 1006 trong response body
+    if (response.data && response.data.code === 1006 && !isLoginRequest && !isRefreshRequest) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        authService.refreshToken()
+          .then((newToken) => {
+            isRefreshing = false;
+            onRefreshed(newToken);
+          })
+          .catch((err) => {
+            isRefreshing = false;
+            handleLogout();
+          });
       }
+
+      // Trả về một promise chờ token mới
+      return new Promise((resolve) => {
+        addRefreshSubscriber((token: string) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          resolve(apiClient(originalRequest));
+        });
+      });
+    }
+
+    return response;
+  },
+  async (error: AxiosError) => {
+    const originalRequest = error.config as any;
+
+    if (!originalRequest) {
+        return Promise.reject(error);
+    }
+
+    const url = originalRequest.url || '';
+    const isLoginRequest = url.includes('/api/auth/token') || url.endsWith('/auth/token');
+    const isRefreshRequest = url.includes('/api/auth/refresh') || url.endsWith('/auth/refresh');
+
+    // 1. Nếu gặp lỗi 401 khi đang gọi API Refresh -> Logout ngay
+    if (error.response?.status === 401 && isRefreshRequest) {
+        handleLogout();
+        return Promise.reject(error);
+    }
+
+    // 2. Nếu API thông thường trả về 401 hoặc mã lỗi đặc biệt trong data (nếu axios ném lỗi)
+    const serverData = error.response?.data as any;
+    if ((error.response?.status === 401 || serverData?.code === 1006) && !isLoginRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      if (!isRefreshing) {
+        isRefreshing = true;
+        try {
+          const newToken = await authService.refreshToken();
+          isRefreshing = false;
+          onRefreshed(newToken);
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return apiClient(originalRequest);
+        } catch (refreshError) {
+          isRefreshing = false;
+          handleLogout();
+          return Promise.reject(refreshError);
+        }
+      }
+
+      return new Promise((resolve) => {
+        addRefreshSubscriber((token: string) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          resolve(apiClient(originalRequest));
+        });
+      });
     }
     
     return Promise.reject(error);
   }
 );
+
+function handleLogout() {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('user');
+  if (window.location.hash !== '#/login' && window.location.pathname !== '/login') {
+    window.location.href = '/'; 
+  }
+}
 
 export default apiClient;
