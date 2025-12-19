@@ -20,50 +20,57 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
   const { eventTheme } = useApp();
 
   const sizeMap = {
-    sm: { icon: 24, font: 'text-lg' },
-    md: { icon: 40, font: 'text-2xl' },
-    lg: { icon: 64, font: 'text-4xl' },
-    xl: { icon: 120, font: 'text-6xl' }
+    sm: { icon: 32, font: 'text-xl' },
+    md: { icon: 48, font: 'text-2xl' },
+    lg: { icon: 96, font: 'text-5xl' },
+    xl: { icon: 180, font: 'text-7xl' }
   };
 
   const currentSize = sizeMap[size];
 
-  // Logic màu sắc và trang trí theo chủ đề
   const getThemeConfig = () => {
     switch (eventTheme) {
         case 'CHRISTMAS':
             return {
-                leftColor: '#D42426', // Đỏ Noel
-                rightColor: '#165B33', // Xanh thông
+                leftColor: '#D42426', // Red
+                rightColor: '#165B33', // Green
                 decoration: (
-                    <g transform="translate(45, 5) scale(0.6)">
-                        <path d="M0 20 L25 0 L50 20 Z" fill="#D42426" />
-                        <circle cx="25" cy="0" r="5" fill="white" />
-                        <rect x="0" y="15" width="50" height="8" rx="4" fill="white" />
+                    <g className="animate-bounce">
+                        {/* Santa Hat sitting on the brain */}
+                        <path d="M35 15 Q50 -5 65 15 L70 18 Q50 10 30 18 Z" fill="#D42426" />
+                        <circle cx="65" cy="5" r="5" fill="white" />
+                        <rect x="30" y="14" width="40" height="6" rx="3" fill="white" />
                     </g>
                 )
             };
         case 'TET':
             return {
-                leftColor: '#E60000', // Đỏ Tết
-                rightColor: '#FFD700', // Vàng mai
+                leftColor: '#E60000', // Lunar Red
+                rightColor: '#FFD700', // Gold
                 decoration: (
-                    <g transform="translate(70, 15) scale(0.5)">
-                        <circle cx="20" cy="20" r="15" fill="#FFD700" />
-                        <circle cx="20" cy="20" r="5" fill="#E60000" />
-                        {[0, 72, 144, 216, 288].map(deg => (
-                            <ellipse key={deg} cx="20" cy="5" rx="6" ry="10" fill="#FFD700" transform={`rotate(${deg}, 20, 20)`} />
-                        ))}
+                    <g>
+                        {/* Apricot blossom (Hoa Mai) near the top right */}
+                        <g transform="translate(75, 10) scale(0.6)">
+                            <circle cx="10" cy="10" r="4" fill="#E60000" />
+                            {[0, 72, 144, 216, 288].map(deg => (
+                                <circle key={deg} cx="10" cy="4" r="5" fill="#FFD700" transform={`rotate(${deg}, 10, 10)`} />
+                            ))}
+                        </g>
+                        {/* Red envelope (Lì xì) hanging */}
+                        <rect x="10" y="60" width="12" height="18" rx="2" fill="#E60000" transform="rotate(-15, 10, 60)" />
+                        <text x="12" y="74" fontSize="8" fill="#FFD700" fontWeight="bold" transform="rotate(-15, 10, 60)">福</text>
                     </g>
                 )
             };
         case 'AUTUMN':
             return {
-                leftColor: '#92400E', // Nâu đất
-                rightColor: '#D97706', // Vàng lá úa
+                leftColor: '#92400E', // Earth Brown
+                rightColor: '#D97706', // Amber Leaf
                 decoration: (
-                    <g transform="translate(10, 10) rotate(-15) scale(0.4)">
-                         <path d="M20 0 L40 20 L30 20 L40 40 L20 30 L0 40 L10 20 L0 20 Z" fill="#D97706" />
+                    <g>
+                        {/* Maple leaf falling */}
+                        <path d="M10 20 L15 15 L12 15 L18 8 L10 12 L2 8 L8 15 L5 15 Z" fill="#D97706" transform="translate(0, 5) rotate(-20)" />
+                        <path d="M85 70 L90 65 L87 65 L93 58 L85 62 L77 58 L83 65 L80 65 Z" fill="#B45309" transform="rotate(15, 85, 70)" />
                     </g>
                 )
             };
@@ -79,63 +86,63 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
   const themeConfig = getThemeConfig();
 
   return (
-    <div className={`flex ${vertical ? 'flex-col' : 'items-center'} gap-3 ${className}`}>
-      <div className="relative">
+    <div className={`flex ${vertical ? 'flex-col' : 'items-center'} gap-4 ${className}`}>
+      <div className="relative shrink-0 flex items-center justify-center">
         <svg 
             width={currentSize.icon} 
             height={currentSize.icon} 
             viewBox="0 0 100 100" 
             fill="none" 
             xmlns="http://www.w3.org/2000/svg"
-            className="shrink-0 drop-shadow-sm overflow-visible"
+            className="overflow-visible drop-shadow-md"
         >
-            {/* Logo base */}
+            {/* Design gốc từ index.html */}
             <path 
-            d="M50 85C30 85 15 70 15 50C15 35 25 20 45 15C48 14.5 50 16 50 18V85Z" 
-            fill={themeConfig.leftColor} 
-            className="transition-colors duration-500"
+                d="M50 85C30 85 15 70 15 50C15 35 25 20 45 15V85Z" 
+                fill={themeConfig.leftColor} 
+                className="transition-colors duration-700"
             />
             <path 
-            d="M50 85C70 85 85 70 85 50C85 35 75 20 55 15C52 14.5 50 16 50 18V85Z" 
-            fill={themeConfig.rightColor} 
-            className="transition-colors duration-500"
+                d="M50 85C70 85 85 70 85 50C85 35 75 20 55 15V85Z" 
+                fill={themeConfig.rightColor} 
+                className="transition-colors duration-700"
             />
             
-            <path d="M35 30C30 35 30 45 35 50M65 30C70 35 70 45 65 50" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.3"/>
-            
-            <g>
+            {/* Kính */}
             <rect x="20" y="38" width="25" height="18" rx="6" fill="white" stroke="#1F2937" strokeWidth="3"/>
             <rect x="55" y="38" width="25" height="18" rx="6" fill="white" stroke="#1F2937" strokeWidth="3"/>
             <path d="M45 47H55" stroke="#1F2937" strokeWidth="3"/>
-            <path d="M18 47H20M80 47H82" stroke="#1F2937" strokeWidth="3" strokeLinecap="round"/>
+            
+            {/* Mắt */}
             <circle cx="32.5" cy="47" r="4" fill="#1F2937"/>
             <circle cx="67.5" cy="47" r="4" fill="#1F2937"/>
-            </g>
+            
+            {/* Nụ cười */}
             <path d="M40 70C45 75 55 75 60 70" stroke="white" strokeWidth="3" strokeLinecap="round"/>
 
-            {/* Decoration based on theme */}
+            {/* Trang trí theo chủ đề */}
             {themeConfig.decoration}
         </svg>
       </div>
 
       {showText && (
-        <div className={`flex flex-col ${vertical ? 'items-center' : ''}`}>
-          <div className={`${currentSize.font} font-black tracking-tight flex`}>
+        <div className={`flex flex-col ${vertical ? 'items-center text-center' : ''}`}>
+          <div className={`${currentSize.font} font-black tracking-tight leading-none`}>
             <span 
-                className="transition-colors duration-500" 
-                style={{ color: eventTheme === 'DEFAULT' ? '' : themeConfig.leftColor }}
+                className="transition-colors duration-700" 
+                style={{ color: eventTheme === 'DEFAULT' ? '#005EB8' : themeConfig.leftColor }}
             >
-                {eventTheme === 'DEFAULT' ? <span className="text-brand-blue dark:text-blue-400">Brain</span> : 'Brain'}
+                Brain
             </span>
             <span 
-                className="transition-colors duration-500"
-                style={{ color: eventTheme === 'DEFAULT' ? '' : themeConfig.rightColor }}
+                className="transition-colors duration-700"
+                style={{ color: eventTheme === 'DEFAULT' ? '#F37321' : themeConfig.rightColor }}
             >
-                {eventTheme === 'DEFAULT' ? <span className="text-brand-orange">QnA</span> : 'QnA'}
+                QnA
             </span>
           </div>
           {size !== 'sm' && (
-            <span className="text-[0.4em] font-bold text-gray-500 dark:text-gray-400 -mt-1 uppercase tracking-[0.2em] whitespace-nowrap">
+            <span className="text-[0.35em] font-black text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.25em] whitespace-nowrap">
               {t('common.slogan')}
             </span>
           )}
