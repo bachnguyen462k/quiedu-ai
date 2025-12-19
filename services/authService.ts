@@ -3,10 +3,9 @@ import apiClient from './apiClient';
 import { User, LoginCredentials, AuthResponse, UserRole, ThemeMode } from '../types';
 
 export const authService = {
-  // Đăng nhập thực tế với API
+  // Đăng nhập để lấy Token
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-        // 1. Gọi API login để lấy Token
         const response = await apiClient.post('/api/auth/token', {
             username: credentials.email,
             password: credentials.password
@@ -15,9 +14,6 @@ export const authService = {
         const responseData = response.data;
 
         if (responseData.code !== 1000) {
-            if (responseData.code === 1005) {
-                throw new Error("Tài khoản không tồn tại");
-            }
             throw new Error(responseData.message || "Đăng nhập thất bại");
         }
 
@@ -28,10 +24,10 @@ export const authService = {
             throw new Error("Xác thực thất bại hoặc không có token");
         }
 
-        // Lưu tạm token để apiClient có thể dùng nó cho request tiếp theo
+        // Lưu tạm token để apiClient có thể dùng nó cho request lấy thông tin user
         localStorage.setItem('accessToken', token);
 
-        // 2. Gọi API lấy thông tin User chi tiết
+        // Gọi API lấy thông tin User chi tiết
         const user = await authService.getCurrentUser();
 
         return {
@@ -41,18 +37,90 @@ export const authService = {
         };
     } catch (error: any) {
         console.error("Login API Error:", error);
-        
-        // Xóa token nếu quá trình đăng nhập bị lỗi giữa chừng
         localStorage.removeItem('accessToken');
-
         if (error.response?.data) {
-            const errorData = error.response.data;
-            if (errorData.code === 1005) {
-                throw "Tài khoản không tồn tại";
-            }
-            throw errorData.message || "Lỗi hệ thống";
+            throw error.response.data.message || "Lỗi đăng nhập";
         }
         throw error.message || "Lỗi kết nối máy chủ";
+    }
+  },
+
+  // Đăng ký tài khoản mới
+  register: async (userData: any): Promise<AuthResponse> => {
+    try {
+        const response = await apiClient.post('/api/users', {
+            username: userData.email,
+            password: userData.password,
+            firstName: userData.name,
+            lastName: "", // Bạn có thể tách name nếu cần
+            roles: [userData.role] // STUDENT hoặc TEACHER
+        });
+
+        const responseData = response.data;
+        if (responseData.code !== 1000) {
+            throw new Error(responseData.message || "Đăng ký thất bại");
+        }
+
+        // Sau khi đăng ký thành công, thực hiện đăng nhập luôn
+        return await authService.login({ 
+            email: userData.email, 
+            password: userData.password 
+        });
+    } catch (error: any) {
+        console.error("Register API Error:", error);
+        if (error.response?.data) {
+            throw error.response.data.message || "Lỗi đăng ký";
+        }
+        throw error.message || "Lỗi kết nối máy chủ";
+    }
+  },
+
+  // Lấy thông tin user hiện tại
+  getCurrentUser: async (): Promise<User> => {
+    try {
+        const response = await apiClient.get('/api/users/my-info');
+        const result = response.data.result;
+
+        const mappedRoles: UserRole[] = [];
+        const permissions: string[] = [];
+        
+        if (result.roles && Array.isArray(result.roles)) {
+            result.roles.forEach((r: any) => {
+                if (r.name === 'ADMIN' || r.name === 'TEACHER') {
+                    if (!mappedRoles.includes('TEACHER')) mappedRoles.push('TEACHER');
+                }
+                if (r.name === 'USER' || r.name === 'STUDENT') {
+                    if (!mappedRoles.includes('STUDENT')) mappedRoles.push('STUDENT');
+                }
+
+                if (r.permissions && Array.isArray(r.permissions)) {
+                    r.permissions.forEach((p: any) => {
+                        if (p.name && !permissions.includes(p.name)) {
+                            permissions.push(p.name);
+                        }
+                    });
+                }
+            });
+        }
+
+        if (mappedRoles.length === 0) mappedRoles.push('STUDENT');
+
+        const displayName = (result.firstName || result.lastName) 
+            ? `${result.lastName || ''} ${result.firstName || ''}`.trim() 
+            : result.username;
+
+        return {
+            id: result.id,
+            name: displayName,
+            email: result.username,
+            roles: mappedRoles,
+            permissions: permissions,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`,
+            darkMode: result.darkMode
+        };
+    } catch (error) {
+        console.error("Get User Info Error:", error);
+        throw error;
     }
   },
 
@@ -65,91 +133,48 @@ export const authService = {
       }
   },
 
-  // Đăng ký (Mock - giữ nguyên để không ảnh hưởng luồng khác)
-  register: async (userData: any): Promise<AuthResponse> => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({
-                user: {
-                    id: `u${Date.now()}`,
-                    name: userData.name,
-                    email: userData.email,
-                    roles: ['STUDENT'],
-                    permissions: [],
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=random&color=fff`,
-                    darkMode: false
-                },
-                accessToken: 'mock-jwt-token-register',
-                refreshToken: 'mock-refresh-token'
-            });
-        }, 1500);
-    });
+  // Cập nhật Theme Mode
+  updateTheme: (theme: ThemeMode): void => {
+      apiClient.put(`/api/users/theme/${theme}`).catch(() => {});
   },
 
-  // Lấy thông tin user hiện tại từ API /api/users/my-info
-  getCurrentUser: async (): Promise<User> => {
+  // Quên mật khẩu: Gửi mã OTP
+  sendVerificationCode: async (email: string): Promise<boolean> => {
     try {
-        const response = await apiClient.get('/api/users/my-info');
-        const result = response.data.result;
-
-        const mappedRoles: UserRole[] = [];
-        const permissions: string[] = [];
-        
-        if (result.roles && Array.isArray(result.roles)) {
-            result.roles.forEach((r: any) => {
-                // Map Roles
-                if (r.name === 'ADMIN' || r.name === 'TEACHER') {
-                    if (!mappedRoles.includes('TEACHER')) mappedRoles.push('TEACHER');
-                }
-                if (r.name === 'USER' || r.name === 'STUDENT') {
-                    if (!mappedRoles.includes('STUDENT')) mappedRoles.push('STUDENT');
-                }
-
-                // Map Permissions (Flatten nested permissions)
-                if (r.permissions && Array.isArray(r.permissions)) {
-                    r.permissions.forEach((p: any) => {
-                        if (p.name && !permissions.includes(p.name)) {
-                            permissions.push(p.name);
-                        }
-                    });
-                }
-            });
-        }
-
-        // Default role nếu không có
-        if (mappedRoles.length === 0) {
-            mappedRoles.push('STUDENT');
-        }
-
-        // Tạo tên hiển thị (ưu tiên Full Name, nếu null thì dùng Username)
-        const displayName = (result.firstName || result.lastName) 
-            ? `${result.lastName || ''} ${result.firstName || ''}`.trim() 
-            : result.username;
-
-        return {
-            id: result.id,
-            name: displayName,
-            email: result.username, // Dùng username làm định danh email
-            roles: mappedRoles,
-            permissions: permissions, // Danh sách quyền đã flatten
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`,
-            darkMode: result.darkMode // Map field darkMode từ API
-        };
-    } catch (error) {
-        console.error("Get User Info Error:", error);
-        throw error;
+        const response = await apiClient.post('/api/auth/forgot-password', { email });
+        return response.data.code === 1000;
+    } catch (error: any) {
+        console.error("Send OTP Error:", error);
+        throw error.response?.data?.message || "Không thể gửi mã xác thực";
     }
   },
 
-  // Cập nhật Theme Mode cho user - Fire and forget
-  updateTheme: (theme: ThemeMode): void => {
-      // Không await để tránh chặn UI, không throw lỗi để tránh spam log nếu thất bại
-      apiClient.put(`/api/users/theme/${theme}`).catch(() => {
-          // Silent failure: Không làm gì nếu lỗi để tránh làm phiền user
-      });
+  // Quên mật khẩu: Xác thực mã OTP
+  verifyCode: async (email: string, code: string): Promise<boolean> => {
+    try {
+        const response = await apiClient.post('/api/auth/verify-otp', { email, otp: code });
+        return response.data.code === 1000;
+    } catch (error: any) {
+        console.error("Verify OTP Error:", error);
+        throw error.response?.data?.message || "Mã xác thực không chính xác";
+    }
   },
 
-  // Các hàm Mock khác giữ nguyên
+  // Quên mật khẩu: Đặt lại mật khẩu mới
+  resetPassword: async (email: string, newPassword: string): Promise<boolean> => {
+    try {
+        const response = await apiClient.post('/api/auth/reset-password', { 
+            email, 
+            password: newPassword 
+        });
+        return response.data.code === 1000;
+    } catch (error: any) {
+        console.error("Reset Password Error:", error);
+        throw error.response?.data?.message || "Không thể đặt lại mật khẩu";
+    }
+  },
+
+  // Mock Google Login (Giữ nguyên vì thường cần cấu hình OAuth2 riêng biệt)
   mockGoogleLogin: async (): Promise<AuthResponse> => {
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -168,17 +193,5 @@ export const authService = {
             });
         }, 1200);
     });
-  },
-
-  sendVerificationCode: async (email: string): Promise<boolean> => {
-      return new Promise((resolve) => { setTimeout(() => resolve(true), 1000); });
-  },
-  verifyCode: async (email: string, code: string): Promise<boolean> => {
-      return new Promise((resolve, reject) => { 
-          code === '123456' ? resolve(true) : reject(new Error("Sai mã")); 
-      });
-  },
-  resetPassword: async (email: string, newPassword: string): Promise<boolean> => {
-      return new Promise((resolve) => { setTimeout(() => resolve(true), 1000); });
   }
 };
