@@ -32,6 +32,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, currentUser, onLogout, o
     }
   }, []);
 
+  const getRoleLabel = (role: UserRole) => {
+    switch(role) {
+        case 'ADMIN': return t('common.role_admin');
+        case 'TEACHER': return t('common.role_teacher');
+        case 'USER': return t('common.role_user');
+        default: return role;
+    }
+  };
+
   const menuItems: MenuItem[] = [
     { id: 'DASHBOARD', label: t('sidebar.dashboard'), icon: LayoutDashboard, path: '/dashboard', allowedRoles: ['TEACHER', 'USER', 'ADMIN'] },
     { id: 'CREATE', label: t('sidebar.create'), icon: PlusCircle, path: '/create', allowedRoles: ['TEACHER', 'USER', 'ADMIN'] },
@@ -92,8 +101,34 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, currentUser, onLogout, o
       </div>
 
       <div className={`border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
-        <button onClick={onLogout} className={`w-full flex items-center justify-center text-sm font-black text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors ${isCollapsed ? 'p-3' : 'gap-2 py-3'}`}>
-            <LogOut size={16} /><span className={isCollapsed ? 'hidden' : 'block'}>{t('sidebar.logout')}</span>
+        {/* User Info Section */}
+        <div className={`flex items-center mb-4 transition-all duration-300 ${isCollapsed ? 'justify-center' : 'px-2 gap-3'}`}>
+            <div className={`shrink-0 rounded-full border-2 border-gray-100 dark:border-gray-800 overflow-hidden bg-gray-50 ${isCollapsed ? 'w-10 h-10' : 'w-9 h-9'}`}>
+                <img 
+                    src={currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`} 
+                    alt="User" 
+                    className="w-full h-full object-cover"
+                />
+            </div>
+            {!isCollapsed && (
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black text-gray-900 dark:text-white truncate">
+                        {currentUser.name}
+                    </p>
+                    <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tighter truncate">
+                        {getRoleLabel(currentUser.roles[0])}
+                    </p>
+                </div>
+            )}
+        </div>
+
+        <button 
+            onClick={onLogout} 
+            className={`w-full flex items-center justify-center text-sm font-black text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors ${isCollapsed ? 'p-3' : 'gap-2 py-3'}`}
+            title={isCollapsed ? t('sidebar.logout') : ''}
+        >
+            <LogOut size={16} />
+            <span className={isCollapsed ? 'hidden' : 'block'}>{t('sidebar.logout')}</span>
         </button>
       </div>
     </aside>
