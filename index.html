@@ -59,6 +59,26 @@
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
       .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+
+      /* Tet Flower Animations */
+      @keyframes flower-fall {
+        0% { top: -10%; transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 110%; transform: translate3d(100px, 0, 0) rotate(360deg); opacity: 0; }
+      }
+
+      @keyframes flower-sway {
+        0% { margin-left: 0px; }
+        100% { margin-left: 50px; }
+      }
+
+      .tet-petal {
+        position: absolute;
+        pointer-events: none;
+        z-index: 9999;
+        will-change: transform, top;
+      }
     </style>
   <script type="importmap">
 {

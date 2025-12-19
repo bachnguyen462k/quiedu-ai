@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -24,6 +24,21 @@ import { useTranslation } from 'react-i18next';
 
 // --- Global Event Theme Overlay Component ---
 const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
+    // Memoize petals to avoid re-calculating on every parent render
+    const tetPetals = useMemo(() => {
+        if (theme !== 'TET') return [];
+        return Array.from({ length: 40 }).map((_, i) => ({
+            id: i,
+            left: `${Math.random() * 100}%`,
+            delay: `${Math.random() * 15}s`,
+            duration: `${8 + Math.random() * 12}s`,
+            size: `${10 + Math.random() * 15}px`,
+            swayDuration: `${3 + Math.random() * 4}s`,
+            type: Math.random() > 0.5 ? 'MAI' : 'DAO',
+            opacity: 0.4 + Math.random() * 0.5
+        }));
+    }, [theme]);
+
     if (theme === 'DEFAULT') return null;
 
     return (
@@ -31,7 +46,7 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
             {/* Christmas Theme: Simple Snowflakes */}
             {theme === 'CHRISTMAS' && (
                 <div className="absolute inset-0">
-                    {[...Array(20)].map((_, i) => (
+                    {[...Array(30)].map((_, i) => (
                         <div key={i} className="absolute text-white/40 dark:text-white/20 animate-bounce" 
                              style={{ 
                                 left: `${Math.random() * 100}%`, 
@@ -45,12 +60,37 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme }) => {
                 </div>
             )}
             
-            {/* Tet Theme: Lanterns/Blossoms */}
+            {/* Tet Theme: Smooth Falling Apricot and Peach Blossoms */}
             {theme === 'TET' && (
-                <>
-                    <div className="absolute top-0 left-0 w-32 h-32 text-red-500/20 opacity-50 dark:opacity-30">🧧</div>
-                    <div className="absolute top-0 right-0 w-32 h-32 text-orange-500/20 opacity-50 dark:opacity-30">🏮</div>
-                </>
+                <div className="absolute inset-0">
+                    {tetPetals.map((petal) => (
+                        <div 
+                            key={petal.id}
+                            className="tet-petal"
+                            style={{
+                                left: petal.left,
+                                width: petal.size,
+                                height: petal.size,
+                                opacity: petal.opacity,
+                                animation: `flower-fall ${petal.duration} linear infinite`,
+                                animationDelay: petal.delay,
+                            }}
+                        >
+                            <div 
+                                className="w-full h-full rounded-full"
+                                style={{
+                                    backgroundColor: petal.type === 'MAI' ? '#FFD700' : '#FFB7C5',
+                                    boxShadow: `0 0 8px ${petal.type === 'MAI' ? '#FFD700' : '#FFB7C5'}`,
+                                    animation: `flower-sway ${petal.swayDuration} ease-in-out infinite alternate`,
+                                    transform: `rotate(${Math.random() * 360}deg)`
+                                }}
+                            ></div>
+                        </div>
+                    ))}
+                    {/* Corner Decorations */}
+                    <div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse">🧧</div>
+                    <div className="absolute top-0 right-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse" style={{ animationDelay: '1s' }}>🏮</div>
+                </div>
             )}
 
             {/* Autumn Theme: Falling Leaves */}
