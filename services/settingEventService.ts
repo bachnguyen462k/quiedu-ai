@@ -32,5 +32,19 @@ export const settingEventService = {
       console.debug("SettingEventService: API unreachable or error, falling back to DEFAULT.");
       return 'DEFAULT';
     }
+  },
+
+  /**
+   * Updates the global event status (on/off).
+   * Endpoint: /api/event/{mode}
+   */
+  updateGlobalEventStatus: async (isOn: boolean): Promise<void> => {
+    try {
+      const mode = isOn ? 'on' : 'off';
+      await apiClient.put(`/event/${mode}`);
+    } catch (error) {
+      console.error("SettingEventService: Failed to update event status", error);
+      throw error;
+    }
   }
 };

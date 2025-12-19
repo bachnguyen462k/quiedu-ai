@@ -13,13 +13,14 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHistory }) => {
-  const { theme, toggleTheme, notifications, removeNotification, isAnimationEnabled, setIsAnimationEnabled } = useApp();
+  const { theme, toggleTheme, notifications, removeNotification, eventTheme, toggleGlobalEvent, addNotification } = useApp();
   const { t, i18n } = useTranslation();
   
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [visibleLimit, setVisibleLimit] = useState(10); // Infinity Scroll State for Search
+  const [isUpdatingEvent, setIsUpdatingEvent] = useState(false);
   
   const searchRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null); // Ref for search bottom
@@ -112,6 +113,20 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
       i18n.changeLanguage(newLang);
   };
 
+  const handleToggleEvent = async () => {
+      if (isUpdatingEvent) return;
+      setIsUpdatingEvent(true);
+      try {
+          await toggleGlobalEvent();
+          const nextState = eventTheme === 'DEFAULT'; // Vì eventTheme chưa kịp update trong scope này nên ta check ngược lại
+          addNotification(nextState ? "Đã bật sự kiện toàn hệ thống" : "Đã tắt sự kiện toàn hệ thống", "info");
+      } catch (e) {
+          addNotification("Không thể cập nhật trạng thái sự kiện", "error");
+      } finally {
+          setIsUpdatingEvent(false);
+      }
+  };
+
   // --- SEARCH LOGIC ---
   const filteredResults = useMemo(() => {
     if (!searchQuery.trim()) return { quizzes: [], teachers: [], files: [] };
@@ -149,6 +164,8 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
   // --- NOTIFICATION LOGIC ---
   const displayedNotifications = notifications.slice(0, visibleNotifLimit);
   const hasMoreNotifications = notifications.length > visibleNotifLimit;
+
+  const isEventOn = eventTheme !== 'DEFAULT';
 
   return (
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 sticky top-0 z-40 transition-colors">
@@ -275,18 +292,23 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                 <span className="text-xs font-bold uppercase">{i18n.language}</span>
             </button>
 
-            {/* Animation Toggle */}
+            {/* Global Event Toggle Button */}
             <button 
                 id="header-effects"
-                onClick={() => setIsAnimationEnabled(!isAnimationEnabled)}
+                onClick={handleToggleEvent}
+                disabled={isUpdatingEvent}
                 className={`p-2 rounded-full transition-colors ${
-                    isAnimationEnabled 
-                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30' 
+                    isEventOn 
+                    ? 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 shadow-inner' 
                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
-                title={isAnimationEnabled ? "Tắt hiệu ứng" : "Bật hiệu ứng"}
+                title={isEventOn ? "Tắt sự kiện hệ thống" : "Bật sự kiện hệ thống"}
             >
-                <Sparkles size={20} className={isAnimationEnabled ? 'animate-pulse' : ''} />
+                {isUpdatingEvent ? (
+                    <Loader2 size={20} className="animate-spin" />
+                ) : (
+                    <Sparkles size={20} className={isEventOn ? 'animate-pulse' : ''} />
+                )}
             </button>
 
             {/* Notification Bell */}

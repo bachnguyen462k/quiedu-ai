@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { Notification, NotificationType, ThemeMode, EventTheme } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { authService } from '../services/authService';
+import { settingEventService } from '../services/settingEventService';
 
 interface AppContextType {
   // Theme
@@ -12,6 +13,7 @@ interface AppContextType {
   // Event Theme
   eventTheme: EventTheme;
   setEventTheme: (theme: EventTheme) => void;
+  toggleGlobalEvent: () => Promise<void>;
   // Animation Toggle
   isAnimationEnabled: boolean;
   setIsAnimationEnabled: (enabled: boolean) => void;
@@ -61,6 +63,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem('eventTheme', newTheme);
   }, []);
 
+  // Hàm bật/tắt sự kiện toàn hệ thống (Global) thông qua API
+  const toggleGlobalEvent = useCallback(async () => {
+    const isCurrentlyOn = eventTheme !== 'DEFAULT';
+    const nextState = !isCurrentlyOn;
+    
+    try {
+      await settingEventService.updateGlobalEventStatus(nextState);
+      
+      if (nextState) {
+        // Nếu bật: Lấy theme từ server hoặc mặc định chọn TET/CHRISTMAS tùy mùa (giả định)
+        // Ở đây ta gọi lại API lấy theme để đồng bộ chính xác nhất
+        const themeFromApi = await settingEventService.getGlobalEventTheme();
+        setEventTheme(themeFromApi !== 'DEFAULT' ? themeFromApi : 'TET'); // Fallback về TET nếu bật mà chưa có theme cụ thể
+      } else {
+        // Nếu tắt: Chuyển về DEFAULT
+        setEventTheme('DEFAULT');
+      }
+    } catch (error) {
+      console.error("Failed to toggle global event:", error);
+      throw error;
+    }
+  }, [eventTheme, setEventTheme]);
+
   useEffect(() => {
     const root = window.document.documentElement;
     if (theme === 'dark') {
@@ -107,12 +132,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setThemeMode, 
     eventTheme,
     setEventTheme,
+    toggleGlobalEvent,
     isAnimationEnabled,
     setIsAnimationEnabled,
     notifications, 
     addNotification, 
     removeNotification
-  }), [theme, toggleTheme, setThemeMode, eventTheme, setEventTheme, isAnimationEnabled, setIsAnimationEnabled, notifications, addNotification, removeNotification]);
+  }), [theme, toggleTheme, setThemeMode, eventTheme, setEventTheme, toggleGlobalEvent, isAnimationEnabled, setIsAnimationEnabled, notifications, addNotification, removeNotification]);
 
   return (
     <AppContext.Provider value={contextValue}>
