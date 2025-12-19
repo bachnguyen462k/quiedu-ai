@@ -24,7 +24,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
-  const [selectedRole, setSelectedRole] = useState<UserRole>('STUDENT');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('USER');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -158,7 +158,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
         <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">{t('login.welcome_join')}</p>
         
         <div className="flex gap-4 mb-6">
-            <button onClick={() => setSelectedRole('STUDENT')} className={`flex-1 py-3 rounded-2xl border-2 font-black transition-all flex items-center justify-center gap-2 ${selectedRole === 'STUDENT' ? 'border-brand-blue bg-blue-50 dark:bg-blue-900/30 text-brand-blue dark:text-blue-400' : 'border-gray-100 dark:border-gray-700 text-gray-400'}`}>
+            <button onClick={() => setSelectedRole('USER')} className={`flex-1 py-3 rounded-2xl border-2 font-black transition-all flex items-center justify-center gap-2 ${selectedRole === 'USER' ? 'border-brand-blue bg-blue-50 dark:bg-blue-900/30 text-brand-blue dark:text-blue-400' : 'border-gray-100 dark:border-gray-700 text-gray-400'}`}>
                 <GraduationCap size={20} /> {t('common.role_student')}
             </button>
             <button onClick={() => setSelectedRole('TEACHER')} className={`flex-1 py-3 rounded-2xl border-2 font-black transition-all flex items-center justify-center gap-2 ${selectedRole === 'TEACHER' ? 'border-brand-orange bg-orange-50 dark:bg-orange-900/30 text-brand-orange' : 'border-gray-100 dark:border-gray-700 text-gray-400'}`}>

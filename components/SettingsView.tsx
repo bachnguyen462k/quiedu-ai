@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 import { User as UserIcon, Mail, Camera, Save, Shield, CheckCircle, Lock, Key, AlertCircle, Moon, Sun } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useTranslation } from 'react-i18next';
@@ -91,6 +92,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
     setAvatar(newAvatar);
   };
 
+  const getRoleLabel = (role: UserRole) => {
+      switch(role) {
+          case 'ADMIN': return t('common.role_admin');
+          case 'TEACHER': return t('common.role_teacher');
+          case 'USER': return t('common.role_user');
+          default: return role;
+      }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8 pb-20 animate-fade-in">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Cài đặt tài khoản</h1>
@@ -118,7 +128,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
             
             <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">{name}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                {currentUser.roles.map(r => r === 'TEACHER' ? 'Giáo viên' : 'Học sinh').join(', ')}
+                {currentUser.roles.map(r => getRoleLabel(r)).join(', ')}
             </p>
             
             <button 
@@ -211,7 +221,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ currentUser, onUpdateUser }
                         <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300">
                             <Shield size={18} />
                             <span className="font-medium">
-                                {currentUser.roles.map(r => r === 'TEACHER' ? 'Giáo viên' : 'Học sinh').join(', ')}
+                                {currentUser.roles.map(r => getRoleLabel(r)).join(', ')}
                             </span>
                         </div>
                     </div>

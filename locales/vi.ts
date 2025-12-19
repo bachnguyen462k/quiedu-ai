@@ -10,6 +10,8 @@ export const vi = {
       back_home: "Quay lại trang chủ",
       role_teacher: "Giáo viên",
       role_student: "Học sinh",
+      role_admin: "Quản trị viên",
+      role_user: "Người dùng",
       slogan: "Hỏi trước - Nhớ lâu - Hiểu sâu"
     },
     sidebar: {

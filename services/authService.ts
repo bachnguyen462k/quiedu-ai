@@ -62,7 +62,7 @@ export const authService = {
             password: userData.password,
             firstName: userData.name,
             lastName: "", // Bạn có thể tách name nếu cần
-            roles: [userData.role] // STUDENT hoặc TEACHER
+            roles: [userData.role] // USER hoặc TEACHER
         });
 
         const responseData = response.data;
@@ -95,11 +95,14 @@ export const authService = {
         
         if (result.roles && Array.isArray(result.roles)) {
             result.roles.forEach((r: any) => {
-                if (r.name === 'ADMIN' || r.name === 'TEACHER') {
+                const roleName = r.name || r; // Hỗ trợ cả object role hoặc string role
+                
+                if (roleName === 'ADMIN') {
+                    if (!mappedRoles.includes('ADMIN')) mappedRoles.push('ADMIN');
+                } else if (roleName === 'TEACHER') {
                     if (!mappedRoles.includes('TEACHER')) mappedRoles.push('TEACHER');
-                }
-                if (r.name === 'USER' || r.name === 'STUDENT') {
-                    if (!mappedRoles.includes('STUDENT')) mappedRoles.push('STUDENT');
+                } else if (roleName === 'USER' || roleName === 'STUDENT') {
+                    if (!mappedRoles.includes('USER')) mappedRoles.push('USER');
                 }
 
                 if (r.permissions && Array.isArray(r.permissions)) {
@@ -112,7 +115,7 @@ export const authService = {
             });
         }
 
-        if (mappedRoles.length === 0) mappedRoles.push('STUDENT');
+        if (mappedRoles.length === 0) mappedRoles.push('USER');
 
         const displayName = (result.firstName || result.lastName) 
             ? `${result.lastName || ''} ${result.firstName || ''}`.trim() 
@@ -192,7 +195,7 @@ export const authService = {
                     id: 'g1',
                     name: 'Nguyễn Google',
                     email: 'nguyen.google@gmail.com',
-                    roles: ['STUDENT'],
+                    roles: ['USER'],
                     permissions: [],
                     avatar: 'https://lh3.googleusercontent.com/a/default-user',
                     darkMode: false

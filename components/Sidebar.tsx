@@ -33,10 +33,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, currentUser, onLogout, o
   }, []);
 
   const menuItems: MenuItem[] = [
-    { id: 'DASHBOARD', label: t('sidebar.dashboard'), icon: LayoutDashboard, path: '/dashboard', allowedRoles: ['TEACHER', 'STUDENT'] },
-    { id: 'CREATE', label: t('sidebar.create'), icon: PlusCircle, path: '/create', allowedRoles: ['TEACHER', 'STUDENT'] },
-    { id: 'LIBRARY', label: t('sidebar.library'), icon: Library, path: '/library', allowedRoles: ['TEACHER', 'STUDENT'] },
-    { id: 'CLASSES', label: t('sidebar.classes'), icon: Users, path: '/classes', allowedRoles: ['TEACHER', 'STUDENT'] },
+    { id: 'DASHBOARD', label: t('sidebar.dashboard'), icon: LayoutDashboard, path: '/dashboard', allowedRoles: ['TEACHER', 'USER', 'ADMIN'] },
+    { id: 'CREATE', label: t('sidebar.create'), icon: PlusCircle, path: '/create', allowedRoles: ['TEACHER', 'USER', 'ADMIN'] },
+    { id: 'LIBRARY', label: t('sidebar.library'), icon: Library, path: '/library', allowedRoles: ['TEACHER', 'USER', 'ADMIN'] },
+    { id: 'CLASSES', label: t('sidebar.classes'), icon: Users, path: '/classes', allowedRoles: ['TEACHER', 'USER', 'ADMIN'] },
   ];
 
   if (!currentUser) return null;

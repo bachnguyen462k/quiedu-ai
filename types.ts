@@ -57,7 +57,7 @@ export enum StudyMode {
 
 // --- Auth & Class Management Types ---
 
-export type UserRole = 'STUDENT' | 'TEACHER';
+export type UserRole = 'USER' | 'ADMIN' | 'TEACHER';
 
 export interface User {
   id: string;
