@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { Notification, NotificationType, ThemeMode } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,11 +20,12 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // --- Theme Logic ---
   const [theme, setTheme] = useState<ThemeMode>(() => {
-    // Check local storage or system preference
+    // Check local storage or default to light
     if (typeof window !== 'undefined') {
         const savedTheme = localStorage.getItem('theme') as ThemeMode;
         if (savedTheme) return savedTheme;
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        // Default to 'light' regardless of system preference
+        return 'light';
     }
     return 'light';
   });
@@ -53,7 +55,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         localStorage.setItem('theme', newTheme);
 
         // 2. Call API to update theme preference if user is logged in
-        // Fire and forget, don't await
         if (localStorage.getItem('accessToken')) {
             authService.updateTheme(newTheme);
         }

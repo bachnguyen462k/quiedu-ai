@@ -5,11 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BrainQnA - Hỏi trước - Nhớ lâu - Hiểu sâu</title>
-    <!-- New BrainQnA Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 85C30 85 15 70 15 50C15 35 25 20 45 15V85Z' fill='%23005EB8'/%3E%3Cpath d='M50 85C70 85 85 70 85 50C85 35 75 20 55 15V85Z' fill='%23F37321'/%3E%3Crect x='20' y='38' width='25' height='18' rx='6' fill='white' stroke='%231F2937' stroke-width='3'/%3E%3Crect x='55' y='38' width='25' height='18' rx='6' fill='white' stroke='%231F2937' stroke-width='3'/%3E%3Cpath d='M45 47H55' stroke='%231F2937' stroke-width='3'/%3E%3Ccircle cx='32.5' cy='47' r='4' fill='%231F2937'/%3E%3Ccircle cx='67.5' cy='47' r='4' fill='%231F2937'/%3E%3Cpath d='M40 70C45 75 55 75 60 70' stroke='white' stroke-width='3'/%3E%3C/svg%3E" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
+      window.tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
@@ -18,15 +17,15 @@
                 blue: {
                   50: '#eff6ff',
                   100: '#dbeafe',
-                  500: '#3b82f6', // Light mode primary blue (vibrant)
-                  600: '#005EB8', // Exact brand blue (deep)
+                  500: '#3b82f6',
+                  600: '#005EB8',
                   700: '#1d4ed8',
                   DEFAULT: '#005EB8',
                 },
                 orange: {
                   50: '#fff7ed',
                   500: '#f97316',
-                  600: '#F37321', // Exact brand orange
+                  600: '#F37321',
                   DEFAULT: '#F37321',
                 }
               },
@@ -42,7 +41,15 @@
     <style>
       .perspective-1000 { perspective: 1000px; }
       .transform-style-3d { transform-style: preserve-3d; }
-      .backface-hidden { backface-visibility: hidden; }
+      .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+      .flip-card-inner { 
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+        transform-style: preserve-3d; 
+        position: relative; 
+        width: 100%; 
+        height: 100%; 
+      }
+      .is-flipped { transform: rotateY(180deg); }
       .rotate-y-180 { transform: rotateY(180deg); }
       .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
       @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
