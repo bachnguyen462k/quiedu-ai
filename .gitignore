@@ -27,6 +27,11 @@ dist/
 dist-ssr/
 *.local
 
+# Docker (Ignored from Git as requested)
+Dockerfile
+nginx.conf
+.dockerignore
+
 # Environment variables
 .env
 .env.local
