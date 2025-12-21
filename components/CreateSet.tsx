@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Flashcard, StudySet, PrivacyStatus, AiGenerationRecord, StudySetType } from '../types';
 import { generateStudySetWithAI, generateStudySetFromFile } from '../services/geminiService';
 import { studySetService, CreateStudySetRequest, UpdateStudySetRequest } from '../services/studySetService';
-import { Plus, Trash2, Sparkles, Save, FileText, Upload, CheckCircle, Keyboard, ScanLine, ArrowLeft, BrainCircuit, Check, X, AlertCircle, Lightbulb, Layers, List, BookOpen, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare, Loader2, FileEdit, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Save, FileText, Upload, CheckCircle, Keyboard, ScanLine, ArrowLeft, BrainCircuit, Check, X, AlertCircle, Lightbulb, Layers, List, BookOpen, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare, Loader2, FileEdit, ChevronDown, ChevronUp, Settings2, Calendar } from 'lucide-react';
 import ThemeLoader from './ThemeLoader';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
@@ -240,14 +240,14 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       finally { setIsLoadingSets(false); }
   };
 
-  const renderTypeCell = (type?: string) => {
-    const iconSize = 14;
+  const renderTypeBadge = (type?: string) => {
+    const iconSize = 12;
     switch (type) {
-      case 'MANUAL': return <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-md text-[10px] uppercase font-black"><Keyboard size={iconSize} /> <span>Thủ công</span></div>;
-      case 'AI_TOPIC': return <div className="flex items-center gap-1.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-md text-[10px] uppercase font-black"><Sparkles size={iconSize} /> <span>AI Chủ đề</span></div>;
-      case 'AI_FILE': return <div className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-md text-[10px] uppercase font-black"><ScanLine size={iconSize} /> <span>AI Quét file</span></div>;
-      case 'AI_TEXTBOOK': return <div className="flex items-center gap-1.5 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 px-2 py-0.5 rounded-md text-[10px] uppercase font-black"><BookOpen size={iconSize} /> <span>AI Giáo án</span></div>;
-      default: return <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-md text-[10px] uppercase font-black"><Layers size={iconSize} /> <span>Quiz</span></div>;
+      case 'MANUAL': return <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-lg text-[9px] uppercase font-black tracking-widest"><Keyboard size={iconSize} /> <span>Thủ công</span></div>;
+      case 'AI_TOPIC': return <div className="flex items-center gap-1.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-1 rounded-lg text-[9px] uppercase font-black tracking-widest"><Sparkles size={iconSize} /> <span>AI Chủ đề</span></div>;
+      case 'AI_FILE': return <div className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded-lg text-[9px] uppercase font-black tracking-widest"><ScanLine size={iconSize} /> <span>AI Quét file</span></div>;
+      case 'AI_TEXTBOOK': return <div className="flex items-center gap-1.5 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 px-2 py-1 rounded-lg text-[9px] uppercase font-black tracking-widest"><BookOpen size={iconSize} /> <span>AI Giáo án</span></div>;
+      default: return <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-lg text-[9px] uppercase font-black tracking-widest"><Layers size={iconSize} /> <span>Quiz</span></div>;
     }
   };
 
@@ -280,36 +280,92 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{t('create_set.ai_textbook_desc')}</p>
                   </button>
               </div>
-              <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+
+              {/* LIST ACTIVITY OPTIMIZED */}
+              <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all">
                   <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
-                      <h3 className="font-black flex items-center gap-2 dark:text-white uppercase tracking-tighter text-sm"><Clock size={18} className="text-brand-blue" /> {t('create_set.recent_activity')}</h3>
+                      <h3 className="font-black flex items-center gap-2 dark:text-white uppercase tracking-tighter text-sm">
+                        <Clock size={18} className="text-brand-blue" /> {t('create_set.recent_activity')}
+                      </h3>
                       {isLoadingSets && <Loader2 size={16} className="animate-spin text-blue-500" />}
                   </div>
-                  <div className="overflow-x-auto">
+
+                  {/* Desktop Table View (lg+) */}
+                  <div className="hidden lg:block">
                       <table className="w-full text-left text-sm">
                           <thead className="bg-gray-50/80 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-black uppercase text-[10px] tracking-widest">
-                              <tr><th className="px-6 py-4">Tên</th><th className="px-6 py-4">Loại</th><th className="px-6 py-4">Ngày</th><th className="px-6 py-4">Trạng thái</th><th className="px-6 py-4 text-right">Hành động</th></tr>
+                              <tr>
+                                <th className="px-6 py-4">Tên học phần</th>
+                                <th className="px-6 py-4">Phương thức</th>
+                                <th className="px-6 py-4">Thời gian</th>
+                                <th className="px-6 py-4">Trạng thái</th>
+                                <th className="px-6 py-4 text-right">Thao tác</th>
+                              </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                               {serverSets.map((r) => (
-                                  <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                      <td className="px-6 py-4 font-bold dark:text-white truncate max-w-xs">{r.title}</td>
-                                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                                          {renderTypeCell(r.type)}
+                                  <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                                      <td className="px-6 py-4">
+                                          <div className="font-black text-gray-900 dark:text-white truncate max-w-md">{r.title}</div>
+                                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">{r.subject || 'Không phân loại'}</div>
                                       </td>
+                                      <td className="px-6 py-4">{renderTypeBadge(r.type)}</td>
                                       <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-medium">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</td>
                                       <td className="px-6 py-4">
-                                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${r.status === 'DRAFT' ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' : 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30'}`}>{r.status === 'DRAFT' ? 'Bản nháp' : 'Hoạt động'}</span>
+                                          <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${r.status === 'DRAFT' ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600' : 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30'}`}>
+                                            {r.status === 'DRAFT' ? 'Bản nháp' : 'Hoạt động'}
+                                          </span>
                                       </td>
                                       <td className="px-6 py-4 text-right">
-                                          <button onClick={() => handleSelectServerSet(r.id)} className="text-indigo-600 dark:text-indigo-400 font-black text-xs border border-indigo-100 dark:border-indigo-800 px-4 py-2 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">Xem lại</button>
+                                          <button 
+                                            onClick={() => handleSelectServerSet(r.id)} 
+                                            className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-black text-xs border border-indigo-100 dark:border-indigo-800 px-4 py-2 rounded-xl hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-500 dark:hover:text-white transition-all shadow-sm group-hover:shadow-indigo-100"
+                                          >
+                                            <FileEdit size={14} /> <span>Xem lại</span>
+                                          </button>
                                       </td>
                                   </tr>
                               ))}
                           </tbody>
                       </table>
                   </div>
+
+                  {/* Mobile Card List View (<lg) */}
+                  <div className="lg:hidden divide-y divide-gray-100 dark:divide-gray-700">
+                    {serverSets.length > 0 ? serverSets.map((r) => (
+                      <div key={r.id} className="p-5 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <div className="flex justify-between items-start mb-3 gap-4">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-black text-gray-900 dark:text-white truncate text-base leading-tight">{r.title}</h4>
+                            <div className="flex items-center gap-2 mt-1.5">
+                                {renderTypeBadge(r.type)}
+                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${r.status === 'DRAFT' ? 'bg-gray-50 text-gray-400 border-gray-100' : 'bg-green-50 text-green-600 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/30'}`}>
+                                  {r.status === 'DRAFT' ? 'Draft' : 'Active'}
+                                </span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="flex items-center justify-end gap-1 text-[10px] text-gray-400 font-black uppercase tracking-tighter">
+                                <Calendar size={10} /> {new Date(r.createdAt).toLocaleDateString('vi-VN')}
+                            </div>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleSelectServerSet(r.id)}
+                          className="w-full mt-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-indigo-100 dark:border-indigo-800"
+                        >
+                          <FileEdit size={14} /> Chỉnh sửa học phần
+                        </button>
+                      </div>
+                    )) : (
+                      <div className="p-12 text-center text-gray-400 font-medium flex flex-col items-center gap-3">
+                        <Layers size={32} opacity={0.3} />
+                        Chưa có dữ liệu hoạt động gần đây
+                      </div>
+                    )}
+                  </div>
               </div>
+
               {showAiModal && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white dark:bg-gray-800 rounded-[32px] w-full max-w-lg p-8 shadow-2xl border border-gray-100 dark:border-gray-700">
