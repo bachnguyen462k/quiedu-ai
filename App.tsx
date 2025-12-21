@@ -18,7 +18,7 @@ import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
 import { StudySet, User, AiGenerationRecord, Review, EventTheme } from './types';
-import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake } from 'lucide-react';
+import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +40,7 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
             left: `${Math.random() * 100}%`,
             delay: `${Math.random() * 20}s`,
             duration: `${10 + Math.random() * 15}s`,
-            size: eventType === 'CHRISTMAS' ? `${10 + Math.random() * 15}px` : `${12 + Math.random() * 18}px`,
+            size: eventType === 'CHRISTMAS' ? `${10 + Math.random() * 15}px` : `${14 + Math.random() * 20}px`,
             swayDuration: `${3 + Math.random() * 5}s`,
             opacity: 0.6 + Math.random() * 0.4,
             variant: Math.random() > 0.5 ? 'A' : 'B'
@@ -75,11 +75,12 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
                     content = <div className="w-full h-full" />;
                 } else if (eventType === 'AUTUMN') {
                     style = {
-                        backgroundColor: item.variant === 'A' ? '#D97706' : '#92400E',
-                        borderRadius: '80% 10% 80% 10%',
+                        color: item.variant === 'A' ? '#D97706' : '#B45309',
+                        filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.1))',
                         transform: `rotate(${Math.random() * 360}deg)`
                     };
-                    content = <div className="w-full h-full" />;
+                    // Content is the Leaf icon with a slight fill for better visibility
+                    content = <Leaf size="100%" strokeWidth={2} fill="currentColor" fillOpacity={0.2} />;
                 }
 
                 return (
