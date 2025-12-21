@@ -43,5 +43,21 @@ export const studySetService = {
       console.error(`StudySetService: Failed to fetch study set ${id}`, error);
       throw error;
     }
+  },
+
+  /**
+   * Lấy danh sách học phần của tôi (Phân trang).
+   * GET /study-sets/my?page={page}&size={size}
+   */
+  getMyStudySets: async (page: number = 0, size: number = 20): Promise<any> => {
+    try {
+      const response = await apiClient.get('/study-sets/my', {
+        params: { page, size }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("StudySetService: Failed to fetch my study sets", error);
+      throw error;
+    }
   }
 };

@@ -1,8 +1,10 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, Review } from '../types';
-import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star } from 'lucide-react';
+import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { studySetService } from '../services/studySetService';
+import { useApp } from '../contexts/AppContext';
 
 interface DashboardProps {
   sets: StudySet[];
@@ -15,10 +17,11 @@ interface DashboardProps {
   isLibrary: boolean;
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
-const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCreateNew, onSelectSet, onSelectUpload, onToggleFavorite, isLibrary }) => {
+const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, currentUser, onCreateNew, onSelectSet, onSelectUpload, onToggleFavorite, isLibrary }) => {
   const { t } = useTranslation();
+  const { addNotification } = useApp();
   
   const subjectsList = [
     { key: 'all', label: t('dashboard.subjects.all') },
@@ -36,18 +39,94 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
   const [sortBy, setSortBy] = useState<'POPULAR' | 'NEWEST'>('POPULAR');
   const [searchQuery, setSearchQuery] = useState('');
   const [libraryTab, setLibraryTab] = useState<'SETS' | 'FAVORITES' | 'FILES'>('SETS');
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  
+  // Server Pagination State
+  const [serverSets, setServerSets] = useState<StudySet[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
+  // --- FETCH DATA FROM SERVER ---
+  const fetchMySets = async (page: number, refresh: boolean = false) => {
+      if (!isLibrary || libraryTab !== 'SETS' || isLoading) return;
+
+      setIsLoading(true);
+      try {
+          const response = await studySetService.getMyStudySets(page, ITEMS_PER_PAGE);
+          if (response.code === 1000) {
+              const { content, totalPages: total } = response.result;
+              
+              // Map API format to Frontend type
+              const mappedSets: StudySet[] = content.map((item: any) => ({
+                  id: item.id.toString(),
+                  title: item.title,
+                  description: item.description,
+                  author: currentUser?.name || 'Bạn',
+                  createdAt: new Date(item.createdAt).getTime(),
+                  privacy: 'PUBLIC',
+                  subject: item.topic || 'Khác',
+                  plays: 0,
+                  cards: [] // Sẽ được fetch chi tiết khi nhấn vào
+              }));
+
+              if (refresh) {
+                  setServerSets(mappedSets);
+              } else {
+                  setServerSets(prev => [...prev, ...mappedSets]);
+              }
+              setTotalPages(total);
+          }
+      } catch (error) {
+          console.error("Failed to load my sets", error);
+          addNotification("Không thể tải danh sách học phần từ máy chủ", "error");
+      } finally {
+          setIsLoading(false);
+          setIsInitialLoading(false);
+      }
+  };
+
+  // Reset and load when entering Library/Tab Sets
+  useEffect(() => {
+    if (isLibrary && libraryTab === 'SETS') {
+        setCurrentPage(0);
+        fetchMySets(0, true);
+    } else {
+        setIsInitialLoading(false);
+    }
+  }, [isLibrary, libraryTab]);
+
+  // Infinite Scroll Logic
+  useEffect(() => {
+    if (observerRef.current) observerRef.current.disconnect();
+    
+    const hasMore = currentPage < totalPages - 1;
+    
+    observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+            const nextPage = currentPage + 1;
+            setCurrentPage(nextPage);
+            fetchMySets(nextPage);
+        }
+    });
+
+    if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
+    
+    return () => { if (observerRef.current) observerRef.current.disconnect(); };
+  }, [currentPage, totalPages, isLoading, isLibrary, libraryTab]);
+
+  // --- LOCAL DATA LOGIC (Explore / Favorites) ---
   const trendingSets = useMemo(() => {
-      return [...sets].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 3);
-  }, [sets]);
+      return [...localSets].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 3);
+  }, [localSets]);
 
   const recentReviews = useMemo(() => {
       if (isLibrary) return []; 
       const allReviews: (Review & { setTitle: string, setId: string })[] = [];
-      sets.forEach(set => {
+      localSets.forEach(set => {
           if (set.reviews) {
               set.reviews.forEach(review => {
                   allReviews.push({ ...review, setTitle: set.title, setId: set.id });
@@ -55,24 +134,28 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
           }
       });
       return allReviews.sort((a, b) => b.createdAt - a.createdAt).slice(0, 10);
-  }, [sets, isLibrary]);
+  }, [localSets, isLibrary]);
 
+  // Merge server and local sets depending on context
   const filteredSets = useMemo(() => {
-    let result = sets;
+    let base = isLibrary && libraryTab === 'SETS' ? serverSets : localSets;
+    
     if (isLibrary && currentUser) {
-        if (libraryTab === 'SETS') result = result.filter(s => s.author === currentUser.name);
-        else if (libraryTab === 'FAVORITES') result = result.filter(s => s.isFavorite);
+        if (libraryTab === 'FAVORITES') base = localSets.filter(s => s.isFavorite);
     }
-    result = result.filter(s => {
+
+    let result = [...base].filter(s => {
         const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                               s.description.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesSubject = filterSubject === 'all' || s.subject?.toLowerCase().includes(filterSubject.toLowerCase());
         return matchesSearch && matchesSubject;
     });
+
     if (sortBy === 'POPULAR') result.sort((a, b) => (b.plays || 0) - (a.plays || 0));
     else result.sort((a, b) => b.createdAt - a.createdAt);
+    
     return result;
-  }, [sets, searchQuery, filterSubject, sortBy, isLibrary, libraryTab, currentUser]);
+  }, [serverSets, localSets, searchQuery, filterSubject, sortBy, isLibrary, libraryTab, currentUser]);
 
   const filteredUploads = useMemo(() => {
       if (!uploads) return [];
@@ -83,23 +166,15 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
   }, [uploads, searchQuery]);
 
   const isShowingFiles = isLibrary && libraryTab === 'FILES';
-  const totalItems = isShowingFiles ? filteredUploads.length : filteredSets.length;
 
-  useEffect(() => { setVisibleCount(ITEMS_PER_PAGE); }, [filteredSets, filteredUploads, libraryTab]);
-
-  const hasMore = visibleCount < totalItems;
-
-  useEffect(() => {
-    if (observerRef.current) observerRef.current.disconnect();
-    observerRef.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) setVisibleCount(prev => prev + ITEMS_PER_PAGE);
-    });
-    if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
-    return () => { if (observerRef.current) observerRef.current.disconnect(); };
-  }, [hasMore, totalItems]);
-
-  const displayedSets = useMemo(() => filteredSets.slice(0, visibleCount), [filteredSets, visibleCount]);
-  const displayedUploads = useMemo(() => filteredUploads.slice(0, visibleCount), [filteredUploads, visibleCount]);
+  if (isInitialLoading && isLibrary && libraryTab === 'SETS') {
+      return (
+          <div className="flex flex-col items-center justify-center py-32 animate-pulse">
+              <Loader2 className="animate-spin text-brand-blue mb-4" size={48} />
+              <p className="text-gray-500 font-bold">{t('dashboard.loading')}</p>
+          </div>
+      );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-24 animate-fade-in">
@@ -115,7 +190,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                         onClick={() => onSelectSet(set)}
                         className={`relative overflow-hidden rounded-3xl p-6 shadow-md border border-gray-100 dark:border-gray-800 cursor-pointer hover:shadow-xl transition-all group ${
                             idx === 0 ? 'bg-gradient-to-br from-brand-blue to-blue-800 text-white border-transparent' : 
-                            'bg-white dark:bg-gray-850'
+                            'bg-white dark:bg-gray-855'
                         }`}
                     >
                         <div className="relative z-10 flex flex-col h-full justify-between">
@@ -163,7 +238,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                                 {isLibrary ? t('dashboard.library') : t('dashboard.explore')}
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400 font-medium mt-1">
-                                {isLibrary ? (isShowingFiles ? `${filteredUploads.length} tài liệu` : `${filteredSets.length} học phần`) : t('landing.hero_desc')}
+                                {isShowingFiles ? `${filteredUploads.length} tài liệu` : `${filteredSets.length} học phần`}
                         </p>
                     </div>
                     <button 
@@ -182,7 +257,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                     </div>
                 )}
 
-                <div className="bg-white dark:bg-gray-850 p-5 rounded-3xl shadow-md border border-gray-100 dark:border-gray-800 flex flex-col xl:flex-row gap-5 items-center">
+                <div className="bg-white dark:bg-gray-855 p-5 rounded-3xl shadow-md border border-gray-100 dark:border-gray-800 flex flex-col xl:flex-row gap-5 items-center">
                     <div className="relative flex-1 w-full text-gray-900">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                         <input type="text" placeholder={libraryTab === 'FILES' ? t('dashboard.search_lib') : t('dashboard.search_comm')} className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-blue/50 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-white transition-all text-sm font-medium" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
@@ -205,44 +280,68 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
             </div>
 
             {isShowingFiles ? (
-                displayedUploads.length === 0 ? (
-                    <div className="text-center py-24 bg-white dark:bg-gray-850 rounded-3xl border border-dashed border-gray-300 dark:border-gray-800"><FileText size={64} className="mx-auto text-gray-200 dark:text-gray-700 mb-6" /><h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('dashboard.empty_library')}</h3><p className="text-gray-600 dark:text-gray-400 mb-8">{t('dashboard.empty_library_desc')}</p><button onClick={onCreateNew} className="text-brand-blue dark:text-blue-400 font-black hover:underline">{t('dashboard.upload_now')}</button></div>
+                /* Fix: Renamed displayedUploads to filteredUploads to fix reference error */
+                filteredUploads.length === 0 ? (
+                    <div className="text-center py-24 bg-white dark:bg-gray-855 rounded-3xl border border-dashed border-gray-300 dark:border-gray-800"><FileText size={64} className="mx-auto text-gray-200 dark:text-gray-700 mb-6" /><h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('dashboard.empty_library')}</h3><p className="text-gray-600 dark:text-gray-400 mb-8">{t('dashboard.empty_library_desc')}</p><button onClick={onCreateNew} className="text-brand-blue dark:text-blue-400 font-black hover:underline">{t('dashboard.upload_now')}</button></div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {displayedUploads.map(file => (
-                            <div key={file.id} onClick={() => onSelectUpload && onSelectUpload(file)} className="group bg-white dark:bg-gray-850 rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 p-6 flex flex-col h-full"><div className="flex justify-between items-start mb-6"><div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-brand-blue dark:text-blue-400 group-hover:bg-brand-blue group-hover:text-white transition-colors"><FileText size={24} /></div><span className="text-[10px] font-bold text-gray-500 flex items-center gap-1 uppercase tracking-wider"><Clock size={12} /> {new Date(file.createdAt).toLocaleDateString('vi-VN')}</span></div><h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight">{file.fileName}</h3><p className="text-sm text-gray-600 mb-6">{file.result.subject} - {file.result.grade}</p><div className="mt-auto pt-6 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center text-xs font-black text-brand-blue"><span className="flex items-center gap-1.5"><Layers size={14} /> {file.result.topics.length} CHỦ ĐỀ</span><span className="group-hover:translate-x-1 transition-transform flex items-center gap-1 uppercase tracking-widest">{t('common.start')} <ChevronRight size={14} /></span></div></div>
+                        {filteredUploads.map(file => (
+                            <div key={file.id} onClick={() => onSelectUpload && onSelectUpload(file)} className="group bg-white dark:bg-gray-855 rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 p-6 flex flex-col h-full"><div className="flex justify-between items-start mb-6"><div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-brand-blue dark:text-blue-400 group-hover:bg-brand-blue group-hover:text-white transition-colors"><FileText size={24} /></div><span className="text-[10px] font-bold text-gray-500 flex items-center gap-1 uppercase tracking-wider"><Clock size={12} /> {new Date(file.createdAt).toLocaleDateString('vi-VN')}</span></div><h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight">{file.fileName}</h3><p className="text-sm text-gray-600 mb-6">{file.result.subject} - {file.result.grade}</p><div className="mt-auto pt-6 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center text-xs font-black text-brand-blue"><span className="flex items-center gap-1.5"><Layers size={14} /> {file.result.topics.length} CHỦ ĐỀ</span><span className="group-hover:translate-x-1 transition-transform flex items-center gap-1 uppercase tracking-widest">{t('common.start')} <ChevronRight size={14} /></span></div></div>
                         ))}
                     </div>
                 )
             ) : (
-                <div className={`grid grid-cols-1 md:grid-cols-2 ${!isLibrary ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-8`}>
-                    {displayedSets.map(set => (
-                        <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-850 rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative">
-                            <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-2.5 rounded-full z-10 transition-all ${set.isFavorite ? 'text-red-500 fill-red-500 scale-110' : 'text-gray-300 dark:text-gray-600 hover:text-red-400'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
-                            <div className="p-6 flex-1">
-                                <div className="flex gap-2 mb-4"><span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">{set.cards.length} THẺ</span><span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest">{set.subject}</span></div>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight pr-6">{set.title}</h3>
-                                <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 opacity-80 font-medium">{set.description}</p>
-                            </div>
-                            <div className="px-6 py-5 border-t border-gray-50 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/30 rounded-b-3xl flex items-center justify-between text-gray-500"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-sm">{set.author.charAt(0)}</div><span className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span></div><div className="flex items-center gap-3 text-xs font-bold text-gray-500"><span className="flex items-center gap-1"><ArrowUpRight size={14} className="text-brand-blue" /> {set.plays}</span></div></div>
+                <>
+                    {filteredSets.length === 0 ? (
+                        <div className="text-center py-24 bg-white dark:bg-gray-855 rounded-3xl border border-dashed border-gray-300 dark:border-gray-800">
+                             <AlertCircle size={64} className="mx-auto text-gray-200 dark:text-gray-700 mb-6" />
+                             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('dashboard.no_results')}</h3>
+                             <p className="text-gray-500 dark:text-gray-400">{t('dashboard.clear_filter')}</p>
                         </div>
-                    ))}
-                </div>
-            )}
+                    ) : (
+                        <div className={`grid grid-cols-1 md:grid-cols-2 ${!isLibrary ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-8`}>
+                            {filteredSets.map(set => (
+                                <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative">
+                                    <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-2.5 rounded-full z-10 transition-all ${set.isFavorite ? 'text-red-500 fill-red-500 scale-110' : 'text-gray-300 dark:text-gray-600 hover:text-red-400'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
+                                    <div className="p-6 flex-1">
+                                        <div className="flex gap-2 mb-4">
+                                            <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">FLASHCARD</span>
+                                            <span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest">{set.subject}</span>
+                                        </div>
+                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight pr-6">{set.title}</h3>
+                                        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 opacity-80 font-medium">{set.description}</p>
+                                    </div>
+                                    <div className="px-6 py-5 border-t border-gray-50 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/30 rounded-b-3xl flex items-center justify-between text-gray-500">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-full bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-sm">{set.author.charAt(0)}</div>
+                                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
+                                            <span className="flex items-center gap-1"><Clock size={14} className="text-brand-blue" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
-            {hasMore && (
-                <div ref={loadMoreRef} className="py-12 flex justify-center w-full">
-                    <div className="flex items-center gap-3 text-gray-600 font-bold bg-white dark:bg-gray-800 px-6 py-3 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700">
-                        <Loader2 className="animate-spin text-brand-blue" size={20} /> {t('dashboard.loading')}
-                    </div>
-                </div>
+                    {/* Infinite Scroll Loader */}
+                    {(isLoading || (currentPage < totalPages - 1)) && (
+                        <div ref={loadMoreRef} className="py-12 flex justify-center w-full">
+                            <div className="flex items-center gap-3 text-gray-600 font-bold bg-white dark:bg-gray-800 px-6 py-3 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 transition-colors">
+                                <Loader2 className="animate-spin text-brand-blue" size={20} /> 
+                                {isLoading ? t('dashboard.loading') : "Cuộn để xem thêm"}
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
         </div>
 
         {!isLibrary && (
             <div className="xl:col-span-1 sticky top-24">
                 <h2 className="text-xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2 uppercase tracking-tight"><MessageSquare className="text-brand-blue dark:text-blue-400" fill="currentColor" size={20} /> {t('dashboard.recent_reviews')}</h2>
-                <div className="bg-white dark:bg-gray-850 rounded-3xl p-5 shadow-md border border-gray-100 dark:border-gray-800 flex flex-col">
+                <div className="bg-white dark:bg-gray-855 rounded-3xl p-5 shadow-md border border-gray-100 dark:border-gray-800 flex flex-col">
                     {recentReviews.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-gray-400"><MessageSquare size={40} className="mb-3 opacity-20" /><p className="text-sm font-bold">{t('set_detail.no_comments')}</p></div>
                     ) : (
@@ -252,7 +351,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets, uploads, currentUser, onCre
                                     <div className="flex justify-between items-start mb-2"><div className="flex items-center gap-2"><img src={review.userAvatar || `https://ui-avatars.com/api/?name=${review.userName}&background=random`} alt="User" className="w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700" /><span className="text-xs font-black text-gray-900 dark:text-white">{review.userName}</span></div><div className="flex text-brand-orange"><Star size={10} fill="currentColor" /></div></div>
                                     <p className="text-xs text-gray-700 dark:text-gray-400 mb-3 italic line-clamp-3 bg-gray-50 dark:bg-gray-800 p-2.5 rounded-xl group-hover:text-brand-blue transition-colors">"{review.comment}"</p>
                                     <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-tighter text-gray-500">
-                                        <span onClick={() => { const targetSet = sets.find(s => s.id === review.setId); if (targetSet) onSelectSet(targetSet); }} className="text-brand-blue hover:underline truncate max-w-[120px]">{review.setTitle}</span>
+                                        <span onClick={() => { const targetSet = localSets.find(s => s.id === review.setId); if (targetSet) onSelectSet(targetSet); }} className="text-brand-blue hover:underline truncate max-w-[120px]">{review.setTitle}</span>
                                         <span className="shrink-0">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</span>
                                     </div>
                                 </div>
