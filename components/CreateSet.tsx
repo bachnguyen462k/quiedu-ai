@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Flashcard, StudySet, PrivacyStatus, AiGenerationRecord } from '../types';
 import { generateStudySetWithAI, generateStudySetFromFile } from '../services/geminiService';
+import { studySetService, CreateStudySetRequest } from '../services/studySetService';
 import { Plus, Trash2, Sparkles, Save, FileText, Upload, CheckCircle, Keyboard, ScanLine, ArrowLeft, BrainCircuit, Check, X, AlertCircle, Lightbulb, Layers, List, BookOpen, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare } from 'lucide-react';
 import ThemeLoader from './ThemeLoader';
 import { v4 as uuidv4 } from 'uuid';
@@ -85,8 +86,8 @@ B. Elon Musk
 *C. Bill Gates`;
 
 const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextbook, history = [], onSelectHistory }) => {
-  const { t } = useTranslation();
-  const { user } = useAuth(); // Access user to check permissions
+  const { t, i18n } = useTranslation();
+  const { user } = useAuth();
 
   // Navigation State
   const [creationStep, setCreationStep] = useState<CreationMode>('MENU');
@@ -143,7 +144,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isGenerating) {
         e.preventDefault();
-        e.returnValue = ''; // Chrome requires returnValue to be set
+        e.returnValue = '';
       }
     };
 
@@ -331,7 +332,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       id: uuidv4(),
       title,
       description,
-      author: 'Bạn',
+      author: user?.name || 'Bạn',
       createdAt: Date.now(),
       cards: validCards,
       privacy,
@@ -368,6 +369,29 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           generatedCards = result.cards;
       }
       
+      // Chuẩn bị dữ liệu lưu xuống backend
+      const saveRequest: CreateStudySetRequest = {
+          topic: aiMode === 'TEXT_TOPIC' ? aiPrompt : aiFile!.name,
+          language: i18n.language || 'vi',
+          title: generatedTitle,
+          description: generatedDescription,
+          cards: generatedCards.map(c => ({
+              term: c.term,
+              definition: c.definition,
+              options: c.options || [],
+              explanation: c.explanation || ''
+          }))
+      };
+
+      // Gọi API lưu xuống backend
+      try {
+          await studySetService.createStudySet(saveRequest);
+          console.log("Backend: Study set saved successfully.");
+      } catch (apiError) {
+          console.error("Backend: Failed to auto-save generated quiz.", apiError);
+          // Vẫn tiếp tục xử lý UI cho người dùng dù lưu backend lỗi
+      }
+
       setTitle(generatedTitle);
       setDescription(generatedDescription);
       
@@ -1087,7 +1111,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           </div>
 
                           <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                              <div className="p-3 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center shrink-0">
+                              <div className="p-3 bg-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center shrink-0">
                                   <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-300 flex items-center gap-2">
                                       <Eye size={12} /> {t('create_set.preview_title')} ({parsedPreviewCards.length})
                                   </span>
