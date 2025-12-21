@@ -309,7 +309,7 @@ export const analyzeTextbookWithAI = async (base64File: string): Promise<Textboo
                             }
                           }
                         },
-                        required: ["topicName", "summary", "keyPoints", "formulas", "questions"]
+                        required: ["topicName", "summary", "keyPoints", "questions"] // 'formulas' are optional
                       }
                     }
                   },

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Sparkles, FileText, CheckCircle, BookOpen, BrainCircuit, ChevronDown, ChevronUp, Save, Book, Sigma, PenTool, Lightbulb, Layers, GraduationCap, FileType, Image as ImageIcon, History, Clock, ArrowRight, X, Trash2, Edit3, Plus, Check, List, Link, ArrowLeft, Globe, Lock, Building, Hash, Bookmark } from 'lucide-react';
 import { analyzeTextbookWithAI } from '../services/geminiService';
 import { studySetService, CreateStudySetRequest } from '../services/studySetService';
-import { TextbookAnalysisResult, StudySet, AiGenerationRecord, Flashcard, PrivacyStatus } from '../types';
+import { TextbookAnalysisResult, StudySet, AiGenerationRecord, Flashcard, PrivacyStatus, StudySetType } from '../types';
 import ThemeLoader from './ThemeLoader';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
@@ -165,18 +165,19 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
             const cleanOptions = q.options ? q.options.map(o => o.replace(/^[A-Z][\.\)]\s*/, '')) : [];
             const rawCorrect = q.correctAnswer || "";
             const cleanCorrect = rawCorrect.replace(/^[A-Z][\.\)]\s*/, '');
+            
             return {
                 id: uuidv4(),
                 term: q.question,
                 definition: cleanCorrect,
-                options: cleanOptions.length > 0 ? cleanOptions : [cleanCorrect, "", "", ""],
+                options: cleanOptions.length > 0 ? cleanOptions : [cleanCorrect, "Đáp án B", "Đáp án C", "Đáp án D"],
                 explanation: q.solutionGuide || "",
                 relatedLink: ""
             };
         });
         setEditingSet({
             title: currentTopic.topicName,
-            description: `${currentTopic.summary}. Tổng hợp câu hỏi từ ${result.grade}.`,
+            description: `${currentTopic.summary}. Tổng hợp kiến thức: ${result.grade}.`,
             privacy: 'PUBLIC',
             level: 'Trung học phổ thông',
             school: '',
@@ -283,6 +284,11 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
             return;
         }
 
+        if (editingSet.cards.length < 2) {
+            alert(t('notifications.min_cards'));
+            return;
+        }
+
         setIsSaving(true);
         try {
             const saveRequest: CreateStudySetRequest = {
@@ -317,14 +323,17 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                     topic: editingSet.topic,
                     type: 'AI_TEXTBOOK'
                 };
+                
+                // Cập nhật trạng thái UI trước khi gọi navigate trong callback
+                setShowSaveModal(false);
                 onSaveToLibrary(newSet);
                 addNotification("Đã lưu học phần từ giáo án thành công!", "success");
-                setShowSaveModal(false);
             } else {
                 throw new Error(response.message);
             }
         } catch (error) {
-            addNotification("Lỗi khi lưu lên máy chủ.", "error");
+            console.error("Save failed:", error);
+            addNotification("Lỗi khi lưu lên máy chủ. Vui lòng kiểm tra lại kết nối.", "error");
         } finally {
             setIsSaving(false);
         }
@@ -416,7 +425,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                 <div className="flex-1 w-full">
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('ai_creator.upload_label')}</label>
                                     <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative group overflow-hidden">
-                                        <input type="file" accept="application/pdf, image/png, image/jpeg, image/jpg" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"/>
+                                        <input type="file" accept="application/pdf, image/png, image/jpeg, image/jpg, application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"/>
                                         {file ? (
                                             <div className="flex flex-col items-center relative z-10">
                                                 {file.type.startsWith('image/') ? (
@@ -430,7 +439,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                             </div>
                                         ) : (
                                             <div>
-                                                <div className="flex justify-center gap-4 mb-3"><div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 text-gray-400 rounded-full flex items-center justify-center group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-500 transition-colors"><Upload size={24} /></div></div>
+                                                <div className="flex justify-center gap-4 mb-3"><div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 text-gray-400 rounded-full flex items-center justify-center group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-50 transition-colors"><Upload size={24} /></div></div>
                                                 <p className="font-medium text-gray-700 dark:text-gray-300">{t('ai_creator.upload_prompt_title')}</p>
                                                 <p className="text-xs text-gray-400 mt-1">{t('ai_creator.upload_prompt_desc')}</p>
                                                 <div className="flex justify-center gap-2 mt-2"><span className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"><FileType size={10} /> PDF</span><span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"><ImageIcon size={10} /> ẢNH</span></div>
@@ -440,7 +449,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                 </div>
                                 <div className="flex-shrink-0 flex flex-col justify-center w-full md:w-auto">
                                     <button onClick={handleAnalyze} disabled={!file || isAnalyzing} className={`px-8 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-all w-full md:w-auto ${!file || isAnalyzing ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:-translate-y-1 hover:shadow-indigo-200'}`}>
-                                        {isAnalyzing ? <ThemeLoader className="text-white" /> : <BrainCircuit />}
+                                        {isAnalyzing ? <ThemeLoader className="text-white" size={24} /> : <BrainCircuit />}
                                         {isAnalyzing ? t('ai_creator.analyzing') : t('ai_creator.analyze_btn')}
                                     </button>
                                 </div>
@@ -455,7 +464,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                     <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"><Layers size={18} /> {t('ai_creator.toc')} ({result.topics.length})</h3>
                                     <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-1">
                                         {result.topics.map((topic, idx) => (
-                                            <button key={idx} onClick={() => setSelectedTopicIndex(idx)} className={`w-full text-left p-3 rounded-lg text-sm font-medium transition-all border-l-4 ${selectedTopicIndex === idx ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-l-indigo-600 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 border-l-transparent hover:border-l-gray-300'}`}><div className="line-clamp-2">{topic.topicName}</div><div className="text-xs text-gray-400 font-normal mt-1">{topic.questions.length} {t('create_set.question')}</div></button>
+                                            <button key={idx} onClick={() => setSelectedTopicIndex(idx)} className={`w-full text-left p-3 rounded-lg text-sm font-medium transition-all border-l-4 ${selectedTopicIndex === idx ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-l-indigo-600 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 border-l-transparent hover:border-l-gray-300'}`}><div className="line-clamp-2">{topic.topicName}</div><div className="text-xs text-gray-400 font-normal mt-1">{topic.questions.length} {t('create_set.quiz')}</div></button>
                                         ))}
                                     </div>
                                 </div>
@@ -472,7 +481,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                     <p className="text-gray-700 dark:text-gray-300 mb-4 italic">{currentTopic.summary}</p>
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div><h4 className="font-bold text-xs text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-2"><Lightbulb size={14} /> {t('ai_creator.key_points')}</h4><ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300 text-sm">{currentTopic.keyPoints.map((point, idx) => (<li key={idx}>{point}</li>))}</ul></div>
-                                        {currentTopic.formulas.length > 0 && (<div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-100 dark:border-gray-600"><h4 className="font-bold text-xs text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-2"><Sigma size={14} /> {t('ai_creator.formulas')}</h4><ul className="space-y-2">{currentTopic.formulas.map((formula, idx) => (<li key={idx} className="bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-600 font-mono text-indigo-700 dark:text-indigo-300 text-sm shadow-sm">{formula}</li>))}</ul></div>)}
+                                        {(currentTopic.formulas?.length || 0) > 0 && (<div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-100 dark:border-gray-600"><h4 className="font-bold text-xs text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-2"><Sigma size={14} /> {t('ai_creator.formulas')}</h4><ul className="space-y-2">{currentTopic.formulas.map((formula, idx) => (<li key={idx} className="bg-white dark:bg-gray-800 px-3 py-2 rounded border border-gray-200 dark:border-gray-600 font-mono text-indigo-700 dark:text-indigo-300 text-sm shadow-sm">{formula}</li>))}</ul></div>)}
                                     </div>
                                 </div>
                                 <div className="space-y-4">
