@@ -1,13 +1,21 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, Sparkles } from 'lucide-react';
-import { User } from '../types';
+import { LayoutDashboard, PlusCircle, Library, Users, Settings, LogOut, Palette } from 'lucide-react';
+import { User, UserRole } from '../types';
 import { useTranslation } from 'react-i18next';
 
 interface MobileNavProps {
     currentUser: User | null;
     onLogout: () => void;
+}
+
+interface MobileMenuItem {
+    id: string;
+    label: string;
+    icon: React.ElementType;
+    path: string;
+    allowedRoles: UserRole[];
 }
 
 const MobileNav: React.FC<MobileNavProps> = ({ currentUser, onLogout }) => {
@@ -18,18 +26,23 @@ const MobileNav: React.FC<MobileNavProps> = ({ currentUser, onLogout }) => {
 
     const isActive = (path: string) => location.pathname === path;
 
-    const menuItems = [
-        { id: 'DASHBOARD', label: t('sidebar.dashboard'), icon: LayoutDashboard, path: '/dashboard' },
-        { id: 'CREATE', label: 'Tạo', icon: PlusCircle, path: '/create' },
-        { id: 'LIBRARY', label: t('sidebar.library'), icon: Library, path: '/library' },
-        { id: 'CLASSES', label: 'Lớp', icon: Users, path: '/classes' },
-        { id: 'SETTINGS', label: 'Cài đặt', icon: Settings, path: '/settings' },
+    const menuItems: MobileMenuItem[] = [
+        { id: 'DASHBOARD', label: t('sidebar.dashboard'), icon: LayoutDashboard, path: '/dashboard', allowedRoles: ['USER', 'TEACHER', 'ADMIN'] },
+        { id: 'CREATE', label: 'Tạo', icon: PlusCircle, path: '/create', allowedRoles: ['USER', 'TEACHER', 'ADMIN'] },
+        { id: 'LIBRARY', label: t('sidebar.library'), icon: Library, path: '/library', allowedRoles: ['USER', 'TEACHER', 'ADMIN'] },
+        { id: 'CLASSES', label: 'Lớp', icon: Users, path: '/classes', allowedRoles: ['USER', 'TEACHER', 'ADMIN'] },
+        { id: 'ADMIN_THEME', label: "Sự kiện", icon: Palette, path: '/admin/theme', allowedRoles: ['ADMIN'] },
+        { id: 'SETTINGS', label: 'Cài đặt', icon: Settings, path: '/settings', allowedRoles: ['USER', 'TEACHER', 'ADMIN'] },
     ];
+
+    const filteredMenuItems = menuItems.filter(item => 
+        item.allowedRoles.some(role => currentUser.roles.includes(role))
+    );
 
     return (
         <nav className="lg:hidden sticky top-16 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 transition-colors">
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar px-4 py-2">
-                {menuItems.map((item) => (
+                {filteredMenuItems.map((item) => (
                     <Link
                         key={item.id}
                         to={item.path}
