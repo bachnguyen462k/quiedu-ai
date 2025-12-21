@@ -215,9 +215,18 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
             cards: prev.cards.map(c => {
                 if (c.id !== cardId) return c;
                 const newOptions = [...(c.options || [])];
+                const oldValue = newOptions[optionIndex];
                 newOptions[optionIndex] = value;
-                const isCurrentlyCorrect = c.definition === c.options?.[optionIndex];
-                return { ...c, options: newOptions, definition: isCurrentlyCorrect ? value : c.definition };
+                
+                // FIX: Only sync definition if this specific option was already the correct one
+                // and it wasn't an empty string (to avoid all empty options being "correct")
+                const wasSelectedAsCorrect = c.definition !== '' && c.definition === oldValue;
+                
+                return { 
+                    ...c, 
+                    options: newOptions, 
+                    definition: wasSelectedAsCorrect ? value : c.definition 
+                };
             })
         }));
     };
@@ -247,10 +256,10 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                 const newOptions = [...(c.options || [])];
                 const removedValue = newOptions[optionIndex];
                 newOptions.splice(optionIndex, 1);
-                let newDef = c.definition;
-                if (c.definition === removedValue) {
-                    newDef = newOptions.length > 0 ? newOptions[0] : '';
-                }
+                
+                // If the correct answer was removed, clear the definition
+                let newDef = c.definition === removedValue ? '' : c.definition;
+                
                 return { ...c, options: newOptions, definition: newDef };
             })
         }));
