@@ -27,16 +27,28 @@ export const settingEventService = {
   },
 
   /**
-   * Cập nhật trạng thái bật/tắt sự kiện toàn hệ thống.
-   * Endpoint: /api/users/event/{mode}
+   * Lưu cài đặt loại sự kiện lên hệ thống.
+   * Endpoint: /api/setting/event/{mode}
+   */
+  updateGlobalEventTheme: async (theme: EventTheme): Promise<void> => {
+    try {
+      // Gọi API PUT /setting/event/{theme} để lưu cấu hình
+      await apiClient.put(`/setting/event/${theme}`);
+    } catch (error) {
+      console.error("SettingEventService: Failed to update event theme", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật trạng thái bật/tắt hiển thị sự kiện cho user (nếu cần thiết).
    */
   updateGlobalEventStatus: async (isOn: boolean): Promise<void> => {
     try {
       const mode = isOn ? 'on' : 'off';
-      // Cập nhật endpoint thành /users/event/{mode}
       await apiClient.put(`/users/event/${mode}`);
     } catch (error) {
-      console.error("SettingEventService: Failed to update event status", error);
+      console.error("SettingEventService: Failed to update user event status", error);
       throw error;
     }
   }
