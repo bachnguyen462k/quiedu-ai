@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Flashcard, StudySet, PrivacyStatus, AiGenerationRecord } from '../types';
 import { generateStudySetWithAI, generateStudySetFromFile } from '../services/geminiService';
-import { studySetService, CreateStudySetRequest } from '../services/studySetService';
+import { studySetService, CreateStudySetRequest, UpdateStudySetRequest } from '../services/studySetService';
 import { Plus, Trash2, Sparkles, Save, FileText, Upload, CheckCircle, Keyboard, ScanLine, ArrowLeft, BrainCircuit, Check, X, AlertCircle, Lightbulb, Layers, List, BookOpen, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare, Loader2 } from 'lucide-react';
 import ThemeLoader from './ThemeLoader';
 import { v4 as uuidv4 } from 'uuid';
@@ -96,6 +96,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
   // Editor State
   const [editorMode, setEditorMode] = useState<EditorMode>('VISUAL');
+  const [editingSetId, setEditingSetId] = useState<string | number | null>(null); // State để biết đang edit hay create
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   
@@ -364,24 +365,45 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
     setIsSaving(true);
     try {
-        const saveRequest: CreateStudySetRequest = {
-            topic: topic || subject || title,
-            language: i18n.language || 'vi',
-            title: title,
-            description: description,
-            cards: validCards.map(c => ({
+        // Chuẩn bị cards payload, phân biệt card cũ (có id số) và card mới
+        const cardPayload = validCards.map(c => {
+            const item: any = {
                 term: c.term,
                 definition: c.definition,
                 options: c.options || [],
                 explanation: c.explanation || ''
-            }))
+            };
+            // Nếu ID là số hoặc chuỗi số (từ server), gửi kèm ID để update
+            if (c.id && !isNaN(Number(c.id))) {
+                item.id = Number(c.id);
+            }
+            return item;
+        });
+
+        const baseRequest = {
+            topic: topic || subject || title,
+            language: i18n.language || 'vi',
+            title: title,
+            description: description,
+            cards: cardPayload
         };
 
-        const response = await studySetService.createStudySet(saveRequest);
+        let response;
+        if (editingSetId) {
+            // Trường hợp cập nhật: PUT /study-sets
+            const updateRequest: UpdateStudySetRequest = {
+                ...baseRequest,
+                id: editingSetId
+            };
+            response = await studySetService.updateStudySet(updateRequest);
+        } else {
+            // Trường hợp tạo mới: POST /study-sets
+            response = await studySetService.createStudySet(baseRequest as CreateStudySetRequest);
+        }
 
         if (response.code === 1000) {
             const newSet: StudySet = {
-                id: response.result?.toString() || uuidv4(),
+                id: response.result?.toString() || editingSetId?.toString() || uuidv4(),
                 title,
                 description,
                 author: user?.name || 'Bạn',
@@ -394,6 +416,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                 subject,
                 topic
             };
+            addNotification(editingSetId ? "Đã cập nhật học phần thành công!" : "Đã tạo học phần mới thành công!", "success");
             onSave(newSet);
         } else {
             throw new Error(response.message || "Không thể lưu học phần");
@@ -451,6 +474,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
               if (detailResponse.code === 1000) {
                   const apiData = detailResponse.result;
                   
+                  setEditingSetId(apiData.id); // Gán ID để các lần save sau là update
                   setTitle(apiData.title);
                   setDescription(apiData.description);
                   setTopic(apiData.topic || '');
@@ -474,6 +498,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           }
       } catch (apiError: any) {
           console.error("Backend Flow Error:", apiError);
+          setEditingSetId(null);
           setTitle(generatedTitle);
           setDescription(generatedDescription);
           const localCards = generatedCards.map(c => ({ 
@@ -502,6 +527,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
   const startManual = () => {
       setCreationStep('EDITOR');
+      setEditingSetId(null); // Tạo mới hoàn toàn
       setTitle('');
       setDescription('');
       setCards([
@@ -525,12 +551,13 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           const response = await studySetService.getStudySetById(setId);
           if (response.code === 1000) {
               const apiData = response.result;
+              setEditingSetId(apiData.id); // Đang chỉnh sửa bộ đã có
               setTitle(apiData.title);
               setDescription(apiData.description);
               setTopic(apiData.topic || '');
               
               const dbCards: Flashcard[] = apiData.cards.map((c: any) => ({
-                  id: c.id.toString(),
+                  id: c.id.toString(), // Lưu lại ID dưới dạng string cho logic map
                   term: c.term,
                   definition: c.definition,
                   options: c.options || [],
@@ -829,7 +856,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                 <ArrowLeft size={20} />
             </button>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                {t('create_set.editor_title')}
+                {editingSetId ? "Chỉnh sửa học phần" : t('create_set.editor_title')}
                 {cards.length > 0 && <span className="bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs px-2 py-0.5 rounded-full">{cards.length} {t('class_mgmt.cards_count')}</span>}
             </h2>
         </div>
@@ -847,7 +874,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                 className="flex-1 sm:flex-none px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center justify-center gap-2 text-sm shadow-sm transition-colors disabled:opacity-50"
             >
                 {isSaving ? <ThemeLoader className="text-white" size={18} /> : <Save size={18} />}
-                <span className="hidden sm:inline">{t('create_set.save_btn')}</span><span className="sm:hidden">{t('create_set.save_short')}</span>
+                <span className="hidden sm:inline">{editingSetId ? "Cập nhật" : t('create_set.save_btn')}</span><span className="sm:hidden">{t('create_set.save_short')}</span>
             </button>
         </div>
       </div>

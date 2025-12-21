@@ -2,6 +2,7 @@
 import apiClient from './apiClient';
 
 export interface StudyCardRequest {
+  id?: number; // Thêm ID cho trường hợp update
   term: string;
   definition: string;
   options: string[];
@@ -16,6 +17,10 @@ export interface CreateStudySetRequest {
   cards: StudyCardRequest[];
 }
 
+export interface UpdateStudySetRequest extends CreateStudySetRequest {
+  id: number | string;
+}
+
 export const studySetService = {
   /**
    * Lưu học phần mới xuống backend.
@@ -27,6 +32,20 @@ export const studySetService = {
       return response.data;
     } catch (error) {
       console.error("StudySetService: Failed to create study set", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật học phần đã tồn tại.
+   * PUT /study-sets
+   */
+  updateStudySet: async (data: UpdateStudySetRequest): Promise<any> => {
+    try {
+      const response = await apiClient.put('/study-sets', data);
+      return response.data;
+    } catch (error) {
+      console.error("StudySetService: Failed to update study set", error);
       throw error;
     }
   },
