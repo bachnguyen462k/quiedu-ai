@@ -10,6 +10,19 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 
+// Define SAMPLE_TEXT_FORMAT constant to fix missing name error in the text formatting guide modal.
+const SAMPLE_TEXT_FORMAT = `Thủ đô của Việt Nam là gì?
+*Hà Nội
+Thành phố Hồ Chí Minh
+Đà Nẵng
+Huế
+
+1 + 1 bằng mấy?
+*2
+3
+4
+5`;
+
 interface CreateSetProps {
   onSave: (set: StudySet) => void;
   onCancel: () => void;
@@ -21,27 +34,6 @@ interface CreateSetProps {
 type CreationMode = 'MENU' | 'EDITOR';
 type AiGenerationMode = 'TEXT_TOPIC' | 'FILE_SCAN_QUIZ';
 type EditorMode = 'VISUAL' | 'TEXT';
-
-const EDUCATION_LEVELS = [
-  'Trung học phổ thông',
-  'Đại học',
-  'Cao đẳng',
-  'Cao học',
-  'Trung cấp',
-  'Khác'
-];
-
-const SAMPLE_TEXT_FORMAT = `Thủ đô của Việt Nam là gì?
-A. Thành phố Hồ Chí Minh
-*B. Hà Nội
-C. Đà Nẵng
-D. Hải Phòng
-
-Công thức hóa học của nước là?
-A. H2O2
-*B. H2O
-C. HO
-D. O2`;
 
 const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextbook, history = [], onSelectHistory }) => {
   const { t, i18n } = useTranslation();
@@ -75,8 +67,14 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   const [parsedPreviewCards, setParsedPreviewCards] = useState<Flashcard[]>([]);
   const [showTextGuide, setShowTextGuide] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
+
+  // Recent Activity Server Pagination
   const [serverSets, setServerSets] = useState<any[]>([]);
   const [isLoadingSets, setIsLoadingSets] = useState(false);
+  const [isMoreLoading, setIsMoreLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  
   const [aiMode, setAiMode] = useState<AiGenerationMode>('TEXT_TOPIC');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiQuestionCount, setAiQuestionCount] = useState<number>(10);
@@ -85,19 +83,51 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   const [isSaving, setIsSaving] = useState(false);
 
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchRecentSets = async () => {
-    setIsLoadingSets(true);
+  const fetchRecentSets = async (page: number, append: boolean = false) => {
+    if (page === 0) setIsLoadingSets(true);
+    else setIsMoreLoading(true);
+
     try {
-      const response = await studySetService.getMyStudySets(0, 10);
+      const response = await studySetService.getMyStudySets(page, 10);
       if (response.code === 1000) {
-        setServerSets(response.result.content);
+        const { content, totalPages: total } = response.result;
+        if (append) {
+          setServerSets(prev => [...prev, ...content]);
+        } else {
+          setServerSets(content);
+        }
+        setTotalPages(total);
+        setCurrentPage(page);
       }
-    } catch (error) { console.error(error); }
-    finally { setIsLoadingSets(false); }
+    } catch (error) { 
+      console.error(error); 
+    } finally { 
+      setIsLoadingSets(false); 
+      setIsMoreLoading(false);
+    }
   };
 
-  useEffect(() => { if (creationStep === 'MENU') fetchRecentSets(); }, [creationStep]);
+  useEffect(() => { 
+    if (creationStep === 'MENU') {
+      fetchRecentSets(0, false);
+    }
+  }, [creationStep]);
+
+  // Infinite scroll observer for recent activities
+  useEffect(() => {
+    if (creationStep !== 'MENU' || !loadMoreRef.current) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !isMoreLoading && currentPage < totalPages - 1) {
+        fetchRecentSets(currentPage + 1, true);
+      }
+    }, { threshold: 0.1 });
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [creationStep, currentPage, totalPages, isMoreLoading]);
 
   const hasPerm = (perm: string) => user?.permissions?.includes(perm) || false;
   const canManualEntry = hasPerm('MANUAL_ENTRY_POST');
@@ -363,6 +393,22 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                         Chưa có dữ liệu hoạt động gần đây
                       </div>
                     )}
+                  </div>
+
+                  {/* INFINITE SCROLL TRIGGER AREA */}
+                  <div ref={loadMoreRef} className="h-24 flex flex-col items-center justify-center bg-gray-50/20 dark:bg-gray-800/20 transition-colors">
+                      {isMoreLoading && (
+                        <div className="flex flex-col items-center gap-2">
+                           <ThemeLoader size={28} />
+                           <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest animate-pulse">Đang tải thêm...</span>
+                        </div>
+                      )}
+                      {!isMoreLoading && currentPage < totalPages - 1 && (
+                        <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-200 dark:border-gray-700 animate-spin opacity-50"></div>
+                      )}
+                      {!isMoreLoading && currentPage >= totalPages - 1 && serverSets.length > 0 && (
+                        <span className="text-[10px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-widest">Đã hiển thị hết danh sách</span>
+                      )}
                   </div>
               </div>
 
