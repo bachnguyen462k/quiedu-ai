@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Sparkles, FileText, CheckCircle, BookOpen, BrainCircuit, ChevronDown, ChevronUp, Save, Book, Sigma, PenTool, Lightbulb, Layers, GraduationCap, FileType, Image as ImageIcon, History, Clock, ArrowRight, X, Trash2, Edit3, Plus, Check, List, Link, ArrowLeft, Globe, Lock, Building, Hash, Bookmark } from 'lucide-react';
 import { analyzeTextbookWithAI } from '../services/geminiService';
+import { studySetService, CreateStudySetRequest } from '../services/studySetService';
 import { TextbookAnalysisResult, StudySet, AiGenerationRecord, Flashcard, PrivacyStatus } from '../types';
 import ThemeLoader from './ThemeLoader';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
+import { useApp } from '../contexts/AppContext';
 
 interface AiTextbookCreatorProps {
     onSaveToLibrary: (set: StudySet) => void;
@@ -62,10 +64,12 @@ const SCHOOLS_BY_LEVEL: Record<string, string[]> = {
 };
 
 const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, history, onAddToHistory, onBack }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const { addNotification } = useApp();
     const [activeTab, setActiveTab] = useState<'CREATE' | 'HISTORY'>('CREATE');
     const [file, setFile] = useState<{name: string, data: string, type: string} | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [result, setResult] = useState<TextbookAnalysisResult | null>(null);
     const [selectedTopicIndex, setSelectedTopicIndex] = useState<number>(0);
     const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null);
@@ -95,7 +99,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isAnalyzing) {
+            if (isAnalyzing || isSaving) {
                 e.preventDefault();
                 e.returnValue = '';
             }
@@ -103,7 +107,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
 
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [isAnalyzing]);
+    }, [isAnalyzing, isSaving]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -218,8 +222,6 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                 const oldValue = newOptions[optionIndex];
                 newOptions[optionIndex] = value;
                 
-                // FIX: Only sync definition if this specific option was already the correct one
-                // and it wasn't an empty string (to avoid all empty options being "correct")
                 const wasSelectedAsCorrect = c.definition !== '' && c.definition === oldValue;
                 
                 return { 
@@ -257,7 +259,6 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                 const removedValue = newOptions[optionIndex];
                 newOptions.splice(optionIndex, 1);
                 
-                // If the correct answer was removed, clear the definition
                 let newDef = c.definition === removedValue ? '' : c.definition;
                 
                 return { ...c, options: newOptions, definition: newDef };
@@ -276,27 +277,57 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
         }));
     };
 
-    const handleFinalSave = () => {
+    const handleFinalSave = async () => {
         if (!editingSet.title.trim()) {
             alert(t('ai_creator.error_no_title'));
             return;
         }
-        const newSet: StudySet = {
-            id: uuidv4(),
-            title: editingSet.title,
-            description: editingSet.description,
-            author: 'AI Assistant',
-            createdAt: Date.now(),
-            cards: editingSet.cards,
-            privacy: editingSet.privacy,
-            level: editingSet.level,
-            school: editingSet.school,
-            major: editingSet.major,
-            subject: editingSet.subject,
-            topic: editingSet.topic
-        };
-        onSaveToLibrary(newSet);
-        setShowSaveModal(false);
+
+        setIsSaving(true);
+        try {
+            const saveRequest: CreateStudySetRequest = {
+                topic: editingSet.topic || editingSet.title,
+                language: i18n.language || 'vi',
+                title: editingSet.title,
+                description: editingSet.description,
+                type: 'AI_TEXTBOOK',
+                cards: editingSet.cards.map(c => ({
+                    term: c.term,
+                    definition: c.definition,
+                    options: c.options || [],
+                    explanation: c.explanation || ''
+                }))
+            };
+
+            const response = await studySetService.createStudySet(saveRequest);
+
+            if (response.code === 1000) {
+                const newSet: StudySet = {
+                    id: response.result?.toString() || uuidv4(),
+                    title: editingSet.title,
+                    description: editingSet.description,
+                    author: 'AI Assistant',
+                    createdAt: Date.now(),
+                    cards: editingSet.cards,
+                    privacy: editingSet.privacy,
+                    level: editingSet.level,
+                    school: editingSet.school,
+                    major: editingSet.major,
+                    subject: editingSet.subject,
+                    topic: editingSet.topic,
+                    type: 'AI_TEXTBOOK'
+                };
+                onSaveToLibrary(newSet);
+                addNotification("Đã lưu học phần từ giáo án thành công!", "success");
+                setShowSaveModal(false);
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            addNotification("Lỗi khi lưu lên máy chủ.", "error");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const renderDifficultyBar = (level: string) => {
@@ -515,7 +546,7 @@ const AiTextbookCreator: React.FC<AiTextbookCreatorProps> = ({ onSaveToLibrary, 
                                 ))}
                             </div>
                         </div>
-                        <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-2xl flex justify-end gap-3 transition-colors"><button onClick={() => setShowSaveModal(false)} className="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-bold transition-colors">{t('common.cancel')}</button><button onClick={handleFinalSave} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm flex items-center gap-2 transition-all hover:shadow-indigo-200 hover:-translate-y-0.5"><Save size={18} /> {t('ai_creator.confirm_save')}</button></div>
+                        <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-2xl flex justify-end gap-3 transition-colors"><button onClick={() => setShowSaveModal(false)} className="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-bold transition-colors">{t('common.cancel')}</button><button onClick={handleFinalSave} disabled={isSaving} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm flex items-center gap-2 transition-all hover:shadow-indigo-200 hover:-translate-y-0.5 disabled:opacity-50">{isSaving ? <ThemeLoader className="text-white" size={18} /> : <Save size={18} />} {t('ai_creator.confirm_save')}</button></div>
                     </div>
                 </div>
             )}

@@ -14,6 +14,7 @@ export interface CreateStudySetRequest {
   language: string;
   title: string;
   description: string;
+  type: string; // Thêm trường type: MANUAL, AI_TOPIC, AI_FILE, AI_TEXTBOOK
   cards: StudyCardRequest[];
 }
 

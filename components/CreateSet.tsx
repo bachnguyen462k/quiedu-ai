@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Flashcard, StudySet, PrivacyStatus, AiGenerationRecord } from '../types';
+import { Flashcard, StudySet, PrivacyStatus, AiGenerationRecord, StudySetType } from '../types';
 import { generateStudySetWithAI, generateStudySetFromFile } from '../services/geminiService';
 import { studySetService, CreateStudySetRequest, UpdateStudySetRequest } from '../services/studySetService';
 import { Plus, Trash2, Sparkles, Save, FileText, Upload, CheckCircle, Keyboard, ScanLine, ArrowLeft, BrainCircuit, Check, X, AlertCircle, Lightbulb, Layers, List, BookOpen, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare, Loader2 } from 'lucide-react';
@@ -96,7 +96,9 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
   // Editor State
   const [editorMode, setEditorMode] = useState<EditorMode>('VISUAL');
-  const [editingSetId, setEditingSetId] = useState<string | number | null>(null); // State để biết đang edit hay create
+  const [editingSetId, setEditingSetId] = useState<string | number | null>(null);
+  const [creationSource, setCreationSource] = useState<StudySetType>('MANUAL'); // Luồng tạo từ đâu
+  
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   
@@ -365,7 +367,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
     setIsSaving(true);
     try {
-        // Chuẩn bị cards payload, phân biệt card cũ (có id số) và card mới
         const cardPayload = validCards.map(c => {
             const item: any = {
                 term: c.term,
@@ -373,7 +374,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                 options: c.options || [],
                 explanation: c.explanation || ''
             };
-            // Nếu ID là số hoặc chuỗi số (từ server), gửi kèm ID để update
             if (c.id && !isNaN(Number(c.id))) {
                 item.id = Number(c.id);
             }
@@ -385,19 +385,18 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
             language: i18n.language || 'vi',
             title: title,
             description: description,
+            type: creationSource, // MANUAL, AI_TOPIC, AI_FILE...
             cards: cardPayload
         };
 
         let response;
         if (editingSetId) {
-            // Trường hợp cập nhật: PUT /study-sets
             const updateRequest: UpdateStudySetRequest = {
                 ...baseRequest,
                 id: editingSetId
             };
             response = await studySetService.updateStudySet(updateRequest);
         } else {
-            // Trường hợp tạo mới: POST /study-sets
             response = await studySetService.createStudySet(baseRequest as CreateStudySetRequest);
         }
 
@@ -414,7 +413,8 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                 school,
                 major,
                 subject,
-                topic
+                topic,
+                type: creationSource
             };
             addNotification(editingSetId ? "Đã cập nhật học phần thành công!" : "Đã tạo học phần mới thành công!", "success");
             onSave(newSet);
@@ -434,6 +434,9 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
     if (aiMode === 'FILE_SCAN_QUIZ' && !aiFile) return;
     
     setIsGenerating(true);
+    const source: StudySetType = aiMode === 'TEXT_TOPIC' ? 'AI_TOPIC' : 'AI_FILE';
+    setCreationSource(source);
+
     try {
       let generatedCards: Omit<Flashcard, 'id'>[] = [];
       let generatedTitle = '';
@@ -456,6 +459,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           language: i18n.language || 'vi',
           title: generatedTitle,
           description: generatedDescription,
+          type: source,
           cards: generatedCards.map(c => ({
               term: c.term,
               definition: c.definition,
@@ -474,7 +478,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
               if (detailResponse.code === 1000) {
                   const apiData = detailResponse.result;
                   
-                  setEditingSetId(apiData.id); // Gán ID để các lần save sau là update
+                  setEditingSetId(apiData.id);
                   setTitle(apiData.title);
                   setDescription(apiData.description);
                   setTopic(apiData.topic || '');
@@ -527,7 +531,8 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
   const startManual = () => {
       setCreationStep('EDITOR');
-      setEditingSetId(null); // Tạo mới hoàn toàn
+      setEditingSetId(null);
+      setCreationSource('MANUAL');
       setTitle('');
       setDescription('');
       setCards([
@@ -551,13 +556,14 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           const response = await studySetService.getStudySetById(setId);
           if (response.code === 1000) {
               const apiData = response.result;
-              setEditingSetId(apiData.id); // Đang chỉnh sửa bộ đã có
+              setEditingSetId(apiData.id);
               setTitle(apiData.title);
               setDescription(apiData.description);
               setTopic(apiData.topic || '');
+              setCreationSource(apiData.type || 'MANUAL');
               
               const dbCards: Flashcard[] = apiData.cards.map((c: any) => ({
-                  id: c.id.toString(), // Lưu lại ID dưới dạng string cho logic map
+                  id: c.id.toString(),
                   term: c.term,
                   definition: c.definition,
                   options: c.options || [],
@@ -709,7 +715,13 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                               {record.title}
                                           </td>
                                           <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                                              <span className="flex items-center gap-1.5"><Layers size={14} className="text-brand-blue" /> Quiz</span>
+                                              <span className="flex items-center gap-1.5 font-medium">
+                                                  {record.type === 'MANUAL' && <><Keyboard size={14} className="text-blue-500" /> Thủ công</>}
+                                                  {record.type === 'AI_TOPIC' && <><Sparkles size={14} className="text-purple-500" /> AI Chủ đề</>}
+                                                  {record.type === 'AI_FILE' && <><ScanLine size={14} className="text-indigo-500" /> AI Quét file</>}
+                                                  {record.type === 'AI_TEXTBOOK' && <><BookOpen size={14} className="text-pink-500" /> AI Giáo án</>}
+                                                  {!record.type && <><Layers size={14} className="text-gray-400" /> Quiz</>}
+                                              </span>
                                           </td>
                                           <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                                               {new Date(record.createdAt).toLocaleDateString()}
@@ -1296,7 +1308,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                         </pre>
                         <button 
                             onClick={() => { setTextEditorContent(SAMPLE_TEXT_FORMAT); setShowTextGuide(false); }}
-                            className="absolute top-2 right-2 bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 p-1.5 rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-1 text-xs font-bold opacity-0 group-hover:opacity-100"
+                            className="absolute top-2 right-2 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-600 p-1.5 rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-1 text-xs font-bold opacity-0 group-hover:opacity-100"
                         >
                             <Copy size={12} /> {t('create_set.copy_sample')}
                         </button>

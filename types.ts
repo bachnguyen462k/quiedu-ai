@@ -20,6 +20,9 @@ export interface Review {
 
 export type PrivacyStatus = 'PUBLIC' | 'PRIVATE';
 
+// Phân loại phương thức tạo quiz
+export type StudySetType = 'MANUAL' | 'AI_TOPIC' | 'AI_FILE' | 'AI_TEXTBOOK';
+
 export interface StudySet {
   id: string;
   title: string;
@@ -33,6 +36,7 @@ export interface StudySet {
   isFavorite?: boolean; 
   
   privacy: PrivacyStatus;
+  type?: StudySetType; // Thêm trường type
   level?: string;      
   school?: string;     
   major?: string;      

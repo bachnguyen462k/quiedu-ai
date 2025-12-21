@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, Review } from '../types';
-import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle } from 'lucide-react';
+/* Added BookOpen to the lucide-react imports to fix 1-based line error at 163 */
+import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
 import { useApp } from '../contexts/AppContext';
@@ -50,6 +51,24 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
+  /* Defined trendingSets to fix 1-based line error at 186 */
+  const trendingSets = useMemo(() => {
+    return [...localSets].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 3);
+  }, [localSets]);
+
+  /* Defined recentReviews to fix 1-based line errors at 344, 348 */
+  const recentReviews = useMemo(() => {
+    const allReviews: (Review & { setId: string; setTitle: string })[] = [];
+    localSets.forEach(set => {
+      if (set.reviews) {
+        set.reviews.forEach(review => {
+          allReviews.push({ ...review, setId: set.id, setTitle: set.title });
+        });
+      }
+    });
+    return allReviews.sort((a, b) => b.createdAt - a.createdAt).slice(0, 5);
+  }, [localSets]);
+
   // --- FETCH DATA FROM SERVER ---
   const fetchMySets = async (page: number, refresh: boolean = false) => {
       if (!isLibrary || libraryTab !== 'SETS' || isLoading) return;
@@ -69,8 +88,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   createdAt: new Date(item.createdAt).getTime(),
                   privacy: 'PUBLIC',
                   subject: item.topic || 'Khác',
+                  type: item.type, // Map trường type từ server
                   plays: 0,
-                  cards: [] // Sẽ được fetch chi tiết khi nhấn vào
+                  cards: []
               }));
 
               if (refresh) {
@@ -118,24 +138,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
     return () => { if (observerRef.current) observerRef.current.disconnect(); };
   }, [currentPage, totalPages, isLoading, isLibrary, libraryTab]);
 
-  // --- LOCAL DATA LOGIC (Explore / Favorites) ---
-  const trendingSets = useMemo(() => {
-      return [...localSets].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 3);
-  }, [localSets]);
-
-  const recentReviews = useMemo(() => {
-      if (isLibrary) return []; 
-      const allReviews: (Review & { setTitle: string, setId: string })[] = [];
-      localSets.forEach(set => {
-          if (set.reviews) {
-              set.reviews.forEach(review => {
-                  allReviews.push({ ...review, setTitle: set.title, setId: set.id });
-              });
-          }
-      });
-      return allReviews.sort((a, b) => b.createdAt - a.createdAt).slice(0, 10);
-  }, [localSets, isLibrary]);
-
   // Merge server and local sets depending on context
   const filteredSets = useMemo(() => {
     let base = isLibrary && libraryTab === 'SETS' ? serverSets : localSets;
@@ -166,6 +168,22 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   }, [uploads, searchQuery]);
 
   const isShowingFiles = isLibrary && libraryTab === 'FILES';
+
+  // Helper to render set type badge
+  const renderSetTypeBadge = (type?: string) => {
+      switch (type) {
+          case 'MANUAL':
+              return <span className="flex items-center gap-1 text-[9px] font-black uppercase text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md"><Keyboard size={10}/> Thủ công</span>;
+          case 'AI_TOPIC':
+              return <span className="flex items-center gap-1 text-[9px] font-black uppercase text-purple-500 bg-purple-50 dark:bg-purple-900/30 px-1.5 py-0.5 rounded-md"><Sparkles size={10}/> AI Chủ đề</span>;
+          case 'AI_FILE':
+              return <span className="flex items-center gap-1 text-[9px] font-black uppercase text-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded-md"><ScanLine size={10}/> AI Quét file</span>;
+          case 'AI_TEXTBOOK':
+              return <span className="flex items-center gap-1 text-[9px] font-black uppercase text-pink-500 bg-pink-50 dark:bg-pink-900/30 px-1.5 py-0.5 rounded-md"><BookOpen size={10}/> AI Giáo án</span>;
+          default:
+              return null;
+      }
+  };
 
   if (isInitialLoading && isLibrary && libraryTab === 'SETS') {
       return (
@@ -303,9 +321,10 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                 <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative">
                                     <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-2.5 rounded-full z-10 transition-all ${set.isFavorite ? 'text-red-500 fill-red-500 scale-110' : 'text-gray-300 dark:text-gray-600 hover:text-red-400'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
                                     <div className="p-6 flex-1">
-                                        <div className="flex gap-2 mb-4">
+                                        <div className="flex flex-wrap gap-2 mb-4">
                                             <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">FLASHCARD</span>
                                             <span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest">{set.subject}</span>
+                                            {renderSetTypeBadge(set.type)}
                                         </div>
                                         <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight pr-6">{set.title}</h3>
                                         <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 opacity-80 font-medium">{set.description}</p>
