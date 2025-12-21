@@ -18,7 +18,7 @@ import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
 import { StudySet, User, AiGenerationRecord, Review, EventTheme } from './types';
-import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf } from 'lucide-react';
+import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2 } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +34,7 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
         let count = 40;
         if (eventType === 'AUTUMN') count = 25; 
         if (eventType === 'CHRISTMAS') count = 45; 
+        if (eventType === 'TET') count = 35;
 
         return Array.from({ length: count }).map((_, i) => ({
             id: i,
@@ -67,12 +68,11 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
                     content = <Snowflake size="100%" strokeWidth={2.5} />;
                 } else if (eventType === 'TET') {
                     style = {
-                        backgroundColor: item.variant === 'A' ? '#FFD700' : '#FFB7C5',
-                        borderRadius: '50% 0 50% 50%',
-                        boxShadow: `0 0 8px ${item.variant === 'A' ? '#FFD700' : '#FFB7C5'}`,
+                        color: item.variant === 'A' ? '#FFD700' : '#FF69B4', // Gold (Mai) or Hot Pink (Đào)
+                        filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.2)) drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
                         transform: `rotate(${Math.random() * 360}deg)`
                     };
-                    content = <div className="w-full h-full" />;
+                    content = <Flower2 size="100%" strokeWidth={2} fill="currentColor" fillOpacity={0.3} />;
                 } else if (eventType === 'AUTUMN') {
                     style = {
                         color: item.variant === 'A' ? '#D97706' : '#B45309',
