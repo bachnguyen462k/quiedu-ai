@@ -18,7 +18,7 @@ import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
 import { StudySet, User, AiGenerationRecord, Review, EventTheme } from './types';
-import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
+import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -33,16 +33,16 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
         
         let count = 40;
         if (eventType === 'AUTUMN') count = 25; 
-        if (eventType === 'CHRISTMAS') count = 50; 
+        if (eventType === 'CHRISTMAS') count = 45; 
 
         return Array.from({ length: count }).map((_, i) => ({
             id: i,
             left: `${Math.random() * 100}%`,
             delay: `${Math.random() * 20}s`,
             duration: `${10 + Math.random() * 15}s`,
-            size: eventType === 'CHRISTMAS' ? `${4 + Math.random() * 8}px` : `${12 + Math.random() * 18}px`,
+            size: eventType === 'CHRISTMAS' ? `${10 + Math.random() * 15}px` : `${12 + Math.random() * 18}px`,
             swayDuration: `${3 + Math.random() * 5}s`,
-            opacity: 0.5 + Math.random() * 0.4,
+            opacity: 0.6 + Math.random() * 0.4,
             variant: Math.random() > 0.5 ? 'A' : 'B'
         }));
     }, [eventType, isAnimationEnabled]);
@@ -53,18 +53,18 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden select-none">
             {items.map((item) => {
                 let style: React.CSSProperties = {};
+                let content: React.ReactNode = null;
 
                 if (eventType === 'CHRISTMAS') {
                     const isDarkMode = uiTheme === 'dark';
                     style = {
-                        backgroundColor: '#FFF',
-                        borderRadius: '50%',
-                        boxShadow: isDarkMode 
-                            ? '0 0 10px rgba(255,255,255,0.8)' 
-                            : '0 0 5px rgba(100, 116, 139, 0.3), 0 0 2px rgba(0,0,0,0.1)',
-                        filter: isDarkMode ? 'blur(1px)' : 'none',
-                        border: isDarkMode ? 'none' : '0.5px solid rgba(203, 213, 225, 0.5)'
+                        color: '#FFFFFF',
+                        // Filter drop-shadow helps white icons stay visible on light backgrounds
+                        filter: isDarkMode 
+                            ? 'drop-shadow(0 0 3px rgba(255,255,255,0.4))' 
+                            : 'drop-shadow(0 0 2px rgba(0,0,0,0.15))',
                     };
+                    content = <Snowflake size="100%" strokeWidth={2.5} />;
                 } else if (eventType === 'TET') {
                     style = {
                         backgroundColor: item.variant === 'A' ? '#FFD700' : '#FFB7C5',
@@ -72,12 +72,14 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
                         boxShadow: `0 0 8px ${item.variant === 'A' ? '#FFD700' : '#FFB7C5'}`,
                         transform: `rotate(${Math.random() * 360}deg)`
                     };
+                    content = <div className="w-full h-full" />;
                 } else if (eventType === 'AUTUMN') {
                     style = {
                         backgroundColor: item.variant === 'A' ? '#D97706' : '#92400E',
                         borderRadius: '80% 10% 80% 10%',
                         transform: `rotate(${Math.random() * 360}deg)`
                     };
+                    content = <div className="w-full h-full" />;
                 }
 
                 return (
@@ -94,12 +96,14 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
                         }}
                     >
                         <div 
-                            className="w-full h-full"
+                            className="w-full h-full flex items-center justify-center"
                             style={{
                                 ...style,
                                 animation: `global-sway ${item.swayDuration} ease-in-out infinite alternate`,
                             }}
-                        ></div>
+                        >
+                            {content}
+                        </div>
                     </div>
                 );
             })}
