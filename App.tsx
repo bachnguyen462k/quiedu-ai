@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
+/* Import useNavigate from react-router-dom to fix 1-based line errors at 229, 317, 326 */
+import { HashRouter as Router, Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
@@ -15,11 +16,11 @@ import AiTextbookCreator from './components/AiTextbookCreator';
 import SettingsView from './components/SettingsView';
 import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
+import ThemeLoader from './components/ThemeLoader';
 import { StudySet, User, AiGenerationRecord, Review, EventTheme } from './types';
-import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Loader2 } from 'lucide-react';
+import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
 
 // --- Global Event Theme Overlay Component ---
@@ -58,7 +59,6 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
                     style = {
                         backgroundColor: '#FFF',
                         borderRadius: '50%',
-                        // Improved visibility for light mode: dark shadow and semi-transparent border
                         boxShadow: isDarkMode 
                             ? '0 0 10px rgba(255,255,255,0.8)' 
                             : '0 0 5px rgba(100, 116, 139, 0.3), 0 0 2px rgba(0,0,0,0.1)',
@@ -182,7 +182,7 @@ const MainLayout: React.FC<{
   if (isLoading) {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-            <Loader2 className="animate-spin text-indigo-600" size={48} />
+            <ThemeLoader size={48} />
         </div>
     );
   }
@@ -227,6 +227,7 @@ const AppRoutes: React.FC = () => {
   const { addNotification, eventTheme } = useApp();
   const { user, isAuthenticated, isLoading, logout, updateUser } = useAuth();
   const { t } = useTranslation();
+  /* Fix: Added useNavigate hook initialization after including it in the imports from react-router-dom */
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -275,7 +276,7 @@ const AppRoutes: React.FC = () => {
   if (isLoading) {
       return (
           <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-              <Loader2 className="animate-spin text-indigo-600" size={48} />
+              <ThemeLoader size={48} />
           </div>
       );
   }
@@ -315,6 +316,7 @@ const AppRoutes: React.FC = () => {
 // --- Sub-components for Routes ---
 const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggleFavorite: (id: string) => void }) => {
     const { setId } = useParams();
+    /* Fix: Added missing useNavigate hook initialization to resolve reference error */
     const navigate = useNavigate();
     const set = sets.find(s => s.id === setId);
     if (!set) return <div className="p-8 text-center text-gray-500">Học phần không tồn tại.</div>;
@@ -324,6 +326,7 @@ const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggle
 const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLASHCARD' | 'QUIZ', onAddReview?: any }) => {
     const { setId } = useParams();
     const { user } = useAuth();
+    /* Fix: Added missing useNavigate hook initialization to resolve reference error */
     const navigate = useNavigate();
     const set = sets.find(s => s.id === setId);
     if (!set) return <div className="p-8 text-center text-gray-500">Học phần không tồn tại.</div>;

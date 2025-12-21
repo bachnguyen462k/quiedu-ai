@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
 import { UserRole } from '../types';
-import { GraduationCap, ArrowRight, Loader2, Mail, Lock, User as UserIcon, Globe, ChevronLeft, ShieldCheck, KeyRound } from 'lucide-react';
+import { ArrowRight, Mail, Lock, User as UserIcon, Globe, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { useTranslation } from 'react-i18next';
 import BrandLogo from './BrandLogo';
+import ThemeLoader from './ThemeLoader';
 
 interface LoginProps {
   onBack: () => void;
@@ -47,7 +48,6 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
         await login({ email, password });
         addNotification(t('login.success_login'), 'success');
     } catch (error: any) {
-        // Lấy thông báo lỗi từ Error object nếu có, ngược lại dùng i18n mặc định
         const errorMessage = error instanceof Error ? error.message : (typeof error === 'string' ? error : t('login.error_login'));
         addNotification(errorMessage, 'error');
     } finally {
@@ -146,7 +146,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                 </div>
             </div>
             <button type="submit" disabled={isLoading || isGoogleSubmitting} className="w-full bg-brand-blue text-white py-4 rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-brand-blue/20 flex items-center justify-center gap-3 mt-6 disabled:opacity-70 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:scale-95">
-                {isLoading ? <Loader2 className="animate-spin" size={22} /> : <>{t('login.btn_login')} <ArrowRight size={22} /></>}
+                {isLoading ? <ThemeLoader className="text-white" size={22} /> : <>{t('login.btn_login')} <ArrowRight size={22} /></>}
             </button>
         </form>
       </>
@@ -159,7 +159,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
         
         <div className="flex gap-4 mb-6">
             <button onClick={() => setSelectedRole('USER')} className={`flex-1 py-3 rounded-2xl border-2 font-black transition-all flex items-center justify-center gap-2 ${selectedRole === 'USER' ? 'border-brand-blue bg-blue-50 dark:bg-blue-900/30 text-brand-blue dark:text-blue-400' : 'border-gray-100 dark:border-gray-700 text-gray-400'}`}>
-                <GraduationCap size={20} /> {t('common.role_student')}
+                <ShieldCheck size={20} /> {t('common.role_student')}
             </button>
             <button onClick={() => setSelectedRole('TEACHER')} className={`flex-1 py-3 rounded-2xl border-2 font-black transition-all flex items-center justify-center gap-2 ${selectedRole === 'TEACHER' ? 'border-brand-orange bg-orange-50 dark:bg-orange-900/30 text-brand-orange' : 'border-gray-100 dark:border-gray-700 text-gray-400'}`}>
                 <UserIcon size={20} /> {t('common.role_teacher')}
@@ -186,7 +186,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                 </div>
             </div>
             <button type="submit" disabled={isLoading} className="w-full bg-brand-blue text-white py-4 rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-brand-blue/20 flex items-center justify-center gap-3 mt-4 disabled:opacity-70">
-                {isLoading ? <Loader2 className="animate-spin" size={22} /> : <>{t('login.btn_register')} <ArrowRight size={22} /></>}
+                {isLoading ? <ThemeLoader className="text-white" size={22} /> : <>{t('login.btn_register')} <ArrowRight size={22} /></>}
             </button>
         </form>
       </>
@@ -271,7 +271,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
             )}
 
             <button type="submit" disabled={isLoading} className="w-full bg-brand-blue text-white py-4 rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-brand-blue/20 flex items-center justify-center gap-3 mt-6 disabled:opacity-70 transform hover:-translate-y-0.5 active:scale-95">
-                {isLoading ? <Loader2 className="animate-spin" size={22} /> : (
+                {isLoading ? <ThemeLoader className="text-white" size={22} /> : (
                     <>
                         {forgotStep === 'EMAIL' ? t('login.send_code') : 
                          forgotStep === 'OTP' ? t('login.verify') : t('login.change_password')}

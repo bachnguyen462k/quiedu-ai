@@ -1,7 +1,9 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Flashcard, StudySet, PrivacyStatus, AiGenerationRecord } from '../types';
 import { generateStudySetWithAI, generateStudySetFromFile } from '../services/geminiService';
-import { Plus, Trash2, Sparkles, Save, Loader2, FileText, Upload, CheckCircle, PenTool, Keyboard, FileUp, ArrowLeft, BrainCircuit, Check, X, Menu, AlertCircle, Lightbulb, ChevronRight, Layers, LayoutGrid, List, BookOpen, ScanLine, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Save, FileText, Upload, CheckCircle, Keyboard, ScanLine, ArrowLeft, BrainCircuit, Check, X, AlertCircle, Lightbulb, Layers, List, BookOpen, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare } from 'lucide-react';
+import ThemeLoader from './ThemeLoader';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -213,10 +215,8 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
   const handleSwitchMode = (newMode: EditorMode) => {
       if (newMode === 'TEXT') {
-          // Convert current cards to text
           setTextEditorContent(stringifyCardsToText(cards));
       } else {
-          // Convert text back to cards
           const parsed = parseTextToCards(textEditorContent);
           if (parsed.length > 0) {
               setCards(parsed);
@@ -362,7 +362,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           generatedCards = result.cards;
 
       } else if (aiMode === 'FILE_SCAN_QUIZ') {
-          // Reverted to not accept count argument
           const result = await generateStudySetFromFile(aiFile!.data, aiFile!.name);
           generatedTitle = result.title;
           generatedDescription = result.description;
@@ -542,7 +541,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                               </thead>
                               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                   {history.map((record) => {
-                                      // Determine type based on data structure (approximate)
                                       const isTextbook = record.result?.topics?.length > 0;
                                       return (
                                           <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
@@ -679,7 +677,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                 disabled={isGenerating || (aiMode === 'TEXT_TOPIC' ? !aiPrompt.trim() : !aiFile)}
                                 className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all shadow-md hover:shadow-indigo-200"
                             >
-                                {isGenerating ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                                {isGenerating ? <ThemeLoader className="text-white" size={18} /> : <Sparkles size={18} />}
                                 {isGenerating ? t('create_set.processing') : t('create_set.start_create')}
                             </button>
                         </div>
@@ -1072,7 +1070,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   ) : (
                       /* --- TEXT MODE (Split View Full Height) --- */
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[calc(100vh-250px)]">
-                          {/* Input Column */}
                           <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                               <div className="p-3 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">
                                   <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">{t('create_set.input_label')}</span>
@@ -1083,31 +1080,19 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                               </div>
                               <textarea
                                   className="flex-1 w-full p-4 bg-transparent outline-none font-mono text-sm leading-relaxed text-gray-800 dark:text-gray-200 h-full resize-none"
-                                  placeholder={`Nhập câu hỏi tại đây...
-
-Câu hỏi 1
-A. Lựa chọn 1
-*B. Lựa chọn 2 (Đáp án đúng)
-C. Lựa chọn 3
-
-Câu hỏi 2 (cách 1 dòng)
-*A. Đúng
-B. Sai`}
+                                  placeholder={`Nhập câu hỏi tại đây...`}
                                   value={textEditorContent}
                                   onChange={(e) => setTextEditorContent(e.target.value)}
                               />
                           </div>
 
-                          {/* Right Column: Preview ONLY */}
                           <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                              {/* PREVIEW HEADER */}
                               <div className="p-3 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-between items-center shrink-0">
                                   <span className="text-xs font-bold uppercase text-gray-500 dark:text-gray-300 flex items-center gap-2">
                                       <Eye size={12} /> {t('create_set.preview_title')} ({parsedPreviewCards.length})
                                   </span>
                               </div>
 
-                              {/* PREVIEW LIST */}
                               <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-white dark:bg-gray-800/30">
                                   {parsedPreviewCards.length === 0 ? (
                                       <div className="text-center text-gray-400 text-sm mt-10">
@@ -1281,7 +1266,7 @@ B. Sai`}
                         disabled={isGenerating || (aiMode === 'TEXT_TOPIC' ? !aiPrompt.trim() : !aiFile)}
                         className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all shadow-md hover:shadow-indigo-200"
                     >
-                        {isGenerating ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                        {isGenerating ? <ThemeLoader className="text-white" size={18} /> : <Sparkles size={18} />}
                         {isGenerating ? t('create_set.processing') : t('create_set.start_create')}
                     </button>
                 </div>
