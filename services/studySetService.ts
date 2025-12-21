@@ -1,6 +1,5 @@
 
 import apiClient from './apiClient';
-import { Flashcard } from '../types';
 
 export interface StudyCardRequest {
   term: string;

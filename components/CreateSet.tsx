@@ -8,6 +8,7 @@ import ThemeLoader from './ThemeLoader';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { useApp } from '../contexts/AppContext';
 
 interface CreateSetProps {
   onSave: (set: StudySet) => void;
@@ -88,6 +89,7 @@ B. Elon Musk
 const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextbook, history = [], onSelectHistory }) => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const { addNotification } = useApp();
 
   // Navigation State
   const [creationStep, setCreationStep] = useState<CreationMode>('MENU');
@@ -368,8 +370,8 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           generatedDescription = result.description;
           generatedCards = result.cards;
       }
-      
-      // Chuẩn bị dữ liệu lưu xuống backend
+
+      // --- BACKEND INTEGRATION: Auto-save to server ---
       const saveRequest: CreateStudySetRequest = {
           topic: aiMode === 'TEXT_TOPIC' ? aiPrompt : aiFile!.name,
           language: i18n.language || 'vi',
@@ -383,14 +385,15 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           }))
       };
 
-      // Gọi API lưu xuống backend
       try {
           await studySetService.createStudySet(saveRequest);
-          console.log("Backend: Study set saved successfully.");
+          addNotification("Đã tự động lưu học phần vào hệ thống", "success");
       } catch (apiError) {
-          console.error("Backend: Failed to auto-save generated quiz.", apiError);
-          // Vẫn tiếp tục xử lý UI cho người dùng dù lưu backend lỗi
+          console.error("Backend Error: Failed to save study set", apiError);
+          // Ta vẫn tiếp tục để người dùng chỉnh sửa trong UI dù server có lỗi
+          addNotification("Lỗi lưu trữ backend, nhưng bạn vẫn có thể chỉnh sửa thủ công", "warning");
       }
+      // ------------------------------------------------
 
       setTitle(generatedTitle);
       setDescription(generatedDescription);
