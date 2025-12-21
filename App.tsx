@@ -31,8 +31,8 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
         if (eventType === 'DEFAULT' || !isAnimationEnabled) return [];
         
         let count = 40;
-        if (eventType === 'AUTUMN') count = 25; // Less leaves for focus
-        if (eventType === 'CHRISTMAS') count = 50; // More snowflakes
+        if (eventType === 'AUTUMN') count = 25; 
+        if (eventType === 'CHRISTMAS') count = 50; 
 
         return Array.from({ length: count }).map((_, i) => ({
             id: i,
@@ -41,8 +41,7 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
             duration: `${10 + Math.random() * 15}s`,
             size: eventType === 'CHRISTMAS' ? `${4 + Math.random() * 8}px` : `${12 + Math.random() * 18}px`,
             swayDuration: `${3 + Math.random() * 5}s`,
-            opacity: 0.4 + Math.random() * 0.5,
-            // Subtypes for variety
+            opacity: 0.5 + Math.random() * 0.4,
             variant: Math.random() > 0.5 ? 'A' : 'B'
         }));
     }, [eventType, isAnimationEnabled]);
@@ -59,12 +58,12 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
                     style = {
                         backgroundColor: '#FFF',
                         borderRadius: '50%',
-                        // Enhance visibility in Light Mode with a subtle border-shadow or light blue tint
+                        // Improved visibility for light mode: dark shadow and semi-transparent border
                         boxShadow: isDarkMode 
                             ? '0 0 10px rgba(255,255,255,0.8)' 
-                            : '0 0 4px rgba(0,0,0,0.1), 0 0 2px rgba(59, 130, 246, 0.2)',
+                            : '0 0 5px rgba(100, 116, 139, 0.3), 0 0 2px rgba(0,0,0,0.1)',
                         filter: isDarkMode ? 'blur(1px)' : 'none',
-                        border: isDarkMode ? 'none' : '0.5px solid rgba(226, 232, 240, 0.8)'
+                        border: isDarkMode ? 'none' : '0.5px solid rgba(203, 213, 225, 0.5)'
                     };
                 } else if (eventType === 'TET') {
                     style = {
@@ -178,7 +177,6 @@ const MainLayout: React.FC<{
   setRunTour: (val: boolean) => void
 }> = ({ children, sets, aiHistory, handleLogout, runTour, setRunTour }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const { eventTheme } = useApp();
   const location = useLocation();
 
   if (isLoading) {
@@ -195,7 +193,6 @@ const MainLayout: React.FC<{
   
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300 overflow-hidden relative">
-      <EventOverlay theme={eventTheme} />
       <Sidebar 
         currentPath={location.pathname}
         currentUser={user}
@@ -227,7 +224,7 @@ const AppRoutes: React.FC = () => {
   const [aiHistory, setAiHistory] = useState<AiGenerationRecord[]>([]);
   const [runTour, setRunTour] = useState(false);
   
-  const { addNotification } = useApp();
+  const { addNotification, eventTheme } = useApp();
   const { user, isAuthenticated, isLoading, logout, updateUser } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -286,29 +283,32 @@ const AppRoutes: React.FC = () => {
   const isAdmin = user?.roles.includes('ADMIN');
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage onStart={() => navigate('/login')} onRegister={() => navigate('/login', { state: { mode: 'REGISTER' } })} />} />
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onBack={() => navigate('/')} initialMode={location.state?.mode || 'LOGIN'} />} />
+    <>
+      <EventOverlay theme={eventTheme} />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage onStart={() => navigate('/login')} onRegister={() => navigate('/login', { state: { mode: 'REGISTER' } })} />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onBack={() => navigate('/')} initialMode={location.state?.mode || 'LOGIN'} />} />
 
-      {/* Protected Routes */}
-      <Route path="/dashboard" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><Dashboard sets={sets} onCreateNew={() => navigate('/create')} onSelectSet={(s) => navigate(`/set/${s.id}`)} onToggleFavorite={handleToggleFavorite} isLibrary={false} /></MainLayout>} />
-      <Route path="/library" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><Dashboard sets={sets} uploads={aiHistory} currentUser={user} onCreateNew={() => navigate('/create')} onSelectSet={(s) => navigate(`/set/${s.id}`)} onSelectUpload={() => navigate('/ai-planner')} onToggleFavorite={handleToggleFavorite} isLibrary={true} /></MainLayout>} />
-      <Route path="/classes" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><ClassManagement currentUser={user!} sets={sets} /></MainLayout>} />
-      <Route path="/create" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><CreateSet onSave={handleSaveSet} onCancel={() => navigate('/dashboard')} onGoToAiTextbook={() => navigate('/ai-planner')} history={aiHistory} onSelectHistory={(r) => navigate('/ai-planner')} /></MainLayout>} />
-      <Route path="/ai-planner" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><AiTextbookCreator onSaveToLibrary={handleSaveSet} history={aiHistory} onAddToHistory={handleAddToAiHistory} onBack={() => navigate('/create')} /></MainLayout>} />
-      <Route path="/settings" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SettingsView currentUser={user!} onUpdateUser={handleUpdateUser} /></MainLayout>} />
-      
-      {/* Admin Specific Routes */}
-      <Route path="/admin/theme" element={isAdmin ? <MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><AdminThemeSettings /></MainLayout> : <Navigate to="/dashboard" replace />} />
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><Dashboard sets={sets} onCreateNew={() => navigate('/create')} onSelectSet={(s) => navigate(`/set/${s.id}`)} onToggleFavorite={handleToggleFavorite} isLibrary={false} /></MainLayout>} />
+        <Route path="/library" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><Dashboard sets={sets} uploads={aiHistory} currentUser={user} onCreateNew={() => navigate('/create')} onSelectSet={(s) => navigate(`/set/${s.id}`)} onSelectUpload={() => navigate('/ai-planner')} onToggleFavorite={handleToggleFavorite} isLibrary={true} /></MainLayout>} />
+        <Route path="/classes" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><ClassManagement currentUser={user!} sets={sets} /></MainLayout>} />
+        <Route path="/create" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><CreateSet onSave={handleSaveSet} onCancel={() => navigate('/dashboard')} onGoToAiTextbook={() => navigate('/ai-planner')} history={aiHistory} onSelectHistory={(r) => navigate('/ai-planner')} /></MainLayout>} />
+        <Route path="/ai-planner" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><AiTextbookCreator onSaveToLibrary={handleSaveSet} history={aiHistory} onAddToHistory={handleAddToAiHistory} onBack={() => navigate('/create')} /></MainLayout>} />
+        <Route path="/settings" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SettingsView currentUser={user!} onUpdateUser={handleUpdateUser} /></MainLayout>} />
+        
+        {/* Admin Specific Routes */}
+        <Route path="/admin/theme" element={isAdmin ? <MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><AdminThemeSettings /></MainLayout> : <Navigate to="/dashboard" replace />} />
 
-      {/* Detail Routes */}
-      <Route path="/set/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SetDetailRoute sets={sets} onToggleFavorite={handleToggleFavorite} /></MainLayout>} />
-      <Route path="/study/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode="FLASHCARD" /></MainLayout>} />
-      <Route path="/quiz/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode="QUIZ" onAddReview={handleAddReview} /></MainLayout>} />
+        {/* Detail Routes */}
+        <Route path="/set/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SetDetailRoute sets={sets} onToggleFavorite={handleToggleFavorite} /></MainLayout>} />
+        <Route path="/study/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode="FLASHCARD" /></MainLayout>} />
+        <Route path="/quiz/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode="QUIZ" onAddReview={handleAddReview} /></MainLayout>} />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 };
 
