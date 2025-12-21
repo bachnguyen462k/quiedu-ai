@@ -244,6 +244,17 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       finally { setIsLoadingSets(false); }
   };
 
+  const renderTypeCell = (type?: string) => {
+    const iconSize = 14;
+    switch (type) {
+      case 'MANUAL': return <div className="flex items-center gap-1.5"><Keyboard size={iconSize} className="text-blue-500" /> <span className="font-medium">Thủ công</span></div>;
+      case 'AI_TOPIC': return <div className="flex items-center gap-1.5"><Sparkles size={iconSize} className="text-purple-500" /> <span className="font-medium">AI Chủ đề</span></div>;
+      case 'AI_FILE': return <div className="flex items-center gap-1.5"><ScanLine size={iconSize} className="text-indigo-500" /> <span className="font-medium">AI Quét file</span></div>;
+      case 'AI_TEXTBOOK': return <div className="flex items-center gap-1.5"><BookOpen size={iconSize} className="text-pink-500" /> <span className="font-medium">AI Giáo án</span></div>;
+      default: return <div className="flex items-center gap-1.5"><Layers size={iconSize} className="text-gray-400" /> <span className="font-medium">Quiz</span></div>;
+    }
+  };
+
   if (creationStep === 'MENU') {
       return (
           <div className="max-w-6xl mx-auto px-4 py-12 animate-fade-in relative pb-32">
@@ -285,12 +296,14 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                           </thead>
                           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                               {serverSets.map((r) => (
-                                  <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                  <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                       <td className="px-6 py-4 font-medium dark:text-white truncate max-w-xs">{r.title}</td>
-                                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{r.type || 'Thủ công'}</td>
+                                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                                          {renderTypeCell(r.type)}
+                                      </td>
                                       <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</td>
                                       <td className="px-6 py-4">
-                                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.status === 'DRAFT' ? 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200' : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'}`}>{r.status || 'ACTIVE'}</span>
+                                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${r.status === 'DRAFT' ? 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500' : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30'}`}>{r.status || 'ACTIVE'}</span>
                                       </td>
                                       <td className="px-6 py-4 text-right">
                                           <button onClick={() => handleSelectServerSet(r.id)} className="text-indigo-600 dark:text-indigo-400 font-medium text-xs border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20">Xem lại</button>
@@ -392,7 +405,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                     {card.options?.map((opt, oi) => {
                                         const isCorrect = card.definition === opt && opt !== '';
                                         return (
-                                            <div key={oi} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'bg-white dark:bg-gray-850 border-gray-200 dark:border-gray-700'}`}>
+                                            <div key={oi} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : 'bg-white dark:bg-gray-855 border-gray-200 dark:border-gray-700'}`}>
                                                 <div onClick={() => setCards(cards.map(c=>c.id===card.id?{...c,definition:opt}:c))} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors ${isCorrect ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 dark:border-gray-600'}`}><Check size={14} /></div>
                                                 <input type="text" className="flex-1 bg-transparent outline-none text-sm dark:text-white" value={opt} onChange={e=>{const next=[...(card.options||[])]; next[oi]=e.target.value; setCards(cards.map(c=>c.id===card.id?{...c,options:next,definition:isCorrect?e.target.value:c.definition}:c));}} />
                                                 <button onClick={()=> {const next=[...(card.options||[])]; next.splice(oi,1); setCards(cards.map(c=>c.id===card.id?{...c,options:next,definition:card.definition===opt?'':card.definition}:c));}} className="text-gray-300 hover:text-red-500 transition-colors"><X size={14} /></button>
