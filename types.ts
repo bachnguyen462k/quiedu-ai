@@ -36,6 +36,7 @@ export interface StudySet {
   isFavorite?: boolean; 
   
   privacy: PrivacyStatus;
+  status?: string;    // Thêm trường status
   type?: StudySetType; // Thêm trường type
   level?: string;      
   school?: string;     

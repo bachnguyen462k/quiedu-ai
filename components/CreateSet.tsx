@@ -98,6 +98,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   const [editorMode, setEditorMode] = useState<EditorMode>('VISUAL');
   const [editingSetId, setEditingSetId] = useState<string | number | null>(null);
   const [creationSource, setCreationSource] = useState<StudySetType>('MANUAL'); // Luồng tạo từ đâu
+  const [status, setStatus] = useState<string>('ACTIVE'); // Mặc định là ACTIVE
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -282,7 +283,12 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   };
 
   const handleExplanationChange = (id: string, value: string) => {
-    setCards(cards.map(c => c.id === id ? { ...c, explanation: value } : c));
+    setCards(cards.map(c => {
+        if (c.id === id) {
+            return { ...c, explanation: value };
+        }
+        return c;
+    }));
   };
 
   const handleLinkChange = (id: string, value: string) => {
@@ -386,6 +392,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
             title: title,
             description: description,
             type: creationSource, // MANUAL, AI_TOPIC, AI_FILE...
+            status: status, // ACTIVE, DRAFT
             cards: cardPayload
         };
 
@@ -414,7 +421,8 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                 major,
                 subject,
                 topic,
-                type: creationSource
+                type: creationSource,
+                status: status
             };
             addNotification(editingSetId ? "Đã cập nhật học phần thành công!" : "Đã tạo học phần mới thành công!", "success");
             onSave(newSet);
@@ -460,6 +468,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           title: generatedTitle,
           description: generatedDescription,
           type: source,
+          status: 'ACTIVE',
           cards: generatedCards.map(c => ({
               term: c.term,
               definition: c.definition,
@@ -482,6 +491,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   setTitle(apiData.title);
                   setDescription(apiData.description);
                   setTopic(apiData.topic || '');
+                  setStatus(apiData.status || 'ACTIVE');
                   
                   const dbCards: Flashcard[] = apiData.cards.map((c: any) => ({
                       id: c.id.toString(),
@@ -533,6 +543,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       setCreationStep('EDITOR');
       setEditingSetId(null);
       setCreationSource('MANUAL');
+      setStatus('ACTIVE');
       setTitle('');
       setDescription('');
       setCards([
@@ -561,6 +572,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
               setDescription(apiData.description);
               setTopic(apiData.topic || '');
               setCreationSource(apiData.type || 'MANUAL');
+              setStatus(apiData.status || 'ACTIVE');
               
               const dbCards: Flashcard[] = apiData.cards.map((c: any) => ({
                   id: c.id.toString(),
@@ -728,7 +740,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                           </td>
                                           <td className="px-6 py-4">
                                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                                  <CheckSquare size={12} /> {t('create_set.status_completed')}
+                                                  <CheckSquare size={12} /> {record.status || t('create_set.status_completed')}
                                               </span>
                                           </td>
                                           <td className="px-6 py-4 text-right">

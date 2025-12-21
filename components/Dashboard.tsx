@@ -89,6 +89,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   privacy: 'PUBLIC',
                   subject: item.topic || 'Khác',
                   type: item.type, // Map trường type từ server
+                  status: item.status, // Map trường status từ server
                   plays: 0,
                   cards: []
               }));
@@ -214,9 +215,14 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                         <div className="relative z-10 flex flex-col h-full justify-between">
                             <div>
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest ${
-                                        idx === 0 ? 'bg-white/20 text-white' : 'bg-brand-orange/10 text-brand-orange'
-                                    }`}>HOT</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest ${
+                                            idx === 0 ? 'bg-white/20 text-white' : 'bg-brand-orange/10 text-brand-orange'
+                                        }`}>HOT</span>
+                                        {set.status && (
+                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 uppercase">{set.status}</span>
+                                        )}
+                                    </div>
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }}
                                         className={`p-2 rounded-full transition-all hover:bg-white/10 ${set.isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-400 dark:text-gray-500'}`}
@@ -325,6 +331,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                             <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">FLASHCARD</span>
                                             <span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest">{set.subject}</span>
                                             {renderSetTypeBadge(set.type)}
+                                            {set.status && (
+                                                <span className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 text-[9px] font-black uppercase tracking-widest">{set.status}</span>
+                                            )}
                                         </div>
                                         <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight pr-6">{set.title}</h3>
                                         <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 opacity-80 font-medium">{set.description}</p>
