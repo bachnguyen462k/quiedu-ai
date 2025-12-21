@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Flashcard, StudySet, PrivacyStatus, AiGenerationRecord } from '../types';
 import { generateStudySetWithAI, generateStudySetFromFile } from '../services/geminiService';
 import { studySetService, CreateStudySetRequest } from '../services/studySetService';
-import { Plus, Trash2, Sparkles, Save, FileText, Upload, CheckCircle, Keyboard, ScanLine, ArrowLeft, BrainCircuit, Check, X, AlertCircle, Lightbulb, Layers, List, BookOpen, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Save, FileText, Upload, CheckCircle, Keyboard, ScanLine, ArrowLeft, BrainCircuit, Check, X, AlertCircle, Lightbulb, Layers, List, BookOpen, Link, Globe, Lock, Building, GraduationCap, Hash, Bookmark, Eye, AlertTriangle, HelpCircle, Copy, Info, Clock, CheckSquare, Loader2 } from 'lucide-react';
 import ThemeLoader from './ThemeLoader';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
@@ -118,6 +118,10 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   const [parsedPreviewCards, setParsedPreviewCards] = useState<Flashcard[]>([]);
   const [showTextGuide, setShowTextGuide] = useState(false);
 
+  // Server Data State
+  const [serverSets, setServerSets] = useState<any[]>([]);
+  const [isLoadingSets, setIsLoadingSets] = useState(false);
+
   // Refs for scrolling
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
@@ -129,6 +133,27 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   const [aiFile, setAiFile] = useState<{name: string, data: string} | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // --- FETCH RECENT SETS ---
+  const fetchRecentSets = async () => {
+    setIsLoadingSets(true);
+    try {
+      const response = await studySetService.getMyStudySets(0, 10);
+      if (response.code === 1000) {
+        setServerSets(response.result.content);
+      }
+    } catch (error) {
+      console.error("Failed to load recent sets", error);
+    } finally {
+      setIsLoadingSets(false);
+    }
+  };
+
+  useEffect(() => {
+    if (creationStep === 'MENU') {
+      fetchRecentSets();
+    }
+  }, [creationStep]);
 
   // --- CHECK PERMISSIONS ---
   const hasPerm = (perm: string) => user?.permissions?.includes(perm) || false;
@@ -268,8 +293,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
         const oldValue = newOptions[optionIndex];
         newOptions[optionIndex] = value;
         
-        // FIX: Only sync definition if this specific option was already the correct one
-        // and it wasn't an empty string (to avoid all empty options being "correct")
         const wasSelectedAsCorrect = c.definition !== '' && c.definition === oldValue;
         
         return { 
@@ -298,7 +321,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           const removedValue = newOptions[optionIndex];
           newOptions.splice(optionIndex, 1);
           
-          // If the correct answer was removed, clear the definition
           let newDef = c.definition === removedValue ? '' : c.definition;
           
           return { ...c, options: newOptions, definition: newDef };
@@ -342,7 +364,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
     setIsSaving(true);
     try {
-        // Chuẩn bị dữ liệu cho API theo format CreateStudySetRequest
         const saveRequest: CreateStudySetRequest = {
             topic: topic || subject || title,
             language: i18n.language || 'vi',
@@ -356,11 +377,9 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
             }))
         };
 
-        // Gọi API POST /study-sets
         const response = await studySetService.createStudySet(saveRequest);
 
         if (response.code === 1000) {
-            // Sau khi lưu server thành công, gọi onSave để đồng bộ local và redirect
             const newSet: StudySet = {
                 id: response.result?.toString() || uuidv4(),
                 title,
@@ -397,7 +416,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       let generatedTitle = '';
       let generatedDescription = '';
 
-      // 1. Gọi AI sinh nội dung
       if (aiMode === 'TEXT_TOPIC') {
           const result = await generateStudySetWithAI(aiPrompt, aiQuestionCount);
           generatedTitle = result.title;
@@ -410,7 +428,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           generatedCards = result.cards;
       }
 
-      // 2. Chuẩn bị request lưu Backend
       const saveRequest: CreateStudySetRequest = {
           topic: aiMode === 'TEXT_TOPIC' ? aiPrompt : aiFile!.name,
           language: i18n.language || 'vi',
@@ -425,20 +442,15 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       };
 
       try {
-          // 3. Gọi API POST /study-sets
-          // Theo yêu cầu: trả về { "code": 1000, "result": 52 }
           const postResponse = await studySetService.createStudySet(saveRequest);
           
           if (postResponse.code === 1000) {
-              const newId = postResponse.result; // result chứa ID trực tiếp (VD: 52)
-              
-              // 4. Gọi API GET /study-sets/{id} để lấy dữ liệu chuẩn xác từ DB
+              const newId = postResponse.result;
               const detailResponse = await studySetService.getStudySetById(newId);
               
               if (detailResponse.code === 1000) {
                   const apiData = detailResponse.result;
                   
-                  // 5. Cập nhật dữ liệu từ DB vào Editor
                   setTitle(apiData.title);
                   setDescription(apiData.description);
                   setTopic(apiData.topic || '');
@@ -462,7 +474,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           }
       } catch (apiError: any) {
           console.error("Backend Flow Error:", apiError);
-          // Fallback: Nếu API lỗi, vẫn hiển thị kết quả từ AI để người dùng không mất dữ liệu
           setTitle(generatedTitle);
           setDescription(generatedDescription);
           const localCards = generatedCards.map(c => ({ 
@@ -508,6 +519,36 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       setAiQuestionCount(10);
   };
 
+  const handleSelectServerSet = async (setId: number | string) => {
+      setIsLoadingSets(true);
+      try {
+          const response = await studySetService.getStudySetById(setId);
+          if (response.code === 1000) {
+              const apiData = response.result;
+              setTitle(apiData.title);
+              setDescription(apiData.description);
+              setTopic(apiData.topic || '');
+              
+              const dbCards: Flashcard[] = apiData.cards.map((c: any) => ({
+                  id: c.id.toString(),
+                  term: c.term,
+                  definition: c.definition,
+                  options: c.options || [],
+                  explanation: c.explanation || '',
+                  relatedLink: ''
+              }));
+              
+              setCards(dbCards);
+              setCreationStep('EDITOR');
+              setEditorMode('VISUAL');
+          }
+      } catch (error) {
+          addNotification("Không thể tải thông tin học phần", "error");
+      } finally {
+          setIsLoadingSets(false);
+      }
+  };
+
   // --- RENDER: SELECTION MENU ---
   if (creationStep === 'MENU') {
       return (
@@ -517,8 +558,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   <p className="text-gray-500 dark:text-gray-400">{t('create_set.desc_method')}</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-full mx-auto mb-8">
-                  {/* MANUAL ENTRY */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-full mx-auto mb-12">
                   <button 
                     onClick={startManual}
                     disabled={!canManualEntry}
@@ -539,7 +579,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       </p>
                   </button>
 
-                  {/* AI BY TOPIC */}
                   <button 
                     onClick={() => openAiModal('TEXT_TOPIC')}
                     disabled={!canAiTopic}
@@ -563,7 +602,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       </p>
                   </button>
 
-                  {/* SCAN DOCUMENT */}
                   <button 
                     onClick={() => openAiModal('FILE_SCAN_QUIZ')}
                     disabled={!canScanDoc}
@@ -584,7 +622,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       </p>
                   </button>
 
-                  {/* AI LESSON PLANNER */}
                   <button 
                     onClick={onGoToAiTextbook}
                     disabled={!canAiPlanner}
@@ -611,65 +648,65 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   </button>
               </div>
 
-              {/* RECENT ACTIVITY TABLE */}
-              {history.length > 0 && (
-                  <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 flex items-center justify-between">
-                          <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                              <Clock size={18} className="text-gray-500" />
-                              {t('create_set.recent_activity')}
-                          </h3>
-                      </div>
-                      <div className="overflow-x-auto">
-                          <table className="w-full text-left text-sm">
-                              <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-medium uppercase text-xs">
-                                  <tr>
-                                      <th className="px-6 py-3">{t('create_set.col_name')}</th>
-                                      <th className="px-6 py-3">{t('create_set.col_type')}</th>
-                                      <th className="px-6 py-3">{t('create_set.col_date')}</th>
-                                      <th className="px-6 py-3">{t('create_set.col_status')}</th>
-                                      <th className="px-6 py-3 text-right">Action</th>
-                                  </tr>
-                              </thead>
-                              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                  {history.map((record) => {
-                                      const isTextbook = record.result?.topics?.length > 0;
-                                      return (
-                                          <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                              <td className="px-6 py-4 font-medium text-gray-900 dark:text-white truncate max-w-xs">
-                                                  {record.fileName || (record.result?.topics?.[0]?.topicName) || "Untitled"}
-                                              </td>
-                                              <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                                                  {isTextbook ? (
-                                                      <span className="flex items-center gap-1.5"><BookOpen size={14} className="text-pink-500" /> {t('create_set.ai_textbook_title')}</span>
-                                                  ) : (
-                                                      <span className="flex items-center gap-1.5"><ScanLine size={14} className="text-indigo-500" /> {t('create_set.scan_file_title')}</span>
-                                                  )}
-                                              </td>
-                                              <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                                                  {new Date(record.createdAt).toLocaleDateString()}
-                                              </td>
-                                              <td className="px-6 py-4">
-                                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                                      <CheckSquare size={12} /> {t('create_set.status_completed')}
-                                                  </span>
-                                              </td>
-                                              <td className="px-6 py-4 text-right">
-                                                  <button 
-                                                      onClick={() => onSelectHistory && onSelectHistory(record)}
-                                                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium text-xs border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                                                  >
-                                                      {t('create_set.action_view')}
-                                                  </button>
-                                              </td>
-                                          </tr>
-                                      );
-                                  })}
-                              </tbody>
-                          </table>
-                      </div>
+              {/* SERVER RECENT ACTIVITY TABLE */}
+              <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 flex items-center justify-between">
+                      <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                          <Clock size={18} className="text-gray-500" />
+                          {t('create_set.recent_activity')}
+                      </h3>
+                      {isLoadingSets && <Loader2 size={16} className="animate-spin text-brand-blue" />}
                   </div>
-              )}
+                  <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                          <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-medium uppercase text-xs">
+                              <tr>
+                                  <th className="px-6 py-3">{t('create_set.col_name')}</th>
+                                  <th className="px-6 py-3">{t('create_set.col_type')}</th>
+                                  <th className="px-6 py-3">{t('create_set.col_date')}</th>
+                                  <th className="px-6 py-3">{t('create_set.col_status')}</th>
+                                  <th className="px-6 py-3 text-right">Action</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                              {serverSets.length === 0 && !isLoadingSets ? (
+                                  <tr>
+                                      <td colSpan={5} className="px-6 py-10 text-center text-gray-400 italic">
+                                          Bạn chưa có học phần nào. Hãy tạo mới ngay!
+                                      </td>
+                                  </tr>
+                              ) : (
+                                  serverSets.map((record) => (
+                                      <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                          <td className="px-6 py-4 font-medium text-gray-900 dark:text-white truncate max-w-xs">
+                                              {record.title}
+                                          </td>
+                                          <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                                              <span className="flex items-center gap-1.5"><Layers size={14} className="text-brand-blue" /> Quiz</span>
+                                          </td>
+                                          <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                                              {new Date(record.createdAt).toLocaleDateString()}
+                                          </td>
+                                          <td className="px-6 py-4">
+                                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                                  <CheckSquare size={12} /> {t('create_set.status_completed')}
+                                              </span>
+                                          </td>
+                                          <td className="px-6 py-4 text-right">
+                                              <button 
+                                                  onClick={() => handleSelectServerSet(record.id)}
+                                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium text-xs border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                                              >
+                                                  {t('create_set.action_view')}
+                                              </button>
+                                          </td>
+                                      </tr>
+                                  ))
+                              )}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
 
               <div className="mt-12 text-center">
                   <button onClick={onCancel} className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium">
@@ -677,7 +714,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   </button>
               </div>
 
-              {/* SHARED AI MODAL */}
+              {/* AI MODAL */}
               {showAiModal && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-gray-200 dark:border-gray-700 transition-colors">
@@ -735,7 +772,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                             </>
                         )}
 
-                        {/* Slider for Question Count (Only for TEXT_TOPIC) */}
                         {aiMode === 'TEXT_TOPIC' && (
                             <div className="mb-6">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex justify-between">
@@ -783,7 +819,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   // --- RENDER: EDITOR ---
   return (
     <div className="w-full h-[calc(100vh-80px)] flex flex-col animate-fade-in bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      {/* Sticky Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-6 py-3 bg-white dark:bg-gray-800 z-30 border-b border-gray-200 dark:border-gray-700 shrink-0">
         <div className="flex items-center gap-3 mb-2 sm:mb-0">
             <button 
@@ -819,10 +854,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
           <div className="mx-auto w-full max-w-[1920px] grid grid-cols-1 lg:grid-cols-4 gap-8 relative h-full">
-              
-              {/* LEFT SIDEBAR: INFO & TOC (ALWAYS VISIBLE) */}
               <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-0 self-start">
-                  {/* General Info Card */}
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 transition-colors">
                       <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                           <FileText size={18} className="text-indigo-600 dark:text-indigo-400" /> {t('create_set.general_info')}
@@ -849,7 +881,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                               />
                           </div>
 
-                          {/* Metadata Fields */}
                           <div className="grid grid-cols-2 gap-3">
                               <div>
                                   <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 flex items-center gap-1"><Globe size={10} /> {t('create_set.privacy_label')}</label>
@@ -928,7 +959,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       </div>
                   </div>
 
-                  {/* TOC Card */}
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-col transition-colors max-h-[calc(100vh-350px)]">
                       <div className="flex justify-between items-center mb-3 flex-shrink-0">
                           <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
@@ -974,9 +1004,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                   </div>
               </div>
 
-              {/* RIGHT MAIN: QUESTIONS EDITOR */}
               <div className="lg:col-span-3 space-y-6 h-full flex flex-col">
-                  {/* Toolbar & Tabs */}
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex-shrink-0">
                       <div className="flex items-center gap-4 w-full sm:w-auto overflow-x-auto">
                           <button
@@ -1025,9 +1053,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                       </div>
                   </div>
 
-                  {/* EDITOR CONTENT AREA */}
                   {editorMode === 'VISUAL' ? (
-                      /* --- VISUAL MODE --- */
                       <div className="space-y-6 flex-1">
                         {cards.map((card, index) => (
                         <div 
@@ -1040,7 +1066,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                             }`}
                             onClick={() => setActiveCardId(card.id)}
                         >
-                            {/* Card Header */}
                             <div className="px-6 py-4 bg-gray-50/50 dark:bg-gray-700/30 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                                 <div className="flex items-center gap-3">
                                     <span className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm">
@@ -1063,7 +1088,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                             </div>
 
                             <div className="p-6">
-                                {/* Question Input */}
                                 <div className="mb-6">
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 flex items-center gap-1">
                                         <BrainCircuit size={14} /> {t('create_set.question_label')}
@@ -1077,7 +1101,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                     />
                                 </div>
 
-                                {/* Options Grid */}
                                 <div className="mb-6">
                                     <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1">
                                         <List size={14} /> {t('create_set.options_label')}
@@ -1123,7 +1146,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                                     )}
                                 </div>
 
-                                {/* Explanation & Link Fields */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30">
                                         <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 uppercase mb-2 flex items-center gap-1">
@@ -1162,7 +1184,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                         </button>
                       </div>
                   ) : (
-                      /* --- TEXT MODE (Split View Full Height) --- */
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[calc(100vh-250px)]">
                           <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                               <div className="p-3 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center shrink-0">
@@ -1222,7 +1243,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           </div>
       </div>
 
-      {/* TEXT GUIDE MODAL */}
       {showTextGuide && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowTextGuide(false)}>
             <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -1268,7 +1288,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
         </div>
       )}
 
-      {/* SHARED AI MODAL */}
       {showAiModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
             <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-gray-200 dark:border-gray-700 transition-colors">
@@ -1326,7 +1345,6 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
                     </>
                 )}
 
-                {/* Slider for Question Count (Only for TEXT_TOPIC) */}
                 {aiMode === 'TEXT_TOPIC' && (
                     <div className="mb-6">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex justify-between">
