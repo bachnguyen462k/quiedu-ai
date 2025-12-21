@@ -110,7 +110,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       }
   };
 
-  // Infinite Scroll Logic and useEffects...
   useEffect(() => {
     if (isLibrary && libraryTab === 'SETS') {
         setCurrentPage(0);
@@ -172,8 +171,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       return (
           <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
               isDraft 
-              ? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' 
-              : 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+              ? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 border dark:border-gray-600' 
+              : 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 border dark:border-green-800/30'
           }`}>
               {isDraft ? 'Bản nháp' : 'Hoạt động'}
           </span>
@@ -225,36 +224,33 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-10 items-start">
         <div className={!isLibrary ? "xl:col-span-3" : "xl:col-span-4"}>
-            {/* Header and filters ... */}
             <div className={`grid grid-cols-1 md:grid-cols-2 ${!isLibrary ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-8 mt-8`}>
                 {filteredSets.map(set => (
-                    <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative">
+                    <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
                         <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-2.5 rounded-full z-10 transition-all ${set.isFavorite ? 'text-red-500 fill-red-500 scale-110' : 'text-gray-300 dark:text-gray-600 hover:text-red-400'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
                         <div className="p-6 flex-1">
                             <div className="flex flex-wrap gap-2 mb-4">
-                                <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest">FLASHCARD</span>
-                                <span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest">{set.subject}</span>
+                                <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-blue-800/30">FLASHCARD</span>
+                                <span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-orange-800/30">{set.subject}</span>
                                 {renderSetTypeBadge(set.type)}
                                 {renderStatusBadge(set.status)}
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight pr-6">{set.title}</h3>
-                            <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 opacity-80 font-medium">{set.description}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 opacity-80 font-medium leading-relaxed">{set.description}</p>
                         </div>
-                        <div className="px-6 py-5 border-t border-gray-50 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-855 rounded-b-3xl flex items-center justify-between text-gray-500">
+                        <div className="px-6 py-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/20 rounded-b-3xl flex items-center justify-between text-gray-500 transition-colors">
                             <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-full bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-sm">{set.author.charAt(0)}</div>
                                 <span className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
                             </div>
-                            <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
-                                <span className="flex items-center gap-1"><Clock size={14} className="text-brand-blue" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
+                            <div className="flex items-center gap-3 text-xs font-bold text-gray-500 dark:text-gray-400">
+                                <span className="flex items-center gap-1"><Clock size={14} className="text-brand-blue dark:text-blue-400" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
-            {/* Pagination ... */}
         </div>
-        {/* Recent Reviews Sidebar ... */}
       </div>
     </div>
   );
