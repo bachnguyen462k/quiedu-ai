@@ -128,6 +128,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
   const [aiQuestionCount, setAiQuestionCount] = useState<number>(10);
   const [aiFile, setAiFile] = useState<{name: string, data: string} | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // --- CHECK PERMISSIONS ---
   const hasPerm = (perm: string) => user?.permissions?.includes(perm) || false;
@@ -141,10 +142,10 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       return hasPermission ? "" : "Bạn không có quyền sử dụng tính năng này. Vui lòng liên hệ quản trị viên.";
   };
 
-  // Warn user before leaving page if generating
+  // Warn user before leaving page if generating or saving
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isGenerating) {
+      if (isGenerating || isSaving) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -152,7 +153,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isGenerating]);
+  }, [isGenerating, isSaving]);
 
   // --- Helpers for Text Mode ---
   const stringifyCardsToText = (currentCards: Flashcard[]) => {
@@ -314,7 +315,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       setSchool('');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     let finalCards = cards;
     if (editorMode === 'TEXT') {
         finalCards = parseTextToCards(textEditorContent);
@@ -330,22 +331,51 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       return;
     }
 
-    const newSet: StudySet = {
-      id: uuidv4(),
-      title,
-      description,
-      author: user?.name || 'Bạn',
-      createdAt: Date.now(),
-      cards: validCards,
-      privacy,
-      level,
-      school,
-      major,
-      subject,
-      topic
-    };
+    setIsSaving(true);
+    try {
+        // Chuẩn bị dữ liệu cho API theo format CreateStudySetRequest
+        const saveRequest: CreateStudySetRequest = {
+            topic: topic || subject || title,
+            language: i18n.language || 'vi',
+            title: title,
+            description: description,
+            cards: validCards.map(c => ({
+                term: c.term,
+                definition: c.definition,
+                options: c.options || [],
+                explanation: c.explanation || ''
+            }))
+        };
 
-    onSave(newSet);
+        // Gọi API POST /study-sets
+        const response = await studySetService.createStudySet(saveRequest);
+
+        if (response.code === 1000) {
+            // Sau khi lưu server thành công, gọi onSave để đồng bộ local và redirect
+            const newSet: StudySet = {
+                id: response.result?.toString() || uuidv4(),
+                title,
+                description,
+                author: user?.name || 'Bạn',
+                createdAt: Date.now(),
+                cards: validCards,
+                privacy,
+                level,
+                school,
+                major,
+                subject,
+                topic
+            };
+            onSave(newSet);
+        } else {
+            throw new Error(response.message || "Không thể lưu học phần");
+        }
+    } catch (error: any) {
+        console.error("Save Error:", error);
+        addNotification("Lỗi khi lưu học phần lên máy chủ. Vui lòng thử lại.", "error");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleAiGenerate = async () => {
@@ -769,9 +799,11 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
             </button>
             <button 
                 onClick={handleSave}
-                className="flex-1 sm:flex-none px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center justify-center gap-2 text-sm shadow-sm transition-colors"
+                disabled={isSaving}
+                className="flex-1 sm:flex-none px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center justify-center gap-2 text-sm shadow-sm transition-colors disabled:opacity-50"
             >
-                <Save size={18} /> <span className="hidden sm:inline">{t('create_set.save_btn')}</span><span className="sm:hidden">{t('create_set.save_short')}</span>
+                {isSaving ? <ThemeLoader className="text-white" size={18} /> : <Save size={18} />}
+                <span className="hidden sm:inline">{t('create_set.save_btn')}</span><span className="sm:hidden">{t('create_set.save_short')}</span>
             </button>
         </div>
       </div>
