@@ -29,5 +29,19 @@ export const studySetService = {
       console.error("StudySetService: Failed to create study set", error);
       throw error;
     }
+  },
+
+  /**
+   * Lấy chi tiết học phần theo ID.
+   * GET /study-sets/{id}
+   */
+  getStudySetById: async (id: number | string): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/study-sets/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`StudySetService: Failed to fetch study set ${id}`, error);
+      throw error;
+    }
   }
 };

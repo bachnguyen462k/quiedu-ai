@@ -358,12 +358,12 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       let generatedTitle = '';
       let generatedDescription = '';
 
+      // 1. Gọi AI sinh nội dung
       if (aiMode === 'TEXT_TOPIC') {
           const result = await generateStudySetWithAI(aiPrompt, aiQuestionCount);
           generatedTitle = result.title;
           generatedDescription = result.description;
           generatedCards = result.cards;
-
       } else if (aiMode === 'FILE_SCAN_QUIZ') {
           const result = await generateStudySetFromFile(aiFile!.data, aiFile!.name);
           generatedTitle = result.title;
@@ -371,7 +371,7 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
           generatedCards = result.cards;
       }
 
-      // --- BACKEND INTEGRATION: Auto-save to server ---
+      // 2. Chuẩn bị request lưu Backend
       const saveRequest: CreateStudySetRequest = {
           topic: aiMode === 'TEXT_TOPIC' ? aiPrompt : aiFile!.name,
           language: i18n.language || 'vi',
@@ -386,31 +386,57 @@ const CreateSet: React.FC<CreateSetProps> = ({ onSave, onCancel, onGoToAiTextboo
       };
 
       try {
-          await studySetService.createStudySet(saveRequest);
-          addNotification("Đã tự động lưu học phần vào hệ thống", "success");
-      } catch (apiError) {
-          console.error("Backend Error: Failed to save study set", apiError);
-          // Ta vẫn tiếp tục để người dùng chỉnh sửa trong UI dù server có lỗi
-          addNotification("Lỗi lưu trữ backend, nhưng bạn vẫn có thể chỉnh sửa thủ công", "warning");
+          // 3. Gọi API POST /study-sets
+          // Theo yêu cầu: trả về { "code": 1000, "result": 52 }
+          const postResponse = await studySetService.createStudySet(saveRequest);
+          
+          if (postResponse.code === 1000) {
+              const newId = postResponse.result; // result chứa ID trực tiếp (VD: 52)
+              
+              // 4. Gọi API GET /study-sets/{id} để lấy dữ liệu chuẩn xác từ DB
+              const detailResponse = await studySetService.getStudySetById(newId);
+              
+              if (detailResponse.code === 1000) {
+                  const apiData = detailResponse.result;
+                  
+                  // 5. Cập nhật dữ liệu từ DB vào Editor
+                  setTitle(apiData.title);
+                  setDescription(apiData.description);
+                  setTopic(apiData.topic || '');
+                  
+                  const dbCards: Flashcard[] = apiData.cards.map((c: any) => ({
+                      id: c.id.toString(),
+                      term: c.term,
+                      definition: c.definition,
+                      options: c.options || [],
+                      explanation: c.explanation || '',
+                      relatedLink: ''
+                  }));
+                  
+                  setCards(dbCards);
+                  if (editorMode === 'TEXT') {
+                      setTextEditorContent(stringifyCardsToText(dbCards));
+                  }
+                  
+                  addNotification("Đã tạo và lưu học phần thành công!", "success");
+              }
+          }
+      } catch (apiError: any) {
+          console.error("Backend Flow Error:", apiError);
+          // Fallback: Nếu API lỗi, vẫn hiển thị kết quả từ AI để người dùng không mất dữ liệu
+          setTitle(generatedTitle);
+          setDescription(generatedDescription);
+          const localCards = generatedCards.map(c => ({ 
+              ...c, 
+              id: uuidv4(),
+              options: c.options || [],
+              explanation: c.explanation || '',
+              relatedLink: ''
+          }));
+          setCards(localCards);
+          addNotification("Không thể lưu lên máy chủ, đang hiển thị bản nháp tạm thời.", "warning");
       }
-      // ------------------------------------------------
 
-      setTitle(generatedTitle);
-      setDescription(generatedDescription);
-      
-      const newCardsWithIds = generatedCards.map(c => ({ 
-          ...c, 
-          id: uuidv4(),
-          options: c.options && c.options.length > 0 ? c.options : [c.definition],
-          explanation: c.explanation || '',
-          relatedLink: ''
-      }));
-
-      setCards(newCardsWithIds);
-      if (editorMode === 'TEXT') {
-          setTextEditorContent(stringifyCardsToText(newCardsWithIds));
-      }
-      
       setShowAiModal(false);
       setAiPrompt('');
       setAiFile(null);
