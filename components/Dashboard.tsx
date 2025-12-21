@@ -280,7 +280,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
             </div>
 
             {isShowingFiles ? (
-                /* Fix: Renamed displayedUploads to filteredUploads to fix reference error */
                 filteredUploads.length === 0 ? (
                     <div className="text-center py-24 bg-white dark:bg-gray-855 rounded-3xl border border-dashed border-gray-300 dark:border-gray-800"><FileText size={64} className="mx-auto text-gray-200 dark:text-gray-700 mb-6" /><h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('dashboard.empty_library')}</h3><p className="text-gray-600 dark:text-gray-400 mb-8">{t('dashboard.empty_library_desc')}</p><button onClick={onCreateNew} className="text-brand-blue dark:text-blue-400 font-black hover:underline">{t('dashboard.upload_now')}</button></div>
                 ) : (
@@ -311,7 +310,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                         <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight pr-6">{set.title}</h3>
                                         <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 opacity-80 font-medium">{set.description}</p>
                                     </div>
-                                    <div className="px-6 py-5 border-t border-gray-50 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/30 rounded-b-3xl flex items-center justify-between text-gray-500">
+                                    <div className="px-6 py-5 border-t border-gray-50 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-855 rounded-b-3xl flex items-center justify-between text-gray-500">
                                         <div className="flex items-center gap-2">
                                             <div className="w-7 h-7 rounded-full bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-sm">{set.author.charAt(0)}</div>
                                             <span className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
