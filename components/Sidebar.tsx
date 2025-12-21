@@ -58,7 +58,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, currentUser, onLogout, o
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <aside className={`bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 flex flex-col h-screen sticky top-0 z-50 transition-all duration-300 ease-in-out relative ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    /* Thêm hidden lg:flex để chỉ hiện Sidebar trên máy tính */
+    <aside className={`hidden lg:flex bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 flex-col h-screen sticky top-0 z-50 transition-all duration-300 ease-in-out relative ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <button onClick={() => setIsCollapsed(!isCollapsed)} className="absolute -right-3 top-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-300 hover:text-brand-blue dark:hover:text-blue-400 rounded-full p-1.5 shadow-md z-50 transition-colors transform hover:scale-110">
         {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
@@ -102,7 +103,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, currentUser, onLogout, o
       </div>
 
       <div className={`border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'}`}>
-        {/* User Info Section */}
         <div className={`flex items-center mb-4 transition-all duration-300 ${isCollapsed ? 'justify-center' : 'px-2 gap-3'}`}>
             <div className={`shrink-0 rounded-full border-2 border-gray-100 dark:border-gray-800 overflow-hidden bg-gray-50 ${isCollapsed ? 'w-10 h-10' : 'w-9 h-9'}`}>
                 <img 

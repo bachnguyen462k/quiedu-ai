@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import MobileNav from './components/MobileNav'; // Import mới
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
@@ -153,6 +154,8 @@ const MainLayout: React.FC<{ children: React.ReactNode, sets: StudySet[], aiHist
       <Sidebar currentPath={location.pathname} currentUser={user} onLogout={handleLogout} onStartTour={() => setRunTour(true)} />
       <div className="flex-1 flex flex-col min-w-0">
           <Header sets={sets} history={aiHistory} onSelectSet={(s) => navigate(`/set/${s.id}`)} onSelectHistory={() => navigate(`/ai-planner`)} />
+          {/* MobileNav sẽ hiển thị khi ở màn hình nhỏ */}
+          <MobileNav currentUser={user} onLogout={handleLogout} />
           <main className="flex-1 overflow-y-auto relative scroll-smooth custom-scrollbar">{children}</main>
       </div>
       {user && <UserTour currentUser={user} run={runTour} onStop={() => setRunTour(false)} />}
