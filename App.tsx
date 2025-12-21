@@ -18,7 +18,7 @@ import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
 import { StudySet, User, AiGenerationRecord, Review, EventTheme } from './types';
-import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2 } from 'lucide-react';
+import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2, Mail, Sparkles } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -34,17 +34,17 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
         let count = 40;
         if (eventType === 'AUTUMN') count = 25; 
         if (eventType === 'CHRISTMAS') count = 45; 
-        if (eventType === 'TET') count = 35;
+        if (eventType === 'TET') count = 30; // Giảm số lượng để đỡ rối mắt
 
         return Array.from({ length: count }).map((_, i) => ({
             id: i,
             left: `${Math.random() * 100}%`,
             delay: `${Math.random() * 20}s`,
-            duration: `${10 + Math.random() * 15}s`,
-            size: eventType === 'CHRISTMAS' ? `${10 + Math.random() * 15}px` : `${14 + Math.random() * 20}px`,
-            swayDuration: `${3 + Math.random() * 5}s`,
-            opacity: 0.6 + Math.random() * 0.4,
-            variant: Math.random() > 0.5 ? 'A' : 'B'
+            duration: `${12 + Math.random() * 18}s`, // Rơi chậm hơn
+            size: eventType === 'CHRISTMAS' ? `${10 + Math.random() * 15}px` : `${12 + Math.random() * 18}px`,
+            swayDuration: `${4 + Math.random() * 6}s`,
+            opacity: 0.4 + Math.random() * 0.3, // Mờ hơn để không gây khó chịu
+            variant: Math.random() > 0.6 ? 'A' : Math.random() > 0.3 ? 'B' : 'C'
         }));
     }, [eventType, isAnimationEnabled]);
 
@@ -60,26 +60,46 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
                     const isDarkMode = uiTheme === 'dark';
                     style = {
                         color: '#FFFFFF',
-                        // Filter drop-shadow helps white icons stay visible on light backgrounds
                         filter: isDarkMode 
                             ? 'drop-shadow(0 0 3px rgba(255,255,255,0.4))' 
                             : 'drop-shadow(0 0 2px rgba(0,0,0,0.15))',
                     };
                     content = <Snowflake size="100%" strokeWidth={2.5} />;
                 } else if (eventType === 'TET') {
-                    style = {
-                        color: item.variant === 'A' ? '#FFD700' : '#FF69B4', // Gold (Mai) or Hot Pink (Đào)
-                        filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.2)) drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
-                        transform: `rotate(${Math.random() * 360}deg)`
-                    };
-                    content = <Flower2 size="100%" strokeWidth={2} fill="currentColor" fillOpacity={0.3} />;
+                    // Variant A: Hoa (Mai/Đào), Variant B: Bao Lì Xì, Variant C: Mầm xanh
+                    if (item.variant === 'A') {
+                        style = {
+                            color: Math.random() > 0.5 ? '#FFD700' : '#FF69B4', 
+                            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))',
+                        };
+                        content = <Flower2 size="100%" strokeWidth={1.5} fill="currentColor" fillOpacity={0.2} />;
+                    } else if (item.variant === 'B') {
+                        style = {
+                            color: '#E60000',
+                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
+                        };
+                        content = (
+                            <div className="w-full h-full relative flex items-center justify-center">
+                                <Mail size="100%" strokeWidth={2} />
+                                <div className="absolute inset-0 flex items-center justify-center pb-0.5">
+                                    <div className="w-1/2 h-1/2 bg-yellow-400 rounded-full scale-50 opacity-80" />
+                                </div>
+                            </div>
+                        );
+                    } else {
+                        style = {
+                            color: '#4ADE80', // Xanh mầm non
+                            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.05))',
+                        };
+                        content = <Leaf size="100%" strokeWidth={2} fill="currentColor" fillOpacity={0.1} />;
+                    }
+                    style.transform = `rotate(${Math.random() * 360}deg)`;
                 } else if (eventType === 'AUTUMN') {
                     style = {
                         color: item.variant === 'A' ? '#D97706' : '#B45309',
                         filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.1))',
                         transform: `rotate(${Math.random() * 360}deg)`
                     };
-                    // Content is the Leaf icon with a slight fill for better visibility
                     content = <Leaf size="100%" strokeWidth={2} fill="currentColor" fillOpacity={0.2} />;
                 }
 
@@ -109,11 +129,11 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
                 );
             })}
 
-            {/* Corner Decorations */}
+            {/* Corner Decorations - Softened */}
             {eventType === 'TET' && (
                 <>
-                    <div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse">🧧</div>
-                    <div className="absolute top-0 right-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse" style={{ animationDelay: '1s' }}>🏮</div>
+                    <div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-20 animate-pulse">🧧</div>
+                    <div className="absolute top-0 right-0 w-32 h-32 text-4xl p-4 opacity-20 animate-pulse" style={{ animationDelay: '1s' }}>🏮</div>
                 </>
             )}
             {eventType === 'CHRISTMAS' && (
