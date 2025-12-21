@@ -27,6 +27,33 @@ import { useTranslation } from 'react-i18next';
 const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => {
     const { isAnimationEnabled, theme: uiTheme } = useApp();
     
+    // Update Favicon logic
+    useEffect(() => {
+        const favicon = document.getElementById('favicon') as HTMLLinkElement;
+        if (!favicon) return;
+
+        let leftColor = '#005EB8';
+        let rightColor = '#F37321';
+        let extra = '';
+
+        if (eventType === 'CHRISTMAS') {
+            leftColor = '#D42426';
+            rightColor = '#165B33';
+            extra = `%3Ccircle cx='80' cy='20' r='15' fill='white'/%3E%3Cpath d='M72 20 L88 20 M80 12 L80 28 M74 14 L86 26 M74 26 L86 14' stroke='%23D42426' stroke-width='3'/%3E`;
+        } else if (eventType === 'TET') {
+            leftColor = '#E60000';
+            rightColor = '#FFD700';
+            extra = `%3Ccircle cx='80' cy='20' r='12' fill='%23FFD700'/%3E%3Ccircle cx='80' cy='20' r='4' fill='%23E60000'/%3E`;
+        } else if (eventType === 'AUTUMN') {
+            leftColor = '#92400E';
+            rightColor = '#D97706';
+            extra = `%3Cpath d='M70 15 L85 10 L80 25 L95 20 L90 35 L75 30 L80 45 L65 40 Z' fill='%23D97706'/%3E`;
+        }
+
+        const svg = `%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 85C30 85 15 70 15 50C15 35 25 20 45 15V85Z' fill='${leftColor.replace('#', '%23')}'/%3E%3Cpath d='M50 85C70 85 85 70 85 50C85 35 75 20 55 15V85Z' fill='${rightColor.replace('#', '%23')}'/%3E%3Crect x='20' y='38' width='25' height='18' rx='6' fill='white' stroke='%231F2937' stroke-width='3'/%3E%3Crect x='55' y='38' width='25' height='18' rx='6' fill='white' stroke='%231F2937' stroke-width='3'/%3E%3Cpath d='M45 47H55' stroke='%231F2937' stroke-width='3'/%3E%3Ccircle cx='32.5' cy='47' r='4' fill='%231F2937'/%3E%3Ccircle cx='67.5' cy='47' r='4' fill='%231F2937'/%3E%3Cpath d='M40 70C45 75 55 75 60 70' stroke='white' stroke-width='3'/%3E${extra}%3C/svg%3E`;
+        favicon.href = `data:image/svg+xml,${svg}`;
+    }, [eventType]);
+    
     // Generate items based on theme
     const items = useMemo(() => {
         if (eventType === 'DEFAULT' || !isAnimationEnabled) return [];
