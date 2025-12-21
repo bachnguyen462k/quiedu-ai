@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, Review } from '../types';
-/* Added BookOpen to the lucide-react imports to fix 1-based line error at 163 */
 import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
 import { useApp } from '../contexts/AppContext';
+import ThemeLoader from './ThemeLoader';
 
 interface DashboardProps {
   sets: StudySet[];
@@ -51,12 +51,10 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  /* Defined trendingSets to fix 1-based line error at 186 */
   const trendingSets = useMemo(() => {
     return [...localSets].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 3);
   }, [localSets]);
 
-  /* Defined recentReviews to fix 1-based line errors at 344, 348 */
   const recentReviews = useMemo(() => {
     const allReviews: (Review & { setId: string; setTitle: string })[] = [];
     localSets.forEach(set => {
@@ -79,7 +77,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
           if (response.code === 1000) {
               const { content, totalPages: total } = response.result;
               
-              // Map API format to Frontend type
               const mappedSets: StudySet[] = content.map((item: any) => ({
                   id: item.id.toString(),
                   title: item.title,
@@ -88,8 +85,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   createdAt: new Date(item.createdAt).getTime(),
                   privacy: 'PUBLIC',
                   subject: item.topic || 'Khác',
-                  type: item.type, // Map trường type từ server
-                  status: item.status, // Map trường status từ server
+                  type: item.type,
+                  status: item.status,
                   plays: 0,
                   cards: []
               }));
@@ -115,7 +112,10 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
         setCurrentPage(0);
         fetchMySets(0, true);
     } else {
-        setIsInitialLoading(false);
+        // Giả lập loading nhẹ cho trải nghiệm người dùng mượt mà khi đổi tab
+        setIsInitialLoading(true);
+        const timer = setTimeout(() => setIsInitialLoading(false), 500);
+        return () => clearTimeout(timer);
     }
   }, [isLibrary, libraryTab]);
 
@@ -148,13 +148,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
     return result;
   }, [serverSets, localSets, searchQuery, filterSubject, sortBy, isLibrary, libraryTab, currentUser]);
 
-  const filteredUploads = useMemo(() => {
-      if (!uploads) return [];
-      return uploads.filter(u => u.fileName.toLowerCase().includes(searchQuery.toLowerCase()) || u.result.subject.toLowerCase().includes(searchQuery.toLowerCase())).sort((a, b) => b.createdAt - a.createdAt);
-  }, [uploads, searchQuery]);
-
-  const isShowingFiles = isLibrary && libraryTab === 'FILES';
-
   const renderSetTypeBadge = (type?: string) => {
       switch (type) {
           case 'MANUAL': return <span className="flex items-center gap-1 text-[9px] font-black uppercase text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-md"><Keyboard size={10}/> Thủ công</span>;
@@ -179,11 +172,16 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       );
   };
 
-  if (isInitialLoading && isLibrary && libraryTab === 'SETS') {
+  if (isInitialLoading) {
       return (
-          <div className="flex flex-col items-center justify-center py-32 animate-pulse">
-              <Loader2 className="animate-spin text-brand-blue mb-4" size={48} />
-              <p className="text-gray-500 font-bold">{t('dashboard.loading')}</p>
+          <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
+              <div className="relative">
+                  <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full animate-pulse"></div>
+                  <ThemeLoader size={64} className="relative z-10" />
+              </div>
+              <p className="mt-6 text-gray-500 dark:text-gray-400 font-black uppercase tracking-widest text-xs animate-pulse">
+                  {t('dashboard.loading')}
+              </p>
           </div>
       );
   }
@@ -249,6 +247,11 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                         </div>
                     </div>
                 ))}
+            </div>
+            
+            {/* Infinite Scroll Trigger */}
+            <div ref={loadMoreRef} className="h-20 flex items-center justify-center mt-8">
+                {isLoading && <ThemeLoader size={32} />}
             </div>
         </div>
       </div>
