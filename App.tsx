@@ -21,6 +21,7 @@ import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriang
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { studySetService } from './services/studySetService';
 
 // --- Global Event Theme Overlay Component ---
 const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => {
@@ -210,7 +211,7 @@ const AppRoutes: React.FC = () => {
 const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggleFavorite: (id: string) => void }) => {
     const { setId } = useParams();
     const navigate = useNavigate();
-    // Chỉnh sửa: Tìm học phần trong local, nếu không thấy thì vẫn cho phép load để SetDetailView tự gọi API
+    // Chỉnh sửa: Tìm học phần trong local, nếu không thấy thì vẫn cho phép load để SetDetailView tự gọi API Preview
     const existingSet = sets.find(s => s.id === setId);
     const setPlaceholder: StudySet = existingSet || { id: setId || '', title: 'Đang tải...', description: '', author: '...', createdAt: Date.now(), cards: [], privacy: 'PUBLIC' };
     return <SetDetailView set={setPlaceholder} onBack={() => navigate(-1)} onStartFlashcard={() => navigate(`/study/${setId}`)} onStartQuiz={() => navigate(`/quiz/${setId}`)} onToggleFavorite={onToggleFavorite} />;
@@ -220,20 +221,62 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
     const { setId } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();
-    // Chỉnh sửa: Tương tự SetDetailRoute, cho phép truy cập StudyRoute để lấy dữ liệu từ server nếu cần
-    const set = sets.find(s => s.id === setId);
-    if (!set && !setId) return <div className="p-8 text-center text-gray-500">Học phần không tồn tại.</div>;
-    // Lưu ý: FlashcardView và QuizView hiện tại phụ thuộc vào `set.cards`. 
-    // Trong một ứng dụng thực tế, bạn cũng nên fetch dữ liệu tại đây nếu `set` trống.
+    const [fullSet, setFullSet] = useState<StudySet | null>(null);
+    const [isFetching, setIsFetching] = useState(false);
+
+    useEffect(() => {
+        const fetchFullData = async () => {
+            if (!setId) return;
+            // Kiểm tra xem đã có dữ liệu cards chưa, nếu chưa (hoặc rỗng) thì phải fetch full /study-sets/{id}
+            const existing = sets.find(s => s.id === setId);
+            if (existing && existing.cards && existing.cards.length > 0) {
+                setFullSet(existing);
+                return;
+            }
+
+            setIsFetching(true);
+            try {
+                const response = await studySetService.getStudySetById(setId);
+                if (response.code === 1000) {
+                    const data = response.result;
+                    setFullSet({
+                        id: data.id.toString(),
+                        title: data.title,
+                        description: data.description,
+                        author: data.author,
+                        createdAt: new Date(data.createdAt).getTime(),
+                        cards: data.cards.map((c: any) => ({
+                            id: c.id.toString(),
+                            term: c.term,
+                            definition: c.definition,
+                            options: c.options || [],
+                            explanation: c.explanation || ''
+                        })),
+                        privacy: data.privacy || 'PUBLIC'
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to fetch full set", e);
+            } finally {
+                setIsFetching(false);
+            }
+        };
+
+        fetchFullData();
+    }, [setId, sets]);
+
+    if (isFetching) return <div className="min-h-screen flex items-center justify-center"><ThemeLoader size={48} /></div>;
+    if (!fullSet) return <div className="p-8 text-center text-gray-500">Học phần không tồn tại hoặc lỗi tải dữ liệu.</div>;
+
     return (
         <div className="pb-20 animate-fade-in">
-            <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-30">
+            <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-30 transition-colors">
                 <div className="max-w-4xl mx-auto px-4 py-2 flex gap-4 overflow-x-auto">
                     <button onClick={() => navigate(`/study/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'FLASHCARD' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><BookOpen size={18} /> Thẻ ghi nhớ</button>
                     <button onClick={() => navigate(`/quiz/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'QUIZ' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><GraduationCap size={18} /> Kiểm tra</button>
                 </div>
             </div>
-            {set ? (mode === 'FLASHCARD' ? <FlashcardView set={set} onBack={() => navigate(`/set/${setId}`)} /> : <QuizView set={set} currentUser={user!} onBack={() => navigate(`/set/${setId}`)} onAddReview={onAddReview} />) : <div className="p-20 text-center"><ThemeLoader size={48} /></div>}
+            {mode === 'FLASHCARD' ? <FlashcardView set={fullSet} onBack={() => navigate(`/set/${setId}`)} /> : <QuizView set={fullSet} currentUser={user!} onBack={() => navigate(`/set/${setId}`)} onAddReview={onAddReview} />}
         </div>
     );
 };

@@ -67,6 +67,20 @@ export const studySetService = {
   },
 
   /**
+   * Lấy thông tin xem trước của học phần.
+   * GET /study-sets/preview/{id}
+   */
+  getStudySetPreviewById: async (id: number | string): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/study-sets/preview/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`StudySetService: Failed to fetch preview for ${id}`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Lấy danh sách học phần của tôi (Phân trang).
    * GET /study-sets/my?page={page}&size={size}
    */
