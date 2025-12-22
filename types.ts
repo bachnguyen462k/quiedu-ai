@@ -69,10 +69,11 @@ export interface QuizHistoryItem {
   attemptId: number;
   studySetId: number;
   studySetTitle: string;
-  score: number;
-  correctAnswers: number;
+  correctCount: number;
   totalQuestions: number;
-  completedAt: string;
+  totalScore: number;
+  totalTimeSec: number;
+  submittedAt: string;
 }
 
 export interface QuizQuestion {

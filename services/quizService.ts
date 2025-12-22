@@ -75,11 +75,11 @@ export const quizService = {
 
   /**
    * Lấy lịch sử làm bài của tôi.
-   * Endpoint: GET /quiz/my-history
+   * Endpoint: GET /quiz/my
    */
   getMyQuizHistory: async (page: number = 0, size: number = 20): Promise<any> => {
       try {
-          const response = await apiClient.get('/quiz/my-history', {
+          const response = await apiClient.get('/quiz/my', {
               params: { page, size }
           });
           return response.data;

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, QuizHistoryItem } from '../types';
-import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2, Timer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
 import { quizService } from '../services/quizService';
@@ -129,6 +129,12 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
         return matchesSearch;
     });
   }, [displaySets, localSets, searchQuery, isLibrary, libraryTab]);
+
+  const formatTime = (totalSeconds: number) => {
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const renderSetTypeBadge = (type?: string) => {
       switch (type) {
@@ -273,21 +279,24 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {quizHistory.map((item) => {
-                        const scoreColor = item.score >= 80 ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : item.score >= 50 ? 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20';
+                        const scoreColor = item.totalScore >= 80 ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : item.totalScore >= 50 ? 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20';
                         return (
                             <div key={item.attemptId} className="bg-white dark:bg-gray-855 p-6 rounded-[32px] border border-gray-100 dark:border-gray-800 hover:shadow-xl transition-all group flex flex-col justify-between min-h-[220px]">
                                 <div>
                                     <div className="flex justify-between items-start mb-4">
                                         <div className={`px-4 py-1 rounded-full text-lg font-black ${scoreColor}`}>
-                                            {item.score}%
+                                            {item.totalScore.toFixed(0)}%
                                         </div>
                                         <div className="text-right">
-                                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(item.completedAt).toLocaleDateString()}</span>
-                                            <span className="block text-[10px] font-bold text-gray-400">{new Date(item.completedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(item.submittedAt).toLocaleDateString()}</span>
+                                            <span className="block text-[10px] font-bold text-gray-400">{new Date(item.submittedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                         </div>
                                     </div>
                                     <h3 className="text-lg font-black text-gray-900 dark:text-white mb-2 line-clamp-2 leading-snug group-hover:text-brand-blue transition-colors">{item.studySetTitle}</h3>
-                                    <p className="text-xs text-gray-500 font-medium flex items-center gap-1.5"><CheckCircle2 size={12} className="text-green-500"/> {item.correctAnswers}/{item.totalQuestions} câu đúng</p>
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4">
+                                        <p className="text-xs text-gray-500 font-medium flex items-center gap-1.5"><CheckCircle2 size={12} className="text-green-500"/> {item.correctCount}/{item.totalQuestions} câu đúng</p>
+                                        <p className="text-xs text-gray-500 font-medium flex items-center gap-1.5"><Timer size={12} className="text-brand-blue"/> {formatTime(item.totalTimeSec)}</p>
+                                    </div>
                                 </div>
                                 <button 
                                     onClick={() => navigate(`/quiz/review/${item.attemptId}/${item.studySetId}`)}
