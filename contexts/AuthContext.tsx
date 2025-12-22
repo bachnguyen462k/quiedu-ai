@@ -26,15 +26,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { setThemeMode } = useApp();
   
-  // Flag để ngăn chặn việc gọi API 2 lần do StrictMode hoặc re-render nhanh
-  const hasInitialized = useRef(false);
+  // Flag khóa khởi tạo
+  const isInitializing = useRef(false);
 
   useEffect(() => {
-    if (hasInitialized.current) return;
-    
+    // Nếu đã/đang khởi tạo thì thoát ngay
+    if (isInitializing.current) return;
+
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+        setIsLoading(false);
+        isInitializing.current = true;
+        return;
+    }
+
     const initAuth = async () => {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
+        isInitializing.current = true; // Khóa ngay lập tức trước khi await
         try {
             const userData = await authService.getCurrentUser();
             setUser(userData);
@@ -48,10 +55,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             localStorage.removeItem('accessToken');
             localStorage.removeItem('user');
             setUser(null);
+        } finally {
+            setIsLoading(false);
         }
-      }
-      setIsLoading(false);
-      hasInitialized.current = true;
     };
 
     initAuth();

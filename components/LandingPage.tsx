@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BookOpen, Zap, ArrowRight, Globe, ScanLine, Check, Star, BrainCircuit, Keyboard, FileText, Sparkles, ChevronRight, Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -43,12 +43,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [isHeroCardFlipped, setIsHeroCardFlipped] = useState(false);
+  
+  // Guard để tránh gọi API 2 lần
+  const hasFetchedTheme = useRef(false);
 
-  // Fetch global event theme on landing page load
   useEffect(() => {
+      if (hasFetchedTheme.current) return;
+      
       const fetchTheme = async () => {
-          const themeFromApi = await settingEventService.getGlobalEventTheme();
-          setEventTheme(themeFromApi);
+          hasFetchedTheme.current = true;
+          try {
+              const themeFromApi = await settingEventService.getGlobalEventTheme();
+              setEventTheme(themeFromApi);
+          } catch (e) {
+              console.error("Theme fetch failed", e);
+          }
       };
 
       fetchTheme();
@@ -79,7 +88,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
             <a href="#testimonials" className="text-gray-700 dark:text-gray-300 hover:text-brand-blue dark:hover:text-blue-400 font-bold transition-colors">Đánh giá</a>
         </div>
         <div className="flex items-center gap-2">
-            {/* Dark Mode Toggle */}
             <button 
                 onClick={toggleTheme}
                 className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -209,7 +217,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
                 </div>
             </div>
 
-            <div className="absolute z-40 -translate-x-44 translate-y-40 bg-white dark:bg-gray-850 p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-slide-in border border-gray-100 dark:border-gray-800 pointer-events-none" style={{ animationDelay: '0.5s' }}>
+            <div className="absolute z-40 -translate-x-44 translate-y-40 bg-white dark:bg-gray-855 p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-slide-in border border-gray-100 dark:border-gray-800 pointer-events-none" style={{ animationDelay: '0.5s' }}>
                 <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 text-brand-orange rounded-xl flex items-center justify-center shrink-0">
                     <Sparkles size={24} />
                 </div>
@@ -221,7 +229,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
         </div>
       </div>
 
-      {/* 4 CREATION METHODS */}
       <div id="creation-methods" className="py-24 bg-gray-50 dark:bg-gray-850 transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-16">
@@ -261,7 +268,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
           </div>
       </div>
       
-      {/* Features Section */}
       <div id="features" className="bg-white dark:bg-gray-900 py-24 transition-colors relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
@@ -287,7 +293,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
         </div>
       </div>
 
-      {/* Testimonials Section */}
       <div id="testimonials" className="py-24 bg-gray-50 dark:bg-gray-850 transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
@@ -317,7 +322,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onRegister }) => {
           </div>
       </div>
 
-      {/* Footer */}
       <footer className="bg-white dark:bg-gray-950 pt-20 pb-10 border-t border-gray-100 dark:border-gray-900 transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">

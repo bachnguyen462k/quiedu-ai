@@ -42,12 +42,15 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [showQrModal, setShowQrModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   
-  // Ref để theo dõi việc load dữ liệu
-  const lastFetchedId = useRef<string | null>(null);
+  // Ref để theo dõi và khóa việc load dữ liệu
+  const isFetchingId = useRef<string | null>(null);
 
   useEffect(() => {
-    // Chỉ gọi API nếu chưa gọi cho ID này
-    if (!metadata.id || lastFetchedId.current === metadata.id) return;
+    // Nếu ID không hợp lệ hoặc ID này đang được tải/đã tải xong thì không chạy tiếp
+    if (!metadata.id || isFetchingId.current === metadata.id) return;
+    
+    // Đánh dấu ID này đang được xử lý ngay lập tức (trước await)
+    isFetchingId.current = metadata.id;
     
     let isMounted = true;
     const fetchPreviewData = async () => {
@@ -56,14 +59,15 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
             const response = await studySetService.getStudySetPreviewById(metadata.id);
             if (isMounted && response.code === 1000) {
                 setPreview(response.result);
-                lastFetchedId.current = metadata.id;
             } else if (isMounted) {
+                isFetchingId.current = null; // Reset để có thể thử lại nếu lỗi logic
                 addNotification("Học phần không tồn tại", "error");
                 onBack();
             }
         } catch (error) {
             console.error("Fetch preview error:", error);
             if (isMounted) {
+                isFetchingId.current = null; // Reset để có thể thử lại nếu lỗi mạng
                 addNotification("Lỗi tải thông tin học phần", "error");
                 onBack();
             }
@@ -75,7 +79,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     fetchPreviewData();
     
     return () => { isMounted = false; };
-  }, [metadata.id]); // Rút gọn dependency: Chỉ chạy lại khi ID học phần thay đổi
+  }, [metadata.id, onBack, addNotification]); 
 
   if (isLoading || !preview) {
       return (

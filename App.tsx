@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -175,12 +175,12 @@ const AppRoutes: React.FC = () => {
 
   useEffect(() => { localStorage.setItem('studySets', JSON.stringify(sets)); }, [sets]);
 
-  const handleLogout = () => { logout(); addNotification(t('notifications.logged_out'), 'info'); navigate('/'); };
-  const handleUpdateUser = (updatedUser: User) => { updateUser(updatedUser); addNotification(t('notifications.profile_updated'), 'success'); };
-  const handleSaveSet = (newSet: StudySet) => { const setWithAuthor = { ...newSet, author: user?.name || 'Bạn' }; setSets([setWithAuthor, ...sets]); navigate('/library'); addNotification(t('notifications.set_created'), 'success'); };
-  const handleAddToAiHistory = (record: AiGenerationRecord) => { setAiHistory([record, ...aiHistory]); };
-  const handleAddReview = (setId: string, review: Review) => { setSets(prevSets => prevSets.map(s => s.id === setId ? { ...s, reviews: [review, ...(s.reviews || [])] } : s)); addNotification(t('notifications.review_submitted'), 'success'); };
-  const handleToggleFavorite = (setId: string) => { setSets(prevSets => prevSets.map(s => s.id === setId ? { ...s, isFavorite: !s.isFavorite } : s)); };
+  const handleLogout = useCallback(() => { logout(); addNotification(t('notifications.logged_out'), 'info'); navigate('/'); }, [logout, addNotification, t, navigate]);
+  const handleUpdateUser = useCallback((updatedUser: User) => { updateUser(updatedUser); addNotification(t('notifications.profile_updated'), 'success'); }, [updateUser, addNotification, t]);
+  const handleSaveSet = useCallback((newSet: StudySet) => { const setWithAuthor = { ...newSet, author: user?.name || 'Bạn' }; setSets(prev => [setWithAuthor, ...prev]); navigate('/library'); addNotification(t('notifications.set_created'), 'success'); }, [user?.name, navigate, addNotification, t]);
+  const handleAddToAiHistory = useCallback((record: AiGenerationRecord) => { setAiHistory(prev => [record, ...prev]); }, []);
+  const handleAddReview = useCallback((setId: string, review: Review) => { setSets(prevSets => prevSets.map(s => s.id === setId ? { ...s, reviews: [review, ...(s.reviews || [])] } : s)); addNotification(t('notifications.review_submitted'), 'success'); }, [addNotification, t]);
+  const handleToggleFavorite = useCallback((setId: string) => { setSets(prevSets => prevSets.map(s => s.id === setId ? { ...s, isFavorite: !s.isFavorite } : s)); }, []);
 
   if (isLoading) return (<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900"><ThemeLoader size={48} /></div>);
   const isAdmin = user?.roles.includes('ADMIN');
@@ -211,9 +211,12 @@ const AppRoutes: React.FC = () => {
 const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggleFavorite: (id: string) => void }) => {
     const { setId } = useParams();
     const navigate = useNavigate();
-    // Chỉnh sửa: Tìm học phần trong local, nếu không thấy thì vẫn cho phép load để SetDetailView tự gọi API Preview
-    const existingSet = sets.find(s => s.id === setId);
-    const setPlaceholder: StudySet = existingSet || { id: setId || '', title: 'Đang tải...', description: '', author: '...', createdAt: Date.now(), cards: [], privacy: 'PUBLIC' };
+    // Ổn định metadata bằng useMemo để không trigger useEffect ở con khi App re-render
+    const setPlaceholder = useMemo(() => {
+        const existing = sets.find(s => s.id === setId);
+        return existing || { id: setId || '', title: 'Đang tải...', description: '', author: '...', createdAt: Date.now(), cards: [], privacy: 'PUBLIC' } as StudySet;
+    }, [sets, setId]);
+    
     return <SetDetailView set={setPlaceholder} onBack={() => navigate(-1)} onStartFlashcard={() => navigate(`/study/${setId}`)} onStartQuiz={() => navigate(`/quiz/${setId}`)} onToggleFavorite={onToggleFavorite} />;
 };
 
@@ -223,17 +226,19 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
     const navigate = useNavigate();
     const [fullSet, setFullSet] = useState<StudySet | null>(null);
     const [isFetching, setIsFetching] = useState(false);
+    const fetchingId = useRef<string | null>(null);
 
     useEffect(() => {
         const fetchFullData = async () => {
-            if (!setId) return;
-            // Kiểm tra xem đã có dữ liệu cards chưa, nếu chưa (hoặc rỗng) thì phải fetch full /study-sets/{id}
+            if (!setId || fetchingId.current === setId) return;
+            
             const existing = sets.find(s => s.id === setId);
             if (existing && existing.cards && existing.cards.length > 0) {
                 setFullSet(existing);
                 return;
             }
 
+            fetchingId.current = setId;
             setIsFetching(true);
             try {
                 const response = await studySetService.getStudySetById(setId);
@@ -257,6 +262,7 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
                 }
             } catch (e) {
                 console.error("Failed to fetch full set", e);
+                fetchingId.current = null;
             } finally {
                 setIsFetching(false);
             }

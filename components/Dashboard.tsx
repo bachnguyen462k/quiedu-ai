@@ -26,34 +26,35 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const [searchQuery, setSearchQuery] = useState('');
   const [libraryTab, setLibraryTab] = useState<'SETS' | 'FAVORITES' | 'FILES'>('SETS');
   
-  // Data State
   const [displaySets, setDisplaySets] = useState<StudySet[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
+  // Guard Ref để ngăn chặn gọi trùng lặp
+  const fetchingTaskRef = useRef<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  // Trending sets derived from displaySets (or first page results)
   const trendingSets = useMemo(() => {
     return [...displaySets].slice(0, 3);
   }, [displaySets]);
 
-  // --- FETCH DATA FROM SERVER ---
   const fetchData = async (page: number, refresh: boolean = false) => {
+      const taskKey = `${isLibrary ? 'LIB' : 'HOME'}-${libraryTab}-${page}`;
+      if (fetchingTaskRef.current === taskKey) return;
+      
+      fetchingTaskRef.current = taskKey;
       setIsLoading(true);
+      
       try {
-          // Nếu là Thư viện -> Lấy học phần của tôi, Nếu là Trang chủ -> Lấy học phần công khai
           const response = isLibrary && libraryTab === 'SETS' 
             ? await studySetService.getMyStudySets(page, ITEMS_PER_PAGE)
             : await studySetService.getPublicStudySets(page, ITEMS_PER_PAGE);
 
           if (response.code === 1000) {
               const { content, totalPages: total } = response.result;
-              
-              // Map API format to Frontend type
               const mappedSets: StudySet[] = content.map((item: any) => ({
                   id: item.id.toString(),
                   title: item.title,
@@ -65,7 +66,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   type: item.type,
                   status: item.status,
                   plays: item.plays || 0,
-                  cards: [] // Chỉ lấy metadata ở danh sách
+                  cards: []
               }));
 
               if (refresh) {
@@ -84,13 +85,11 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       }
   };
 
-  // Reset and fetch when switching between Library and Home
   useEffect(() => {
     setCurrentPage(0);
     fetchData(0, true);
   }, [isLibrary, libraryTab]);
 
-  // Infinite Scroll Logic
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
     const hasMore = currentPage < totalPages - 1;
@@ -107,15 +106,11 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
     return () => { if (observerRef.current) observerRef.current.disconnect(); };
   }, [currentPage, totalPages, isLoading, isLibrary, libraryTab]);
 
-  // Combined filtering for Search
   const filteredSets = useMemo(() => {
     let base = displaySets;
-    
-    // Nếu là Favorites tab trong Library, filter từ localSets (giả định favorites được quản lý local/sync)
     if (isLibrary && libraryTab === 'FAVORITES') {
         base = localSets.filter(s => s.isFavorite);
     }
-
     return base.filter(s => {
         const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                              s.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -171,7 +166,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest ${idx === 0 ? 'bg-white/20 text-white' : 'bg-brand-orange/10 text-brand-orange'}`}>HOT</span>
-                                        {/* Bỏ trạng thái ở trang chủ */}
                                         {isLibrary && renderStatusBadge(set.status)}
                                     </div>
                                     <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`p-2 rounded-full transition-all hover:bg-white/10 ${set.isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-400 dark:text-gray-500'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
@@ -219,8 +213,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                             <div className="flex flex-wrap gap-2 mb-4">
                                 <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-blue-800/30">QUIZ</span>
                                 <span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-orange-800/30">{set.subject}</span>
-                                
-                                {/* Chỉ hiển thị cách tạo và trạng thái khi ở trong Thư viện */}
                                 {isLibrary && (
                                     <>
                                         {renderSetTypeBadge(set.type)}
@@ -244,7 +236,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                 ))}
             </div>
 
-            {/* Load More Trigger */}
             <div ref={loadMoreRef} className="h-20 flex items-center justify-center mt-8">
                 {isLoading && filteredSets.length > 0 && (
                     <div className="flex items-center gap-2 text-gray-400 font-bold animate-pulse">
