@@ -58,14 +58,35 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     })) as any as ServerQuestion[];
   }, [serverAttempt, set.cards]);
 
-  const handleOptionSelect = (option: string) => {
+  const handleOptionSelect = async (option: string) => {
     if (isCompleted || isSubmitting) return;
     
+    const currentQuestion = questions[currentQuestionIndex];
     setSelectedOption(option);
+    
+    // 1. Cập nhật state local ngay lập tức để UI phản hồi nhanh
     const newUserSelections = [...userSelections];
     newUserSelections[currentQuestionIndex] = option;
     setUserSelections(newUserSelections);
 
+    // 2. Nếu là Online Quiz, gọi API lưu đáp án từng câu
+    if (serverAttempt) {
+        try {
+            // Không chặn UI (await) để trải nghiệm mượt, nhưng vẫn gửi request
+            quizService.saveAnswer(
+                serverAttempt.attemptId,
+                currentQuestion.cardId,
+                option
+            ).catch(err => {
+                console.error("Auto-save answer failed", err);
+                addNotification("Không thể lưu đáp án tự động. Kiểm tra kết nối.", "warning");
+            });
+        } catch (error) {
+            console.error("QuizView: Option select error", error);
+        }
+    }
+
+    // 3. Chuyển câu sau 300ms
     setTimeout(() => {
       setSelectedOption(null);
       if (currentQuestionIndex < questions.length - 1) {

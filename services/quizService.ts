@@ -24,6 +24,24 @@ export const quizService = {
   },
 
   /**
+   * Lưu đáp án cho từng câu hỏi ngay khi chọn.
+   * Endpoint: POST /quiz/answer
+   */
+  saveAnswer: async (attemptId: number, studyCardId: number, selectedAnswer: string): Promise<any> => {
+    try {
+      const response = await apiClient.post('/quiz/answer', {
+        attemptId,
+        studyCardId,
+        selectedAnswer
+      });
+      return response.data;
+    } catch (error) {
+      console.error("QuizService: saveAnswer failed", error);
+      throw error;
+    }
+  },
+
+  /**
    * Nộp bài làm lên server để chấm điểm.
    */
   submitQuiz: async (attemptId: number, answers: { attemptQuestionId: number, answer: string }[]): Promise<any> => {
