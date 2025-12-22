@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { StudySet, QuizQuestion, Review, User, QuizAttempt, ServerQuestion } from '../types';
-import { ArrowLeft, CheckCircle, XCircle, Award, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle, Star, MessageSquare, ExternalLink, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Award, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle, Star, MessageSquare, ExternalLink, Loader2, Timer } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
@@ -31,11 +31,11 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   const [isReviewing, setIsReviewing] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
 
-  // Result state (filled after submission)
+  // Result state (filled after submission and review fetch)
   const [score, setScore] = useState(0);
-  const [serverResults, setServerResults] = useState<any[]>([]);
+  const [reviewItems, setReviewItems] = useState<any[]>([]);
 
-  // Review state
+  // Review state (rating for study set)
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
@@ -48,7 +48,6 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
   const questions = useMemo(() => {
     if (serverAttempt) return serverAttempt.questions;
-    // Fallback: Tự sinh câu hỏi từ cards nếu không có serverAttempt (chế độ offline/demo)
     return set.cards.map((card, idx) => ({
         attemptQuestionId: idx,
         questionNo: idx + 1,
@@ -64,29 +63,19 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     const currentQuestion = questions[currentQuestionIndex];
     setSelectedOption(option);
     
-    // 1. Cập nhật state local ngay lập tức để UI phản hồi nhanh
     const newUserSelections = [...userSelections];
     newUserSelections[currentQuestionIndex] = option;
     setUserSelections(newUserSelections);
 
-    // 2. Nếu là Online Quiz, gọi API lưu đáp án từng câu ngay khi chọn
     if (serverAttempt) {
-        try {
-            // Gửi request POST /quiz/answer không dùng await để tránh lag UI
-            quizService.saveAnswer(
-                serverAttempt.attemptId,
-                currentQuestion.cardId,
-                option
-            ).catch(err => {
-                console.error("Auto-save answer failed", err);
-                // Thông báo nhẹ nếu lưu lỗi nhưng không chặn người dùng
-            });
-        } catch (error) {
-            console.error("QuizView: Option select error", error);
-        }
+        // Auto-save answer to server
+        quizService.saveAnswer(
+            serverAttempt.attemptId,
+            currentQuestion.cardId,
+            option
+        ).catch(err => console.error("Auto-save answer failed", err));
     }
 
-    // 3. Chuyển câu sau 300ms
     setTimeout(() => {
       setSelectedOption(null);
       if (currentQuestionIndex < questions.length - 1) {
@@ -98,10 +87,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   };
 
   const handleSubmitQuiz = async () => {
-      if (!serverAttempt) {
-          addNotification("Hệ thống Quiz Offline đang được cập nhật.", "info");
-          return;
-      }
+      if (!serverAttempt) return;
 
       setIsSubmitting(true);
       try {
@@ -110,25 +96,32 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
               answer: userSelections[idx] || ""
           }));
 
-          // Gọi API POST /quiz/submit/{attemptId}
-          const response = await quizService.submitQuiz(serverAttempt.attemptId, finalAnswers);
+          // 1. Gửi lệnh nộp bài
+          const submitResponse = await quizService.submitQuiz(serverAttempt.attemptId, finalAnswers);
           
-          if (response.code === 1000) {
-              // Nếu thành công, lấy dữ liệu kết quả (giả định kết quả nằm trong response.result nếu có)
-              // Nếu server chỉ trả về code 1000, chúng ta cần đảm bảo có cách lấy điểm số
-              if (response.result) {
-                setScore(response.result.score || 0);
-                setServerResults(response.result.details || []);
-              }
+          if (submitResponse.code === 1000) {
+              // 2. Nếu nộp thành công, gọi API lấy dữ liệu review chi tiết
+              const reviewResponse = await quizService.getQuizReview(serverAttempt.attemptId);
               
-              setIsReviewing(false);
-              setIsCompleted(true);
-              addNotification("Đã nộp bài thành công!", "success");
+              if (reviewResponse.code === 1000) {
+                  const items = reviewResponse.result; // List<QuizReviewItemResponse>
+                  const correctCount = items.filter((i: any) => i.correct).length;
+                  const calculatedScore = Math.round((correctCount / items.length) * 100);
+                  
+                  setScore(calculatedScore);
+                  setReviewItems(items);
+                  setIsReviewing(false);
+                  setIsCompleted(true);
+                  addNotification("Nộp bài thành công!", "success");
+              } else {
+                  addNotification("Không thể lấy kết quả chi tiết.", "warning");
+                  setIsCompleted(true); // Vẫn chuyển màn nhưng có thể thiếu data
+              }
           } else {
-              addNotification(response.message || "Không thể nộp bài", "error");
+              addNotification(submitResponse.message || "Lỗi khi nộp bài", "error");
           }
       } catch (error) {
-          addNotification("Lỗi nộp bài. Vui lòng kiểm tra kết nối.", "error");
+          addNotification("Lỗi hệ thống. Vui lòng thử lại.", "error");
       } finally {
           setIsSubmitting(false);
       }
@@ -145,7 +138,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
   // --- VIEW: RESULTS ---
   if (isCompleted) {
-    const percentage = Math.round(score);
+    const percentage = score;
     const data = [
       { name: t('quiz.correct'), value: score },
       { name: t('quiz.incorrect'), value: 100 - score },
@@ -185,7 +178,6 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 </div>
             </div>
             
-            {/* Review Section */}
             {!reviewSubmitted && (
                 <div className="bg-orange-50 dark:bg-orange-900/10 p-8 rounded-[32px] border border-orange-100 dark:border-orange-900/20 max-w-2xl mx-auto mb-8 transition-colors">
                      <h3 className="text-xl font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tight">{t('quiz.review_title')}</h3>
@@ -202,44 +194,65 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
             )}
          </div>
 
-         {/* Detailed Stats from Server */}
-         {serverResults.length > 0 && (
-             <div className="space-y-6">
-                <h3 className="text-xl font-black text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4 uppercase tracking-tighter">{t('quiz.detail_title')}</h3>
-                {serverResults.map((detail, idx) => (
-                    <div key={idx} className={`p-6 rounded-[24px] border-2 transition-all ${detail.isCorrect ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800/50' : 'bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-800/50'}`}>
-                        <div className="flex items-start gap-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-white ${detail.isCorrect ? 'bg-green-500 shadow-lg shadow-green-200 dark:shadow-none' : 'bg-red-500 shadow-lg shadow-red-200 dark:shadow-none'}`}>
-                                {detail.isCorrect ? <Check size={20} strokeWidth={4} /> : <X size={20} strokeWidth={4} />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-black text-gray-900 dark:text-white mb-4 text-lg leading-snug">
-                                    <span className="text-gray-400 font-bold mr-2 text-sm uppercase">Câu {idx + 1}:</span>
-                                    {detail.questionTerm}
+         {/* Detailed Stats from Review API */}
+         <div className="space-y-6">
+            <h3 className="text-xl font-black text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4 uppercase tracking-tighter">{t('quiz.detail_title')}</h3>
+            
+            {reviewItems.length > 0 ? reviewItems.map((item, idx) => (
+                <div key={idx} className={`p-6 md:p-8 rounded-[32px] border-2 transition-all ${item.correct ? 'bg-green-50/30 dark:bg-green-900/5 border-green-100 dark:border-green-800/30' : 'bg-red-50/30 dark:bg-red-900/5 border-red-100 dark:border-red-800/30'}`}>
+                    <div className="flex flex-col md:flex-row md:items-start gap-6">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-black text-white shadow-lg ${item.correct ? 'bg-green-500 shadow-green-200 dark:shadow-none' : 'bg-red-500 shadow-red-200 dark:shadow-none'}`}>
+                            {item.correct ? <Check size={24} strokeWidth={4} /> : <X size={24} strokeWidth={4} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start mb-4">
+                                <h4 className="font-black text-gray-900 dark:text-white text-lg leading-snug">
+                                    <span className="text-gray-400 font-bold mr-2 text-sm uppercase">Câu {item.questionNo}:</span>
+                                    {item.term}
                                 </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className={`p-3 rounded-xl border ${detail.isCorrect ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800/30' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/30'}`}>
-                                        <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{t('quiz.your_choice')}</span>
-                                        <span className={`font-bold text-sm ${detail.isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>{detail.userAnswer || t('quiz.not_answered')}</span>
-                                    </div>
-                                    {!detail.isCorrect && (
-                                        <div className="p-3 rounded-xl border bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700">
-                                            <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{t('quiz.correct_answer')}</span>
-                                            <span className="font-bold text-sm text-green-600 dark:text-green-400">{detail.correctAnswer}</span>
-                                        </div>
-                                    )}
-                                </div>
+                                {item.timeSpentMs > 0 && (
+                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ml-4">
+                                        <Clock size={12} /> {(item.timeSpentMs / 1000).toFixed(1)}s
+                                    </span>
+                                )}
                             </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div className={`p-4 rounded-2xl border ${item.correct ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800/30' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/30'}`}>
+                                    <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{t('quiz.your_choice')}</span>
+                                    <span className={`font-bold text-sm ${item.correct ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>{item.selectedAnswer || t('quiz.not_answered')}</span>
+                                </div>
+                                {!item.correct && (
+                                    <div className="p-4 rounded-2xl border bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700">
+                                        <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{t('quiz.correct_answer')}</span>
+                                        <span className="font-bold text-sm text-green-600 dark:text-green-400">{item.correctAnswer}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {item.explanation && (
+                                <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-blue"></div>
+                                    <h5 className="text-[10px] font-black text-brand-blue uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                        <MessageSquare size={12} fill="currentColor" /> Giải thích kiến thức
+                                    </h5>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium italic">{item.explanation}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
-                ))}
-             </div>
-         )}
+                </div>
+            )) : (
+                <div className="text-center py-20 text-gray-400 font-medium italic bg-white dark:bg-gray-800 rounded-[32px] border-2 border-dashed border-gray-100 dark:border-gray-700 transition-colors">
+                    Đang tải dữ liệu kết quả chi tiết...
+                </div>
+            )}
+         </div>
       </div>
     );
   }
 
-  // --- VIEW: REVIEW SCREEN ---
+  // --- VIEW: REVIEW BEFORE SUBMIT ---
   if (isReviewing) {
       return (
         <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
@@ -351,7 +364,6 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
           )}
       </div>
 
-      {/* Navigation Sidebar (Desktop) */}
       <div className={`fixed inset-0 bg-black/50 z-[160] lg:static lg:bg-transparent lg:z-auto lg:w-80 flex-shrink-0 ${showGrid ? 'flex justify-end' : 'hidden lg:block'}`} onClick={() => setShowGrid(false)}>
          <div className="bg-white dark:bg-gray-800 h-full w-80 lg:w-full lg:h-auto lg:rounded-[32px] lg:shadow-sm lg:border-2 lg:border-gray-50 dark:lg:border-gray-800 p-8 overflow-y-auto transition-colors" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-8">

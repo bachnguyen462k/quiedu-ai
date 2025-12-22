@@ -57,5 +57,19 @@ export const quizService = {
       console.error("QuizService: submitQuiz failed", error);
       throw error;
     }
+  },
+
+  /**
+   * Lấy kết quả review chi tiết của một lượt thi.
+   * Endpoint: GET /quiz/{attemptId}/review
+   */
+  getQuizReview: async (attemptId: number): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/quiz/${attemptId}/review`);
+      return response.data;
+    } catch (error) {
+      console.error("QuizService: getQuizReview failed", error);
+      throw error;
+    }
   }
 };
