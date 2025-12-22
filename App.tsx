@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
@@ -17,7 +17,7 @@ import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
 import { StudySet, User, AiGenerationRecord, Review, EventTheme } from './types';
-import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2, Mail, Sparkles } from 'lucide-react';
+import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2, Mail, Sparkles, LayoutDashboard, PlusCircle, Library, Users } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -116,6 +116,37 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
     );
 };
 
+// --- Mobile Navigation Bar ---
+const MobileNavBar: React.FC = () => {
+    const location = useLocation();
+    const { t } = useTranslation();
+    
+    const menuItems = [
+        { path: '/dashboard', icon: LayoutDashboard, label: 'Trang chủ' },
+        { path: '/create', icon: PlusCircle, label: 'Tạo mới' },
+        { path: '/library', icon: Library, label: 'Thư viện' },
+        { path: '/classes', icon: Users, label: 'Lớp học' },
+    ];
+
+    return (
+        <div className="lg:hidden flex items-center justify-around bg-white dark:bg-gray-855 border-b border-gray-100 dark:border-gray-800 px-2 py-2 sticky top-16 z-[100] transition-colors shadow-sm">
+            {menuItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                    <Link 
+                        key={item.path} 
+                        to={item.path} 
+                        className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${isActive ? 'text-brand-blue dark:text-blue-400 bg-brand-blue/5' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'}`}
+                    >
+                        <item.icon size={20} />
+                        <span className="text-[10px] font-black uppercase tracking-tighter">{item.label}</span>
+                    </Link>
+                );
+            })}
+        </div>
+    );
+};
+
 // --- Layout Component ---
 const MainLayout: React.FC<{ children: React.ReactNode, sets: StudySet[], aiHistory: AiGenerationRecord[], handleLogout: () => void, runTour: boolean, setRunTour: (val: boolean) => void }> = ({ children, sets, aiHistory, handleLogout, runTour, setRunTour }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -143,6 +174,9 @@ const MainLayout: React.FC<{ children: React.ReactNode, sets: StudySet[], aiHist
             onSelectHistory={() => window.location.hash = `#/ai-planner`} 
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           />
+          {/* Mobile sub-menu bar */}
+          <MobileNavBar />
+          
           <main className="flex-1 overflow-y-auto relative scroll-smooth custom-scrollbar">
             {children}
           </main>

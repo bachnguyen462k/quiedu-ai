@@ -1,9 +1,9 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Bell, Moon, Sun, X, FileText, GraduationCap, Clock, Trash2, Globe, Loader2, Sparkles, Menu } from 'lucide-react';
+import { Search, Bell, Moon, Sun, X, GraduationCap, Globe, Loader2, Sparkles, Menu } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
-import { StudySet, AiGenerationRecord, EventTheme } from '../types';
+import { StudySet, AiGenerationRecord } from '../types';
 import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
@@ -15,23 +15,25 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHistory, onToggleSidebar }) => {
-  const { theme, toggleTheme, notifications, removeNotification, eventTheme, toggleGlobalEvent, addNotification } = useApp();
+  const { theme, toggleTheme, notifications, eventTheme, toggleGlobalEvent, addNotification } = useApp();
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [visibleLimit, setVisibleLimit] = useState(10);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isUpdatingEvent, setIsUpdatingEvent] = useState(false);
   
   const searchRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [visibleNotifLimit, setVisibleNotifLimit] = useState(10);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setShowSearchResults(false);
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+          setShowSearchResults(false);
+          if (window.innerWidth < 768) setIsMobileSearchOpen(false);
+      }
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) setShowNotifications(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -66,26 +68,30 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
   const filteredResults = useMemo(() => {
     if (!searchQuery.trim()) return { quizzes: [] };
     const lowerQuery = searchQuery.toLowerCase();
-    const quizzes = sets.filter(s => s.title.toLowerCase().includes(lowerQuery) || s.description.toLowerCase().includes(lowerQuery));
-    return { quizzes };
+    return { 
+        quizzes: sets.filter(s => s.title.toLowerCase().includes(lowerQuery) || s.description.toLowerCase().includes(lowerQuery))
+    };
   }, [searchQuery, sets]);
 
-  const hasResults = filteredResults.quizzes.length > 0;
-
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 sticky top-0 z-[120] transition-colors">
-      <div className="h-full px-4 md:px-6 flex items-center justify-between">
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 sticky top-0 z-[120] transition-colors shadow-sm">
+      <div className="h-full px-4 md:px-6 flex items-center justify-between gap-4">
         
-        {/* LEFT: Toggle Sidebar & Mobile Search Icon */}
-        <div className="flex items-center gap-3">
+        {/* LEFT: Toggle Sidebar & Search */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
             <button 
                 onClick={onToggleSidebar}
-                className="lg:hidden p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors shrink-0"
             >
                 <Menu size={24} />
             </button>
-            <div className="relative w-full max-w-md hidden md:block" ref={searchRef}>
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+
+            {/* Desktop Search / Mobile Toggle Button */}
+            <div className={`relative flex-1 max-w-md ${isMobileSearchOpen ? 'fixed inset-x-0 top-0 h-16 bg-white dark:bg-gray-800 px-4 flex items-center z-[130]' : 'hidden md:block'}`} ref={searchRef}>
+                {isMobileSearchOpen && (
+                    <button onClick={() => setIsMobileSearchOpen(false)} className="mr-3 text-gray-400 hover:text-gray-600"><X size={24} /></button>
+                )}
+                <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isMobileSearchOpen ? 'ml-12' : ''}`}>
                     <Search size={18} className={searchTheme.icon} />
                 </div>
                 <input 
@@ -98,16 +104,18 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                 />
                 
                 {showSearchResults && searchQuery && (
-                    <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-fade-in">
-                        {!hasResults ? (
+                    <div className={`absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-fade-in ${isMobileSearchOpen ? 'fixed inset-x-4 top-16 w-auto' : ''}`}>
+                        {filteredResults.quizzes.length === 0 ? (
                             <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">{t('header.search_no_result')}</div>
                         ) : (
                             <div className="max-h-[70vh] overflow-y-auto custom-scrollbar p-2">
-                                <div className="px-2 py-1 text-xs font-bold text-gray-400 uppercase tracking-wider">{t('header.search_quizzes')}</div>
-                                {filteredResults.quizzes.slice(0, visibleLimit).map(set => (
-                                    <button key={set.id} onClick={() => { onSelectSet(set); setShowSearchResults(false); }} className="w-full text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors">
-                                        <div className="w-8 h-8 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center shrink-0"><GraduationCap size={16} /></div>
-                                        <div className="min-w-0 font-medium text-sm text-gray-900 dark:text-white truncate">{set.title}</div>
+                                {filteredResults.quizzes.slice(0, 10).map(set => (
+                                    <button key={set.id} onClick={() => { onSelectSet(set); setShowSearchResults(false); setIsMobileSearchOpen(false); }} className="w-full text-left p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors">
+                                        <div className="w-8 h-8 rounded bg-brand-blue/10 text-brand-blue flex items-center justify-center shrink-0"><GraduationCap size={16} /></div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="font-black text-sm text-gray-900 dark:text-white truncate">{set.title}</div>
+                                            <div className="text-[10px] text-gray-400 truncate uppercase tracking-tighter">{set.author}</div>
+                                        </div>
                                     </button>
                                 ))}
                             </div>
@@ -115,34 +123,56 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                     </div>
                 )}
             </div>
+
+            {/* Mobile Search Icon */}
+            <button 
+                onClick={() => setIsMobileSearchOpen(true)}
+                className="md:hidden p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+                <Search size={24} />
+            </button>
         </div>
 
         {/* RIGHT: ACTIONS */}
-        <div className="flex items-center gap-1 sm:gap-4">
-            <button onClick={changeLanguage} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1" title={t('common.language')}><Globe size={20} /><span className="text-[10px] font-black uppercase hidden xs:block">{i18n.language}</span></button>
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button onClick={changeLanguage} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-1">
+                <Globe size={20} />
+                <span className="text-[10px] font-black uppercase hidden xs:block">{i18n.language}</span>
+            </button>
 
             <button 
                 onClick={handleToggleEvent}
-                disabled={isUpdatingEvent}
                 className={`p-2 rounded-full transition-colors ${eventTheme !== 'DEFAULT' ? 'text-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                title="Bật/Tắt sự kiện toàn trang"
             >
                 {isUpdatingEvent ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
             </button>
 
             <div className="relative" ref={notifRef}>
-                <button onClick={() => setShowNotifications(!showNotifications)} className={`p-2 rounded-full transition-colors relative ${showNotifications ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}><Bell size={20} />{notifications.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 border border-white rounded-full animate-pulse"></span>}</button>
+                <button onClick={() => setShowNotifications(!showNotifications)} className={`p-2 rounded-full transition-colors relative ${showNotifications ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+                    <Bell size={20} />
+                    {notifications.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 border border-white rounded-full"></span>}
+                </button>
                 {showNotifications && (
                     <div className="absolute right-0 top-full mt-2 w-72 md:w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-[200] animate-fade-in origin-top-right">
-                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center"><h3 className="font-bold text-sm dark:text-white">{t('header.notifications')}</h3></div>
+                        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
+                            <h3 className="font-bold text-sm dark:text-white">{t('header.notifications')}</h3>
+                        </div>
                         <div className="max-h-80 overflow-y-auto custom-scrollbar">
-                            {notifications.length === 0 ? <div className="p-8 text-center text-gray-400 text-xs">{t('header.no_notifications')}</div> : <div className="divide-y divide-gray-100 dark:divide-gray-700">{notifications.slice(0, visibleNotifLimit).map(notif => (<div key={notif.id} className="p-3 text-xs dark:text-gray-200">{notif.message}</div>))}</div>}
+                            {notifications.length === 0 ? (
+                                <div className="p-8 text-center text-gray-400 text-xs">{t('header.no_notifications')}</div>
+                            ) : (
+                                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                                    {notifications.map(notif => (<div key={notif.id} className="p-4 text-xs dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">{notif.message}</div>))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
             </div>
 
-            <button onClick={toggleTheme} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">{theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}</button>
+            <button onClick={toggleTheme} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                {theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}
+            </button>
         </div>
       </div>
     </header>
