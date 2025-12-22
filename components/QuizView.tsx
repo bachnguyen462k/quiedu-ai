@@ -106,18 +106,23 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
       setIsSubmitting(true);
       try {
-          const payload = questions.map((q, idx) => ({
+          // Chuẩn bị danh sách đáp án cuối cùng để nộp
+          const finalAnswers = questions.map((q, idx) => ({
               attemptQuestionId: q.attemptQuestionId,
               answer: userSelections[idx] || ""
           }));
 
-          const response = await quizService.submitQuiz(serverAttempt.attemptId, payload);
+          // Gọi API POST /quiz/submit/{attemptId}
+          const response = await quizService.submitQuiz(serverAttempt.attemptId, finalAnswers);
+          
           if (response.code === 1000) {
               setScore(response.result.score);
               setServerResults(response.result.details || []);
               setIsReviewing(false);
               setIsCompleted(true);
               addNotification("Đã nộp bài thành công!", "success");
+          } else {
+              addNotification(response.message || "Không thể nộp bài", "error");
           }
       } catch (error) {
           addNotification("Lỗi nộp bài. Vui lòng kiểm tra kết nối.", "error");
@@ -177,7 +182,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 </div>
             </div>
             
-            {/* Review Section (Reuse old code) */}
+            {/* Review Section */}
             {!reviewSubmitted && (
                 <div className="bg-orange-50 dark:bg-orange-900/10 p-8 rounded-[32px] border border-orange-100 dark:border-orange-900/20 max-w-2xl mx-auto mb-8 transition-colors">
                      <h3 className="text-xl font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tight">{t('quiz.review_title')}</h3>

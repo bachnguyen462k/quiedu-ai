@@ -43,11 +43,11 @@ export const quizService = {
 
   /**
    * Nộp bài làm lên server để chấm điểm.
+   * Endpoint: POST /quiz/submit/{attemptId}
    */
   submitQuiz: async (attemptId: number, answers: { attemptQuestionId: number, answer: string }[]): Promise<any> => {
     try {
-      const response = await apiClient.post('/quiz/submit', {
-        attemptId,
+      const response = await apiClient.post(`/quiz/submit/${attemptId}`, {
         answers
       });
       return response.data;
