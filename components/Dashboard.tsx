@@ -1,11 +1,10 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, Review } from '../types';
-import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Zap } from 'lucide-react';
+import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Zap, Crown, Medal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
 import { useApp } from '../contexts/AppContext';
-// Fix: Add missing ThemeLoader import
 import ThemeLoader from './ThemeLoader';
 
 interface DashboardProps {
@@ -39,7 +38,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const trendingSets = useMemo(() => {
-    return [...displaySets].slice(0, 4);
+    // Chỉ lấy Top 3 học phần thịnh hành nhất
+    return [...displaySets].slice(0, 3);
   }, [displaySets]);
 
   const fetchData = async (page: number, refresh: boolean = false) => {
@@ -165,104 +165,81 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                         </div>
                         {t('dashboard.trending')}
                     </h2>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1">Những học phần được quan tâm nhất hôm nay.</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1">Top 3 học phần bùng nổ nhất tuần qua.</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {trendingSets.length > 0 ? trendingSets.map((set, idx) => {
                     const isTop1 = idx === 0;
                     const isTop2 = idx === 1;
+                    const isTop3 = idx === 2;
                     
+                    const cardTheme = isTop1 
+                        ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 ring-4 ring-amber-100 dark:ring-amber-900/20'
+                        : isTop2
+                        ? 'bg-gradient-to-br from-slate-400 via-slate-500 to-indigo-600 ring-4 ring-indigo-50 dark:ring-indigo-900/10'
+                        : 'bg-gradient-to-br from-orange-400 via-orange-500 to-red-600 ring-4 ring-orange-50 dark:ring-orange-900/10';
+
                     return (
                         <div 
                             key={set.id} 
                             onClick={() => onSelectSet(set)} 
-                            className={`group relative overflow-hidden rounded-[40px] p-8 cursor-pointer transition-all duration-500 shadow-sm hover:shadow-2xl border-2 transform hover:-translate-y-2 flex flex-col justify-between min-h-[340px] ${
-                                isTop1 
-                                ? 'lg:col-span-2 bg-gradient-to-br from-indigo-600 to-blue-800 border-transparent text-white ring-4 ring-indigo-100 dark:ring-indigo-900/20' 
-                                : isTop2
-                                ? 'bg-gradient-to-br from-orange-400 to-red-600 border-transparent text-white'
-                                : 'bg-white dark:bg-gray-855 border-gray-100 dark:border-gray-800'
-                            }`}
+                            className={`group relative overflow-hidden rounded-[36px] p-7 cursor-pointer transition-all duration-500 shadow-xl hover:shadow-2xl border-transparent transform hover:-translate-y-2 flex flex-col justify-between min-h-[300px] text-white ${cardTheme}`}
                         >
-                            {/* Decorative Pattern for Top Cards */}
-                            {(isTop1 || isTop2) && (
-                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-700">
-                                    {isTop1 ? <Trophy size={200} /> : <Zap size={160} />}
-                                </div>
-                            )}
+                            {/* Background Decorations */}
+                            <div className="absolute -top-10 -right-10 opacity-10 group-hover:scale-125 transition-transform duration-700">
+                                {isTop1 ? <Crown size={220} /> : isTop2 ? <Trophy size={200} /> : <Medal size={180} />}
+                            </div>
 
                             <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center justify-between mb-5">
                                     <div className="flex items-center gap-2">
-                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-[0.2em] shadow-sm ${
-                                            isTop1 || isTop2 ? 'bg-white/20 text-white backdrop-blur-md' : 'bg-brand-orange/10 text-brand-orange'
-                                        }`}>
+                                        <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
+                                            {isTop1 ? <Crown size={12} className="text-yellow-200" /> : isTop2 ? <Trophy size={12} /> : <Medal size={12} />}
                                             RANK {idx + 1}
-                                        </span>
+                                        </div>
                                         {isTop1 && (
-                                            <span className="flex items-center gap-1 text-[10px] font-black bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full uppercase tracking-widest animate-bounce">
-                                                <Trophy size={10} /> HOT
-                                            </span>
+                                            <span className="bg-red-500 text-[9px] font-black px-2 py-0.5 rounded-lg animate-pulse tracking-widest">HOT</span>
                                         )}
                                     </div>
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} 
-                                        className={`p-3 rounded-2xl transition-all hover:scale-110 active:scale-90 ${
-                                            isTop1 || isTop2 
-                                            ? 'bg-white/10 text-white hover:bg-white/20' 
-                                            : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-red-500'
-                                        }`}
+                                        className="p-2.5 bg-white/10 hover:bg-white/20 rounded-2xl transition-all hover:scale-110 active:scale-90"
                                     >
-                                        <Heart size={22} fill={set.isFavorite ? (isTop1 || isTop2 ? "white" : "currentColor") : "none"} className={set.isFavorite ? 'text-red-500' : ''} />
+                                        <Heart size={20} fill={set.isFavorite ? "white" : "none"} className={set.isFavorite ? 'text-white' : 'text-white/70'} />
                                     </button>
                                 </div>
 
-                                <h3 className={`font-black mb-4 line-clamp-3 leading-[1.2] transition-colors ${
-                                    isTop1 ? 'text-3xl md:text-4xl' : 'text-xl'
-                                } ${
-                                    isTop1 || isTop2 ? 'text-white' : 'text-gray-900 dark:text-white group-hover:text-brand-blue dark:group-hover:text-blue-400'
-                                }`}>
+                                <h3 className="text-xl md:text-2xl font-black mb-3 line-clamp-2 leading-tight drop-shadow-sm">
                                     {set.title}
                                 </h3>
                                 
-                                <p className={`text-sm line-clamp-2 font-medium opacity-80 mb-8 leading-relaxed ${
-                                    isTop1 || isTop2 ? 'text-indigo-100' : 'text-gray-600 dark:text-gray-400'
-                                }`}>
+                                <p className="text-xs line-clamp-2 font-medium text-white/80 mb-6 leading-relaxed">
                                     {set.description}
                                 </p>
                             </div>
 
-                            <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-black shadow-inner ${
-                                        isTop1 || isTop2 ? 'bg-white text-brand-blue' : 'bg-brand-blue/10 text-brand-blue dark:bg-blue-900/30'
-                                    }`}>
+                            <div className="relative z-10 pt-5 border-t border-white/10 flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-9 h-9 rounded-2xl bg-white text-brand-blue flex items-center justify-center text-xs font-black shadow-lg">
                                         {set.author.charAt(0)}
                                     </div>
                                     <div className="min-w-0">
-                                        <span className={`block text-sm font-bold truncate ${isTop1 || isTop2 ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{set.author}</span>
-                                        <span className={`text-[10px] font-black uppercase tracking-widest ${isTop1 || isTop2 ? 'text-white/60' : 'text-gray-400'}`}>{set.subject}</span>
+                                        <span className="block text-xs font-bold truncate text-white">{set.author}</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/60">{set.subject}</span>
                                     </div>
                                 </div>
-                                <div className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl font-black text-xs shadow-lg transition-transform group-hover:scale-105 ${
-                                    isTop1 || isTop2 ? 'bg-white text-indigo-700' : 'bg-brand-blue text-white'
-                                }`}>
-                                    <Play size={14} fill="currentColor" /> {set.plays}
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-brand-blue rounded-xl font-black text-[10px] shadow-lg transition-transform group-hover:scale-105">
+                                    <Play size={12} fill="currentColor" /> {set.plays}
                                 </div>
                             </div>
-                            
-                            {/* Hover Overlay for Standard Cards */}
-                            {!(isTop1 || isTop2) && (
-                                <div className="absolute inset-0 bg-brand-blue/0 group-hover:bg-brand-blue/5 transition-colors pointer-events-none" />
-                            )}
                         </div>
                     );
                 }) : (
                     <div className="col-span-full py-20 text-center bg-gray-50 dark:bg-gray-800/50 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
                         <Flame size={48} className="mx-auto text-gray-200 mb-4" />
-                        <p className="text-gray-500 font-bold italic">Đang tải học phần thịnh hành...</p>
+                        <p className="text-gray-500 font-bold italic">Đang cập nhật xu hướng học tập...</p>
                     </div>
                 )}
             </div>
