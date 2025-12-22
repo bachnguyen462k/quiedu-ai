@@ -41,58 +41,47 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  
-  // Guard Ref: Lưu ID của học phần đang được tải
-  const fetchingIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!metadata.id) return;
 
-    // Trường hợp 1: Dữ liệu đã có sẵn trong state (phù hợp với ID hiện tại)
-    if (preview && preview.id.toString() === metadata.id) {
-        setIsLoading(false);
-        return;
-    }
-
-    // Trường hợp 2: Nếu effect này đang chạy dở cho ID này, không làm gì cả
-    if (fetchingIdRef.current === metadata.id) {
-        // Tuy nhiên, nếu preview đã có dữ liệu từ lần chạy trước đó thành công, tắt loading
-        if (preview) setIsLoading(false);
-        return;
-    }
-    
-    // Đánh dấu bắt đầu fetch cho ID này
-    fetchingIdRef.current = metadata.id;
+    // Mỗi khi ID thay đổi hoặc F5, reset lại trạng thái
     let isMounted = true;
+    setIsLoading(true);
 
     const fetchPreviewData = async () => {
-        setIsLoading(true);
         try {
             const response = await studySetService.getStudySetPreviewById(metadata.id);
+            
+            // Chỉ cập nhật State nếu Component vẫn đang hiển thị (Mounted)
             if (isMounted) {
                 if (response.code === 1000) {
                     setPreview(response.result);
                 } else {
-                    addNotification("Học phần không tồn tại", "error");
+                    addNotification("Học phần không tồn tại hoặc đã bị xóa", "error");
                     onBack();
                 }
             }
         } catch (error) {
             console.error("Fetch preview error:", error);
             if (isMounted) {
-                addNotification("Lỗi tải thông tin học phần", "error");
+                addNotification("Không thể kết nối đến máy chủ", "error");
                 onBack();
             }
         } finally {
-            // Quan trọng: Phải tắt loading bất kể kết quả thế nào (nếu component vẫn mount)
-            if (isMounted) setIsLoading(false);
+            if (isMounted) {
+                setIsLoading(false);
+            }
         }
     };
 
     fetchPreviewData();
     
-    return () => { isMounted = false; };
-  }, [metadata.id, onBack, addNotification, preview]); 
+    // Hàm dọn dẹp: Đánh dấu component đã unmount
+    return () => { 
+        isMounted = false; 
+    };
+  }, [metadata.id, onBack]); // Chỉ chạy lại khi ID thay đổi
 
   if (isLoading || !preview) {
       return (

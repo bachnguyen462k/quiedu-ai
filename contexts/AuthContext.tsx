@@ -25,41 +25,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { setThemeMode } = useApp();
-  
-  const isInitializing = useRef(false);
 
   useEffect(() => {
-    // Nếu đang khởi tạo, không làm gì cả, để tiến trình đầu tiên chạy nốt
-    if (isInitializing.current) return;
-
+    let isMounted = true;
     const token = localStorage.getItem('accessToken');
+    
     if (!token) {
         setIsLoading(false);
-        isInitializing.current = true; // Vẫn đánh dấu đã init xong (dù không có user)
         return;
     }
 
     const initAuth = async () => {
-        isInitializing.current = true; 
         try {
             const userData = await authService.getCurrentUser();
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            
-            if (userData.darkMode !== undefined && userData.darkMode !== null) {
-                setThemeMode(userData.darkMode ? 'dark' : 'light');
+            if (isMounted) {
+                setUser(userData);
+                localStorage.setItem('user', JSON.stringify(userData));
+                
+                if (userData.darkMode !== undefined && userData.darkMode !== null) {
+                    setThemeMode(userData.darkMode ? 'dark' : 'light');
+                }
             }
         } catch (error) {
             console.error("Session expired or invalid", error);
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
-            setUser(null);
+            if (isMounted) {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('user');
+                setUser(null);
+            }
         } finally {
-            setIsLoading(false);
+            if (isMounted) {
+                setIsLoading(false);
+            }
         }
     };
 
     initAuth();
+
+    return () => { isMounted = false; };
   }, [setThemeMode]);
 
   const login = async (credentials: LoginCredentials) => {
