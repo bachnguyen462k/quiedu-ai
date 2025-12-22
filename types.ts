@@ -20,7 +20,6 @@ export interface Review {
 
 export type PrivacyStatus = 'PUBLIC' | 'PRIVATE';
 
-// Phân loại phương thức tạo quiz
 export type StudySetType = 'MANUAL' | 'AI_TOPIC' | 'AI_FILE' | 'AI_TEXTBOOK';
 
 export interface StudySet {
@@ -36,8 +35,8 @@ export interface StudySet {
   isFavorite?: boolean; 
   
   privacy: PrivacyStatus;
-  status?: string;    // Thêm trường status
-  type?: StudySetType; // Thêm trường type
+  status?: string;
+  type?: StudySetType;
   level?: string;      
   school?: string;     
   major?: string;      
@@ -45,11 +44,32 @@ export interface StudySet {
   topic?: string;      
 }
 
+// --- Server-side Quiz Types ---
+
+export interface ServerQuestion {
+  attemptQuestionId: number;
+  questionNo: number;
+  cardId: number;
+  term: string;
+  options: string[];
+}
+
+export interface QuizAttempt {
+  attemptId: number;
+  studySet: {
+    id: number;
+    title: string;
+    description: string;
+  };
+  questions: ServerQuestion[];
+  startedAt: string;
+}
+
 export interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
-  correctAnswer: string;
+  correctAnswer: string; // Vẫn giữ cho client-side quiz cũ
   relatedLink?: string; 
 }
 
@@ -69,9 +89,9 @@ export interface User {
   name: string;
   email: string;
   roles: UserRole[]; 
-  permissions: string[]; // List of permission keys (e.g. "CREATE_POST")
+  permissions: string[];
   avatar?: string;
-  darkMode?: boolean; // Theme preference from API
+  darkMode?: boolean;
 }
 
 export interface LoginCredentials {
@@ -171,5 +191,4 @@ export interface Notification {
 
 export type ThemeMode = 'light' | 'dark';
 
-// --- Event Themes ---
 export type EventTheme = 'DEFAULT' | 'CHRISTMAS' | 'TET' | 'AUTUMN';

@@ -16,12 +16,13 @@ import SettingsView from './components/SettingsView';
 import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
-import { StudySet, User, AiGenerationRecord, Review, EventTheme } from './types';
+import { StudySet, User, AiGenerationRecord, Review, EventTheme, QuizAttempt } from './types';
 import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2, Mail, Sparkles, LayoutDashboard, PlusCircle, Library, Users } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from './services/studySetService';
+import { quizService } from './services/quizService';
 
 // --- Global Event Theme Overlay Component ---
 const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => {
@@ -119,7 +120,6 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
 // --- Mobile Navigation Bar ---
 const MobileNavBar: React.FC = () => {
     const location = useLocation();
-    const { t } = useTranslation();
     
     const menuItems = [
         { path: '/dashboard', icon: LayoutDashboard, label: 'Trang chủ' },
@@ -174,7 +174,6 @@ const MainLayout: React.FC<{ children: React.ReactNode, sets: StudySet[], aiHist
             onSelectHistory={() => window.location.hash = `#/ai-planner`} 
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           />
-          {/* Mobile sub-menu bar */}
           <MobileNavBar />
           
           <main className="flex-1 overflow-y-auto relative scroll-smooth custom-scrollbar">
@@ -248,24 +247,24 @@ const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggle
 const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLASHCARD' | 'QUIZ', onAddReview?: any }) => {
     const { setId } = useParams();
     const { user } = useAuth();
+    const { addNotification } = useApp();
     const navigate = useNavigate();
+    
     const [fullSet, setFullSet] = useState<StudySet | null>(null);
+    const [quizAttempt, setQuizAttempt] = useState<QuizAttempt | null>(null);
     const [isFetching, setIsFetching] = useState(false);
     const fetchingId = useRef<string | null>(null);
 
     const handleBackToDetail = useCallback(() => navigate(`/set/${setId}`), [navigate, setId]);
 
     useEffect(() => {
-        const fetchFullData = async () => {
+        const fetchAllNeededData = async () => {
             if (!setId || fetchingId.current === setId) return;
-            const existing = sets.find(s => s.id === setId);
-            if (existing && existing.cards && existing.cards.length > 0) {
-                setFullSet(existing);
-                return;
-            }
             fetchingId.current = setId;
             setIsFetching(true);
+            
             try {
+                // 1. Fetch Flashcard/StudySet Data
                 const response = await studySetService.getStudySetById(setId);
                 if (response.code === 1000) {
                     const data = response.result;
@@ -285,13 +284,21 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
                         privacy: data.privacy || 'PUBLIC'
                     });
                 }
+
+                // 2. If mode is QUIZ, Fetch Attempt Data from Server
+                if (mode === 'QUIZ') {
+                    const attempt = await quizService.startQuiz(setId);
+                    setQuizAttempt(attempt);
+                }
+
             } catch (e) {
-                console.error("Failed to fetch full set", e);
+                console.error("Failed to fetch full study/quiz data", e);
+                addNotification("Lỗi tải dữ liệu. Vui lòng thử lại.", "error");
                 fetchingId.current = null;
             } finally { setIsFetching(false); }
         };
-        fetchFullData();
-    }, [setId, sets]);
+        fetchAllNeededData();
+    }, [setId, mode, addNotification]);
 
     if (isFetching) return <div className="min-h-screen flex items-center justify-center"><ThemeLoader size={48} /></div>;
     if (!fullSet) return <div className="p-8 text-center text-gray-500">Học phần không tồn tại hoặc lỗi tải dữ liệu.</div>;
@@ -304,7 +311,17 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
                     <button onClick={() => navigate(`/quiz/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'QUIZ' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><GraduationCap size={18} /> Kiểm tra</button>
                 </div>
             </div>
-            {mode === 'FLASHCARD' ? <FlashcardView set={fullSet} onBack={handleBackToDetail} /> : <QuizView set={fullSet} currentUser={user!} onBack={handleBackToDetail} onAddReview={onAddReview} />}
+            {mode === 'FLASHCARD' ? (
+                <FlashcardView set={fullSet} onBack={handleBackToDetail} />
+            ) : (
+                <QuizView 
+                    set={fullSet} 
+                    currentUser={user!} 
+                    onBack={handleBackToDetail} 
+                    onAddReview={onAddReview}
+                    serverAttempt={quizAttempt || undefined}
+                />
+            )}
         </div>
     );
 };
