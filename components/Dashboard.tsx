@@ -32,7 +32,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Guard Ref để ngăn chặn gọi trùng lặp
   const fetchingTaskRef = useRef<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -46,6 +45,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       if (fetchingTaskRef.current === taskKey) return;
       
       fetchingTaskRef.current = taskKey;
+      if (page === 0) setIsInitialLoading(true);
       setIsLoading(true);
       
       try {
@@ -95,7 +95,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
     const hasMore = currentPage < totalPages - 1;
     
     observerRef.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
+        if (entries[0].isIntersecting && hasMore && !isLoading && !isInitialLoading) {
             const nextPage = currentPage + 1;
             setCurrentPage(nextPage);
             fetchData(nextPage);
@@ -104,7 +104,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
 
     if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
     return () => { if (observerRef.current) observerRef.current.disconnect(); };
-  }, [currentPage, totalPages, isLoading, isLibrary, libraryTab]);
+  }, [currentPage, totalPages, isLoading, isInitialLoading, isLibrary, libraryTab]);
 
   const filteredSets = useMemo(() => {
     let base = displaySets;

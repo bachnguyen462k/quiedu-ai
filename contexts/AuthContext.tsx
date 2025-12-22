@@ -26,22 +26,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { setThemeMode } = useApp();
   
-  // Flag khóa khởi tạo
   const isInitializing = useRef(false);
 
   useEffect(() => {
-    // Nếu đã/đang khởi tạo thì thoát ngay
+    // Nếu đang khởi tạo, không làm gì cả, để tiến trình đầu tiên chạy nốt
     if (isInitializing.current) return;
 
     const token = localStorage.getItem('accessToken');
     if (!token) {
         setIsLoading(false);
-        isInitializing.current = true;
+        isInitializing.current = true; // Vẫn đánh dấu đã init xong (dù không có user)
         return;
     }
 
     const initAuth = async () => {
-        isInitializing.current = true; // Khóa ngay lập tức trước khi await
+        isInitializing.current = true; 
         try {
             const userData = await authService.getCurrentUser();
             setUser(userData);

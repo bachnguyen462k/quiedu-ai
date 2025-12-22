@@ -42,44 +42,54 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [showQrModal, setShowQrModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   
-  // Ref để theo dõi và khóa việc load dữ liệu
-  const isFetchingId = useRef<string | null>(null);
+  const fetchingIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Nếu ID không hợp lệ hoặc ID này đang được tải/đã tải xong thì không chạy tiếp
-    if (!metadata.id || isFetchingId.current === metadata.id) return;
-    
-    // Đánh dấu ID này đang được xử lý ngay lập tức (trước await)
-    isFetchingId.current = metadata.id;
+    if (!metadata.id) return;
+
+    // Nếu ID này đã được load xong, tắt loading và thoát
+    if (preview && preview.id.toString() === metadata.id) {
+        setIsLoading(false);
+        return;
+    }
+
+    // Nếu đang tải dở ID này, không làm gì cả (để tiến trình kia chạy nốt)
+    if (fetchingIdRef.current === metadata.id) return;
     
     let isMounted = true;
+    fetchingIdRef.current = metadata.id;
+
     const fetchPreviewData = async () => {
         setIsLoading(true);
         try {
             const response = await studySetService.getStudySetPreviewById(metadata.id);
-            if (isMounted && response.code === 1000) {
-                setPreview(response.result);
-            } else if (isMounted) {
-                isFetchingId.current = null; // Reset để có thể thử lại nếu lỗi logic
-                addNotification("Học phần không tồn tại", "error");
-                onBack();
+            if (isMounted) {
+                if (response.code === 1000) {
+                    setPreview(response.result);
+                } else {
+                    addNotification("Học phần không tồn tại", "error");
+                    onBack();
+                }
             }
         } catch (error) {
             console.error("Fetch preview error:", error);
             if (isMounted) {
-                isFetchingId.current = null; // Reset để có thể thử lại nếu lỗi mạng
                 addNotification("Lỗi tải thông tin học phần", "error");
                 onBack();
             }
         } finally {
-            if (isMounted) setIsLoading(false);
+            if (isMounted) {
+                setIsLoading(false);
+                // Giữ ref để không fetch lại khi re-render vặt, 
+                // nhưng nếu metadata.id thay đổi logic trên sẽ xử lý
+            }
         }
     };
 
     fetchPreviewData();
     
     return () => { isMounted = false; };
-  }, [metadata.id, onBack, addNotification]); 
+  }, [metadata.id, onBack]); 
 
   if (isLoading || !preview) {
       return (
