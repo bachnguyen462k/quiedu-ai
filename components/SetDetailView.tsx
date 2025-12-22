@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { StudySet } from '../types';
-import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Languages } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../contexts/AppContext';
 import { studySetService } from '../services/studySetService';
@@ -15,7 +15,7 @@ interface SetDetailViewProps {
   onToggleFavorite?: (setId: string) => void;
 }
 
-interface SetPreview {
+interface SetPreviewResponse {
   id: number;
   title: string;
   description: string;
@@ -36,42 +36,42 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const { t } = useTranslation();
   const { addNotification } = useApp();
   
-  const [preview, setPreview] = useState<SetPreview | null>(null);
+  const [preview, setPreview] = useState<SetPreviewResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
-    const fetchPreview = async () => {
+    const fetchPreviewData = async () => {
         if (!metadata.id) return;
         setIsLoading(true);
         try {
-            // Gọi API Preview để lấy thông tin chung trước khi làm bài
+            // Sử dụng API preview để lấy thông tin tổng quan nhanh chóng
             const response = await studySetService.getStudySetPreviewById(metadata.id);
             if (response.code === 1000) {
                 setPreview(response.result);
             } else {
-                addNotification("Không thể lấy thông tin bài tập", "error");
+                addNotification("Học phần không tồn tại", "error");
                 onBack();
             }
         } catch (error) {
-            console.error("Preview fetch error", error);
-            addNotification("Lỗi kết nối máy chủ", "error");
+            console.error("Fetch preview error:", error);
+            addNotification("Lỗi tải thông tin học phần", "error");
             onBack();
         } finally {
             setIsLoading(false);
         }
     };
 
-    fetchPreview();
-  }, [metadata.id, addNotification]);
+    fetchPreviewData();
+  }, [metadata.id, addNotification, onBack]);
 
   if (isLoading || !preview) {
       return (
           <div className="min-h-[60vh] flex flex-col items-center justify-center animate-fade-in">
               <ThemeLoader size={48} className="mb-4" />
-              <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Đang tải thông tin chuẩn bị...</p>
+              <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Đang chuẩn bị học phần...</p>
           </div>
       );
   }
@@ -122,6 +122,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Left: Main Details */}
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white dark:bg-gray-855 p-10 rounded-[40px] shadow-sm border border-gray-100 dark:border-gray-800 transition-colors relative overflow-hidden">
             <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
@@ -129,12 +130,15 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
             </div>
 
             <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex flex-wrap items-center gap-3 mb-6">
                     <span className="bg-brand-blue/10 text-brand-blue px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">
                         {preview.topic || 'Tổng hợp'}
                     </span>
                     <span className="bg-orange-100 text-brand-orange px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
                         <Zap size={10} fill="currentColor" /> {preview.totalQuestions} Câu hỏi
+                    </span>
+                    <span className="bg-green-100 text-green-600 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                        <Languages size={10} /> {preview.language || 'VN'}
                     </span>
                 </div>
                 
@@ -154,13 +158,17 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                         <span className="font-bold text-gray-700 dark:text-gray-300">{formattedDate}</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Lượt học</span>
-                        <span className="font-bold text-gray-700 dark:text-gray-300">{preview.totalAttempts || 0} lần</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tổng lượt thi</span>
+                        <div className="flex items-center gap-1.5 font-bold text-gray-700 dark:text-gray-300">
+                            <Users size={14} className="text-brand-blue" />
+                            {preview.totalAttempts || 0}
+                        </div>
                     </div>
                 </div>
             </div>
           </div>
 
+          {/* Guidelines / AI Notice */}
           <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-[32px] border border-indigo-100 dark:border-indigo-900/30 transition-colors">
             <h3 className="font-black text-indigo-900 dark:text-indigo-300 mb-6 flex items-center gap-3 uppercase tracking-tighter text-lg">
                 <Info size={24} /> {t('set_detail.info_title')}
@@ -170,9 +178,9 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                 <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
                     <div className="flex items-center gap-3 mb-3">
                         <Timer className="text-brand-blue" size={20} />
-                        <span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Thời gian dự kiến</span>
+                        <span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Thời gian ước tính</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{preview.durationMinutes || Math.ceil(preview.totalQuestions * 1.5)} phút</span> để hoàn thành bài tập này.</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{preview.durationMinutes || 15} phút</span> để hoàn thành bộ câu hỏi này.</p>
                 </div>
 
                 <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
@@ -180,20 +188,21 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                         <ShieldCheck className="text-brand-orange" size={20} />
                         <span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Độ tin cậy</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Ngôn ngữ: <span className="text-brand-orange font-black uppercase">{preview.language || 'VN'}</span>. Đã được AI xác thực.</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Nội dung đã được kiểm duyệt bởi hệ thống <span className="text-brand-orange font-black">BrainQnA AI</span>.</p>
                 </div>
             </div>
 
             <div className="mt-8 flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 rounded-3xl bg-white/30 dark:bg-gray-900/20 text-center">
                 <Lock size={32} className="text-indigo-400 mb-4" />
-                <h4 className="font-bold text-indigo-900 dark:text-indigo-200 text-lg mb-2">Xem trước giới hạn</h4>
+                <h4 className="font-bold text-indigo-900 dark:text-indigo-200 text-lg mb-2">Chế độ xem trước</h4>
                 <p className="text-sm text-indigo-700/60 dark:text-indigo-400/60 max-w-sm font-medium">
-                    Hãy bắt đầu học để xem toàn bộ {preview.totalQuestions} câu hỏi và ghi lại kết quả học tập của bạn.
+                    Nhấn bắt đầu để xem toàn bộ {preview.totalQuestions} câu hỏi và bắt đầu quá trình ôn tập của bạn.
                 </p>
             </div>
           </div>
         </div>
 
+        {/* Right: Mode Selection & Stats */}
         <div className="space-y-6">
             <div className="bg-white dark:bg-gray-855 p-8 rounded-[40px] shadow-2xl border border-brand-blue/10 dark:border-gray-800 sticky top-24 transition-colors">
                 <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-2">
@@ -234,7 +243,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
                 <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800">
                     <div className="flex justify-between items-end mb-4">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('set_detail.stats_title')}</p>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Đánh giá chung</p>
                         <div className="flex items-center gap-1 text-yellow-400">
                              <Star size={14} fill="currentColor" />
                              <span className="text-sm font-black text-gray-900 dark:text-white">{preview.rating?.toFixed(1) || '5.0'}</span>
@@ -246,12 +255,12 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                                 <div className="bg-green-500 h-full rounded-full" style={{ width: `${preview.successRate || 100}%` }}></div>
                             </div>
                          </div>
-                         <span className="text-xs font-black text-gray-500 dark:text-gray-400 whitespace-nowrap">{preview.successRate || 100}% thành công</span>
+                         <span className="text-xs font-black text-gray-500 dark:text-gray-400 whitespace-nowrap">{preview.successRate || 100}% độ khó</span>
                     </div>
 
                     <div className="mt-8">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                             <Share2 size={12} /> Chia sẻ học phần
+                             <Share2 size={12} /> Chia sẻ với bạn bè
                         </p>
                         <div className="flex gap-2">
                             <div 

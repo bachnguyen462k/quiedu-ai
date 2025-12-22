@@ -2,7 +2,7 @@
 import apiClient from './apiClient';
 
 export interface StudyCardRequest {
-  id?: number; // Thêm ID cho trường hợp update
+  id?: number; 
   term: string;
   definition: string;
   options: string[];
@@ -14,8 +14,8 @@ export interface CreateStudySetRequest {
   language: string;
   title: string;
   description: string;
-  type: string; // MANUAL, AI_TOPIC, AI_FILE, AI_TEXTBOOK
-  status: string; // ACTIVE, DRAFT, etc.
+  type: string; 
+  status: string; 
   cards: StudyCardRequest[];
 }
 
@@ -24,10 +24,6 @@ export interface UpdateStudySetRequest extends CreateStudySetRequest {
 }
 
 export const studySetService = {
-  /**
-   * Lưu học phần mới xuống backend.
-   * POST /study-sets
-   */
   createStudySet: async (data: CreateStudySetRequest): Promise<any> => {
     try {
       const response = await apiClient.post('/study-sets', data);
@@ -38,10 +34,6 @@ export const studySetService = {
     }
   },
 
-  /**
-   * Cập nhật học phần đã tồn tại.
-   * PUT /study-sets
-   */
   updateStudySet: async (data: UpdateStudySetRequest): Promise<any> => {
     try {
       const response = await apiClient.put('/study-sets', data);
@@ -52,10 +44,6 @@ export const studySetService = {
     }
   },
 
-  /**
-   * Lấy chi tiết học phần theo ID.
-   * GET /study-sets/{id}
-   */
   getStudySetById: async (id: number | string): Promise<any> => {
     try {
       const response = await apiClient.get(`/study-sets/${id}`);
@@ -67,8 +55,8 @@ export const studySetService = {
   },
 
   /**
-   * Lấy thông tin xem trước của học phần.
-   * GET /study-sets/preview/{id}
+   * Lấy thông tin xem trước (preview) của học phần.
+   * Dữ liệu trả về không bao gồm danh sách cards chi tiết để tối ưu tốc độ.
    */
   getStudySetPreviewById: async (id: number | string): Promise<any> => {
     try {
@@ -80,10 +68,6 @@ export const studySetService = {
     }
   },
 
-  /**
-   * Lấy danh sách học phần của tôi (Phân trang).
-   * GET /study-sets/my?page={page}&size={size}
-   */
   getMyStudySets: async (page: number = 0, size: number = 20): Promise<any> => {
     try {
       const response = await apiClient.get('/study-sets/my', {
@@ -96,10 +80,6 @@ export const studySetService = {
     }
   },
 
-  /**
-   * Lấy danh sách học phần công khai (Toàn hệ thống).
-   * GET /study-sets?page={page}&size={size}
-   */
   getPublicStudySets: async (page: number = 0, size: number = 20): Promise<any> => {
     try {
       const response = await apiClient.get('/study-sets', {
