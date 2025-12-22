@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { StudySet, QuizQuestion, Review, User, QuizAttempt, ServerQuestion } from '../types';
-import { ArrowLeft, CheckCircle, XCircle, Award, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle, Star, MessageSquare, ExternalLink, Loader2, Timer } from 'lucide-react';
+import { StudySet, Review, User, QuizAttempt, ServerQuestion } from '../types';
+import { ArrowLeft, CheckCircle, XCircle, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle, Star, MessageSquare, Loader2, Timer } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
@@ -21,15 +21,18 @@ const COLORS = ['#10B981', '#EF4444', '#E5E7EB'];
 const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddReview, serverAttempt }) => {
   const { t } = useTranslation();
   const { addNotification } = useApp();
+  
+  // Quiz State
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  
-  // Track user selection: [answer_string, answer_string, ...]
   const [userSelections, setUserSelections] = useState<(string | null)[]>([]); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
+
+  // Timer State
+  const [seconds, setSeconds] = useState(0);
 
   // Result state (filled after submission and review fetch)
   const [score, setScore] = useState(0);
@@ -39,6 +42,22 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
+  // Timer Effect
+  useEffect(() => {
+    if (isCompleted || isSubmitting) return;
+    const interval = setInterval(() => {
+      setSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isCompleted, isSubmitting]);
+
+  // Format seconds to MM:SS
+  const formatTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Initialize selections based on question count
   useEffect(() => {
@@ -96,15 +115,15 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
               answer: userSelections[idx] || ""
           }));
 
-          // 1. Gửi lệnh nộp bài
+          // 1. Gửi lệnh nộp bài qua POST /quiz/submit/{attemptId}
           const submitResponse = await quizService.submitQuiz(serverAttempt.attemptId, finalAnswers);
           
           if (submitResponse.code === 1000) {
-              // 2. Nếu nộp thành công, gọi API lấy dữ liệu review chi tiết
+              // 2. Nếu nộp thành công, gọi API lấy dữ liệu review chi tiết List<QuizReviewItemResponse>
               const reviewResponse = await quizService.getQuizReview(serverAttempt.attemptId);
               
               if (reviewResponse.code === 1000) {
-                  const items = reviewResponse.result; // List<QuizReviewItemResponse>
+                  const items = reviewResponse.result; 
                   const correctCount = items.filter((i: any) => i.correct).length;
                   const calculatedScore = Math.round((correctCount / items.length) * 100);
                   
@@ -115,7 +134,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                   addNotification("Nộp bài thành công!", "success");
               } else {
                   addNotification("Không thể lấy kết quả chi tiết.", "warning");
-                  setIsCompleted(true); // Vẫn chuyển màn nhưng có thể thiếu data
+                  setIsCompleted(true);
               }
           } else {
               addNotification(submitResponse.message || "Lỗi khi nộp bài", "error");
@@ -136,7 +155,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
   if (questions.length === 0) return <div className="p-20 text-center dark:text-white flex flex-col items-center gap-4"><Loader2 className="animate-spin text-brand-blue" /> {t('quiz.generating')}</div>;
 
-  // --- VIEW: RESULTS ---
+  // --- VIEW: RESULTS (Màn hình kết quả) ---
   if (isCompleted) {
     const percentage = score;
     const data = [
@@ -164,9 +183,9 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 </div>
                 
                 <div className="text-6xl font-black text-brand-blue dark:text-blue-400 mb-2">{percentage}%</div>
-                <p className="text-gray-500 dark:text-gray-400 mb-8 font-bold uppercase tracking-widest text-xs">
-                    KẾT QUẢ ĐÃ ĐƯỢC AI XÁC THỰC
-                </p>
+                <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 mb-8 font-bold uppercase tracking-widest text-xs">
+                    <Clock size={14} /> Thời gian hoàn thành: {formatTime(seconds)}
+                </div>
 
                 <div className="flex justify-center gap-4">
                     <button onClick={onBack} className="px-8 py-3.5 rounded-2xl border-2 border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-black uppercase text-xs tracking-widest transition-all">
@@ -212,7 +231,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                                 </h4>
                                 {item.timeSpentMs > 0 && (
                                     <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ml-4">
-                                        <Clock size={12} /> {(item.timeSpentMs / 1000).toFixed(1)}s
+                                        <Timer size={12} /> {(item.timeSpentMs / 1000).toFixed(1)}s
                                     </span>
                                 )}
                             </div>
@@ -252,7 +271,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     );
   }
 
-  // --- VIEW: REVIEW BEFORE SUBMIT ---
+  // --- VIEW: REVIEW SCREEN ---
   if (isReviewing) {
       return (
         <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
@@ -301,7 +320,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
       );
   }
 
-  // --- VIEW: ACTIVE QUIZ ---
+  // --- VIEW: ACTIVE QUIZ (Giao diện làm bài) ---
   const currentQuestion = questions[currentQuestionIndex];
   const answeredCount = userSelections.filter(a => a !== null).length;
   const progress = (answeredCount / questions.length) * 100;
@@ -310,19 +329,27 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-10 animate-fade-in transition-colors">
       <div className="flex-1">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-8 gap-4">
             <button onClick={onBack} className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-black uppercase text-xs tracking-widest flex items-center gap-2 transition-colors">
               <ArrowLeft size={18} /> {t('quiz.exit')}
             </button>
-            <div className="flex items-center gap-4 flex-1 max-w-xs justify-end">
-                <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
+            
+            <div className="flex-1 flex flex-col items-center">
+                <div className="flex items-center gap-2 mb-2">
+                    <Clock size={18} className="text-brand-blue" />
+                    <span className="text-xl font-black text-gray-900 dark:text-white font-mono">{formatTime(seconds)}</span>
+                </div>
+                <div className="w-full max-w-md bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
                     <div className="bg-brand-blue h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div>
                 </div>
-                <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase whitespace-nowrap tracking-widest">{answeredCount}/{questions.length}</span>
             </div>
-            <button onClick={() => setShowGrid(!showGrid)} className="lg:hidden ml-4 p-2.5 text-brand-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl transition-all active:scale-90">
-                <LayoutGrid size={22} />
-            </button>
+
+            <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase whitespace-nowrap tracking-widest">{answeredCount}/{questions.length}</span>
+                <button onClick={() => setShowGrid(!showGrid)} className="lg:hidden p-2.5 text-brand-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl transition-all active:scale-90">
+                    <LayoutGrid size={22} />
+                </button>
+            </div>
           </div>
 
           <div className="bg-white dark:bg-gray-855 rounded-[40px] shadow-sm border-2 border-gray-50 dark:border-gray-800 p-8 md:p-12 mb-8 min-h-[260px] flex flex-col justify-center relative overflow-hidden transition-colors">

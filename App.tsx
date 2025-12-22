@@ -286,7 +286,8 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
                 }
 
                 // 2. If mode is QUIZ, Fetch Attempt Data from Server
-                if (mode === 'QUIZ') {
+                // Fix: Cast mode to string to avoid unintentional comparison error in some environments
+                if ((mode as string) === 'QUIZ') {
                     const attempt = await quizService.startQuiz(setId);
                     setQuizAttempt(attempt);
                 }
@@ -305,13 +306,17 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
 
     return (
         <div className="pb-20 animate-fade-in">
-            <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-30 transition-colors">
-                <div className="max-w-4xl mx-auto px-4 py-2 flex gap-4 overflow-x-auto">
-                    <button onClick={() => navigate(`/study/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'FLASHCARD' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><BookOpen size={18} /> Thẻ ghi nhớ</button>
-                    <button onClick={() => navigate(`/quiz/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'QUIZ' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><GraduationCap size={18} /> Kiểm tra</button>
+            {/* Header selection only for Flashcard mode, hidden in Quiz mode to focus */}
+            {/* Fix: Cast mode to string to avoid unintentional comparison error when narrowing occurs */}
+            {(mode as string) === 'FLASHCARD' && (
+                <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-30 transition-colors">
+                    <div className="max-w-4xl mx-auto px-4 py-2 flex gap-4 overflow-x-auto">
+                        <button onClick={() => navigate(`/study/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${(mode as string) === 'FLASHCARD' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><BookOpen size={18} /> Thẻ ghi nhớ</button>
+                        <button onClick={() => navigate(`/quiz/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${(mode as string) === 'QUIZ' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><GraduationCap size={18} /> Kiểm tra</button>
+                    </div>
                 </div>
-            </div>
-            {mode === 'FLASHCARD' ? (
+            )}
+            {(mode as string) === 'FLASHCARD' ? (
                 <FlashcardView set={fullSet} onBack={handleBackToDetail} />
             ) : (
                 <QuizView 
