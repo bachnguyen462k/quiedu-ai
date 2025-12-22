@@ -211,13 +211,16 @@ const AppRoutes: React.FC = () => {
 const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggleFavorite: (id: string) => void }) => {
     const { setId } = useParams();
     const navigate = useNavigate();
-    // Ổn định metadata bằng useMemo để không trigger useEffect ở con khi App re-render
+    const handleBack = useCallback(() => navigate(-1), [navigate]);
+    const handleStartFlash = useCallback(() => navigate(`/study/${setId}`), [navigate, setId]);
+    const handleStartQuiz = useCallback(() => navigate(`/quiz/${setId}`), [navigate, setId]);
+
     const setPlaceholder = useMemo(() => {
         const existing = sets.find(s => s.id === setId);
         return existing || { id: setId || '', title: 'Đang tải...', description: '', author: '...', createdAt: Date.now(), cards: [], privacy: 'PUBLIC' } as StudySet;
     }, [sets, setId]);
     
-    return <SetDetailView set={setPlaceholder} onBack={() => navigate(-1)} onStartFlashcard={() => navigate(`/study/${setId}`)} onStartQuiz={() => navigate(`/quiz/${setId}`)} onToggleFavorite={onToggleFavorite} />;
+    return <SetDetailView set={setPlaceholder} onBack={handleBack} onStartFlashcard={handleStartFlash} onStartQuiz={handleStartQuiz} onToggleFavorite={onToggleFavorite} />;
 };
 
 const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLASHCARD' | 'QUIZ', onAddReview?: any }) => {
@@ -227,6 +230,8 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
     const [fullSet, setFullSet] = useState<StudySet | null>(null);
     const [isFetching, setIsFetching] = useState(false);
     const fetchingId = useRef<string | null>(null);
+
+    const handleBackToDetail = useCallback(() => navigate(`/set/${setId}`), [navigate, setId]);
 
     useEffect(() => {
         const fetchFullData = async () => {
@@ -282,7 +287,7 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
                     <button onClick={() => navigate(`/quiz/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'QUIZ' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><GraduationCap size={18} /> Kiểm tra</button>
                 </div>
             </div>
-            {mode === 'FLASHCARD' ? <FlashcardView set={fullSet} onBack={() => navigate(`/set/${setId}`)} /> : <QuizView set={fullSet} currentUser={user!} onBack={() => navigate(`/set/${setId}`)} onAddReview={onAddReview} />}
+            {mode === 'FLASHCARD' ? <FlashcardView set={fullSet} onBack={handleBackToDetail} /> : <QuizView set={fullSet} currentUser={user!} onBack={handleBackToDetail} onAddReview={onAddReview} />}
         </div>
     );
 };

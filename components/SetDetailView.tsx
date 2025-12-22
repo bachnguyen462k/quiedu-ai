@@ -42,22 +42,28 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [showQrModal, setShowQrModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   
+  // Guard Ref: Lưu ID của học phần đang được tải
   const fetchingIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!metadata.id) return;
 
-    // Nếu ID này đã được load xong, tắt loading và thoát
+    // Trường hợp 1: Dữ liệu đã có sẵn trong state (phù hợp với ID hiện tại)
     if (preview && preview.id.toString() === metadata.id) {
         setIsLoading(false);
         return;
     }
 
-    // Nếu đang tải dở ID này, không làm gì cả (để tiến trình kia chạy nốt)
-    if (fetchingIdRef.current === metadata.id) return;
+    // Trường hợp 2: Nếu effect này đang chạy dở cho ID này, không làm gì cả
+    if (fetchingIdRef.current === metadata.id) {
+        // Tuy nhiên, nếu preview đã có dữ liệu từ lần chạy trước đó thành công, tắt loading
+        if (preview) setIsLoading(false);
+        return;
+    }
     
-    let isMounted = true;
+    // Đánh dấu bắt đầu fetch cho ID này
     fetchingIdRef.current = metadata.id;
+    let isMounted = true;
 
     const fetchPreviewData = async () => {
         setIsLoading(true);
@@ -78,18 +84,15 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                 onBack();
             }
         } finally {
-            if (isMounted) {
-                setIsLoading(false);
-                // Giữ ref để không fetch lại khi re-render vặt, 
-                // nhưng nếu metadata.id thay đổi logic trên sẽ xử lý
-            }
+            // Quan trọng: Phải tắt loading bất kể kết quả thế nào (nếu component vẫn mount)
+            if (isMounted) setIsLoading(false);
         }
     };
 
     fetchPreviewData();
     
     return () => { isMounted = false; };
-  }, [metadata.id, onBack]); 
+  }, [metadata.id, onBack, addNotification, preview]); 
 
   if (isLoading || !preview) {
       return (
