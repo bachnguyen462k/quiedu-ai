@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { User, LoginCredentials } from '../types';
 import { authService } from '../services/authService';
 import apiClient from '../services/apiClient';
@@ -14,7 +14,6 @@ interface AuthContextType {
   loginWithGoogle: (idToken: string, roleId: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
-  // Recovery methods
   requestPasswordReset: (email: string) => Promise<boolean>;
   verifyResetCode: (email: string, code: string) => Promise<boolean>;
   confirmPasswordReset: (email: string, newPassword: string) => Promise<boolean>;
@@ -25,36 +24,34 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  
-  // Use setThemeMode from AppContext to sync theme without triggering API update loop
   const { setThemeMode } = useApp();
+  
+  // Flag để ngăn chặn việc gọi API 2 lần do StrictMode hoặc re-render nhanh
+  const hasInitialized = useRef(false);
 
-  // Khôi phục session khi reload trang
   useEffect(() => {
+    if (hasInitialized.current) return;
+    
     const initAuth = async () => {
       const token = localStorage.getItem('accessToken');
-      
       if (token) {
         try {
-            // Gọi API để lấy thông tin user mới nhất thay vì dùng localStorage cũ
             const userData = await authService.getCurrentUser();
             setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData)); // Cập nhật cache local
+            localStorage.setItem('user', JSON.stringify(userData));
             
-            // Sync theme from API
-            // Check for value existence instead of strict boolean type to be safer
             if (userData.darkMode !== undefined && userData.darkMode !== null) {
                 setThemeMode(userData.darkMode ? 'dark' : 'light');
             }
         } catch (error) {
             console.error("Session expired or invalid", error);
-            // Nếu token hết hạn hoặc lỗi, xóa session
             localStorage.removeItem('accessToken');
             localStorage.removeItem('user');
             setUser(null);
         }
       }
       setIsLoading(false);
+      hasInitialized.current = true;
     };
 
     initAuth();
@@ -64,17 +61,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       const data = await authService.login(credentials); 
-
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
 
-      // Sync theme from API
-      // Check for value existence instead of strict boolean type to be safer
       if (data.user.darkMode !== undefined && data.user.darkMode !== null) {
           const targetTheme = data.user.darkMode ? 'dark' : 'light';
           setThemeMode(targetTheme);
-          // Force local storage update immediately to prevent race conditions
           localStorage.setItem('theme', targetTheme);
       }
     } catch (error) {
@@ -92,7 +85,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           localStorage.setItem('accessToken', data.accessToken);
           localStorage.setItem('user', JSON.stringify(data.user));
           setUser(data.user);
-          // Register mock usually returns default theme, but sync anyway
           if (data.user.darkMode !== undefined && data.user.darkMode !== null) {
               setThemeMode(data.user.darkMode ? 'dark' : 'light');
           }
@@ -135,7 +127,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
         setUser(null);
-        // Optional: Reset to light mode or keep current preference on logout
     }
   };
 
@@ -144,7 +135,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
-  // --- Password Recovery Wrappers ---
   const requestPasswordReset = async (email: string) => {
       return await authService.sendVerificationCode(email);
   };

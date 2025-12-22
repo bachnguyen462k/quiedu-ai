@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StudySet } from '../types';
 import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Languages } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -41,31 +41,41 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  
+  // Ref để theo dõi việc load dữ liệu
+  const lastFetchedId = useRef<string | null>(null);
 
   useEffect(() => {
+    // Chỉ gọi API nếu chưa gọi cho ID này
+    if (!metadata.id || lastFetchedId.current === metadata.id) return;
+    
+    let isMounted = true;
     const fetchPreviewData = async () => {
-        if (!metadata.id) return;
         setIsLoading(true);
         try {
-            // Sử dụng API preview để lấy thông tin tổng quan nhanh chóng
             const response = await studySetService.getStudySetPreviewById(metadata.id);
-            if (response.code === 1000) {
+            if (isMounted && response.code === 1000) {
                 setPreview(response.result);
-            } else {
+                lastFetchedId.current = metadata.id;
+            } else if (isMounted) {
                 addNotification("Học phần không tồn tại", "error");
                 onBack();
             }
         } catch (error) {
             console.error("Fetch preview error:", error);
-            addNotification("Lỗi tải thông tin học phần", "error");
-            onBack();
+            if (isMounted) {
+                addNotification("Lỗi tải thông tin học phần", "error");
+                onBack();
+            }
         } finally {
-            setIsLoading(false);
+            if (isMounted) setIsLoading(false);
         }
     };
 
     fetchPreviewData();
-  }, [metadata.id, addNotification, onBack]);
+    
+    return () => { isMounted = false; };
+  }, [metadata.id]); // Rút gọn dependency: Chỉ chạy lại khi ID học phần thay đổi
 
   if (isLoading || !preview) {
       return (
@@ -122,7 +132,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Left: Main Details */}
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white dark:bg-gray-855 p-10 rounded-[40px] shadow-sm border border-gray-100 dark:border-gray-800 transition-colors relative overflow-hidden">
             <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
@@ -168,7 +177,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
             </div>
           </div>
 
-          {/* Guidelines / AI Notice */}
           <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-[32px] border border-indigo-100 dark:border-indigo-900/30 transition-colors">
             <h3 className="font-black text-indigo-900 dark:text-indigo-300 mb-6 flex items-center gap-3 uppercase tracking-tighter text-lg">
                 <Info size={24} /> {t('set_detail.info_title')}
@@ -202,7 +210,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
           </div>
         </div>
 
-        {/* Right: Mode Selection & Stats */}
         <div className="space-y-6">
             <div className="bg-white dark:bg-gray-855 p-8 rounded-[40px] shadow-2xl border border-brand-blue/10 dark:border-gray-800 sticky top-24 transition-colors">
                 <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-2">
