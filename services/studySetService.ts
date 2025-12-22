@@ -80,5 +80,21 @@ export const studySetService = {
       console.error("StudySetService: Failed to fetch my study sets", error);
       throw error;
     }
+  },
+
+  /**
+   * Lấy danh sách học phần công khai (Toàn hệ thống).
+   * GET /study-sets?page={page}&size={size}
+   */
+  getPublicStudySets: async (page: number = 0, size: number = 20): Promise<any> => {
+    try {
+      const response = await apiClient.get('/study-sets', {
+        params: { page, size }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("StudySetService: Failed to fetch public study sets", error);
+      throw error;
+    }
   }
 };

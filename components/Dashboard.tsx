@@ -1,7 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, Review } from '../types';
-/* Added BookOpen to the lucide-react imports to fix 1-based line error at 163 */
 import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
@@ -24,25 +23,11 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const { t } = useTranslation();
   const { addNotification } = useApp();
   
-  const subjectsList = [
-    { key: 'all', label: t('dashboard.subjects.all') },
-    { key: 'math', label: t('dashboard.subjects.math') },
-    { key: 'physics', label: t('dashboard.subjects.physics') },
-    { key: 'chemistry', label: t('dashboard.subjects.chemistry') },
-    { key: 'biology', label: t('dashboard.subjects.biology') },
-    { key: 'english', label: t('dashboard.subjects.english') },
-    { key: 'history', label: t('dashboard.subjects.history') },
-    { key: 'geography', label: t('dashboard.subjects.geography') },
-    { key: 'civics', label: t('dashboard.subjects.civics') }
-  ];
-
-  const [filterSubject, setFilterSubject] = useState('all');
-  const [sortBy, setSortBy] = useState<'POPULAR' | 'NEWEST'>('POPULAR');
   const [searchQuery, setSearchQuery] = useState('');
   const [libraryTab, setLibraryTab] = useState<'SETS' | 'FAVORITES' | 'FILES'>('SETS');
   
-  // Server Pagination State
-  const [serverSets, setServerSets] = useState<StudySet[]>([]);
+  // Data State
+  const [displaySets, setDisplaySets] = useState<StudySet[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,31 +36,20 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  /* Defined trendingSets to fix 1-based line error at 186 */
+  // Trending sets derived from displaySets (or first page results)
   const trendingSets = useMemo(() => {
-    return [...localSets].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 3);
-  }, [localSets]);
-
-  /* Defined recentReviews to fix 1-based line errors at 344, 348 */
-  const recentReviews = useMemo(() => {
-    const allReviews: (Review & { setId: string; setTitle: string })[] = [];
-    localSets.forEach(set => {
-      if (set.reviews) {
-        set.reviews.forEach(review => {
-          allReviews.push({ ...review, setId: set.id, setTitle: set.title });
-        });
-      }
-    });
-    return allReviews.sort((a, b) => b.createdAt - a.createdAt).slice(0, 5);
-  }, [localSets]);
+    return [...displaySets].slice(0, 3);
+  }, [displaySets]);
 
   // --- FETCH DATA FROM SERVER ---
-  const fetchMySets = async (page: number, refresh: boolean = false) => {
-      if (!isLibrary || libraryTab !== 'SETS' || isLoading) return;
-
+  const fetchData = async (page: number, refresh: boolean = false) => {
       setIsLoading(true);
       try {
-          const response = await studySetService.getMyStudySets(page, ITEMS_PER_PAGE);
+          // Nếu là Thư viện -> Lấy học phần của tôi, Nếu là Trang chủ -> Lấy học phần công khai
+          const response = isLibrary && libraryTab === 'SETS' 
+            ? await studySetService.getMyStudySets(page, ITEMS_PER_PAGE)
+            : await studySetService.getPublicStudySets(page, ITEMS_PER_PAGE);
+
           if (response.code === 1000) {
               const { content, totalPages: total } = response.result;
               
@@ -84,25 +58,25 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   id: item.id.toString(),
                   title: item.title,
                   description: item.description,
-                  author: currentUser?.name || 'Bạn',
+                  author: item.author || 'Thành viên',
                   createdAt: new Date(item.createdAt).getTime(),
-                  privacy: 'PUBLIC',
+                  privacy: item.privacy || 'PUBLIC',
                   subject: item.topic || 'Khác',
-                  type: item.type, // Map trường type từ server
-                  status: item.status, // Map trường status từ server
-                  plays: 0,
-                  cards: []
+                  type: item.type,
+                  status: item.status,
+                  plays: item.plays || 0,
+                  cards: [] // Chỉ lấy metadata ở danh sách
               }));
 
               if (refresh) {
-                  setServerSets(mappedSets);
+                  setDisplaySets(mappedSets);
               } else {
-                  setServerSets(prev => [...prev, ...mappedSets]);
+                  setDisplaySets(prev => [...prev, ...mappedSets]);
               }
               setTotalPages(total);
           }
       } catch (error) {
-          console.error("Failed to load my sets", error);
+          console.error("Failed to load sets", error);
           addNotification("Không thể tải danh sách học phần từ máy chủ", "error");
       } finally {
           setIsLoading(false);
@@ -110,50 +84,44 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       }
   };
 
+  // Reset and fetch when switching between Library and Home
   useEffect(() => {
-    if (isLibrary && libraryTab === 'SETS') {
-        setCurrentPage(0);
-        fetchMySets(0, true);
-    } else {
-        setIsInitialLoading(false);
-    }
+    setCurrentPage(0);
+    fetchData(0, true);
   }, [isLibrary, libraryTab]);
 
+  // Infinite Scroll Logic
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
     const hasMore = currentPage < totalPages - 1;
+    
     observerRef.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore && !isLoading) {
             const nextPage = currentPage + 1;
             setCurrentPage(nextPage);
-            fetchMySets(nextPage);
+            fetchData(nextPage);
         }
     });
+
     if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
     return () => { if (observerRef.current) observerRef.current.disconnect(); };
   }, [currentPage, totalPages, isLoading, isLibrary, libraryTab]);
 
+  // Combined filtering for Search
   const filteredSets = useMemo(() => {
-    let base = isLibrary && libraryTab === 'SETS' ? serverSets : localSets;
-    if (isLibrary && currentUser) {
-        if (libraryTab === 'FAVORITES') base = localSets.filter(s => s.isFavorite);
+    let base = displaySets;
+    
+    // Nếu là Favorites tab trong Library, filter từ localSets (giả định favorites được quản lý local/sync)
+    if (isLibrary && libraryTab === 'FAVORITES') {
+        base = localSets.filter(s => s.isFavorite);
     }
-    let result = [...base].filter(s => {
-        const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || s.description.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesSubject = filterSubject === 'all' || s.subject?.toLowerCase().includes(filterSubject.toLowerCase());
-        return matchesSearch && matchesSubject;
+
+    return base.filter(s => {
+        const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             s.description.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
     });
-    if (sortBy === 'POPULAR') result.sort((a, b) => (b.plays || 0) - (a.plays || 0));
-    else result.sort((a, b) => b.createdAt - a.createdAt);
-    return result;
-  }, [serverSets, localSets, searchQuery, filterSubject, sortBy, isLibrary, libraryTab, currentUser]);
-
-  const filteredUploads = useMemo(() => {
-      if (!uploads) return [];
-      return uploads.filter(u => u.fileName.toLowerCase().includes(searchQuery.toLowerCase()) || u.result.subject.toLowerCase().includes(searchQuery.toLowerCase())).sort((a, b) => b.createdAt - a.createdAt);
-  }, [uploads, searchQuery]);
-
-  const isShowingFiles = isLibrary && libraryTab === 'FILES';
+  }, [displaySets, localSets, searchQuery, isLibrary, libraryTab]);
 
   const renderSetTypeBadge = (type?: string) => {
       switch (type) {
@@ -179,7 +147,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       );
   };
 
-  if (isInitialLoading && isLibrary && libraryTab === 'SETS') {
+  if (isInitialLoading) {
       return (
           <div className="flex flex-col items-center justify-center py-32 animate-pulse">
               <Loader2 className="animate-spin text-brand-blue mb-4" size={48} />
@@ -196,7 +164,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                 <Flame className="text-brand-orange" fill="currentColor" /> {t('dashboard.trending')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {trendingSets.map((set, idx) => (
+                {trendingSets.length > 0 ? trendingSets.map((set, idx) => (
                     <div key={set.id} onClick={() => onSelectSet(set)} className={`relative overflow-hidden rounded-3xl p-6 shadow-md border border-gray-100 dark:border-gray-800 cursor-pointer hover:shadow-xl transition-all group ${idx === 0 ? 'bg-gradient-to-br from-brand-blue to-blue-800 text-white border-transparent' : 'bg-white dark:bg-gray-855'}`}>
                         <div className="relative z-10 flex flex-col h-full justify-between">
                             <div>
@@ -217,20 +185,38 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                             </div>
                         </div>
                     </div>
-                ))}
+                )) : (
+                    <div className="col-span-3 py-10 text-center text-gray-500 italic">Chưa có học phần nổi bật nào.</div>
+                )}
             </div>
         </section>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-10 items-start">
-        <div className={!isLibrary ? "xl:col-span-3" : "xl:col-span-4"}>
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${!isLibrary ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-8 mt-8`}>
+      {isLibrary && (
+          <div className="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-6 transition-colors">
+              <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-full md:w-auto">
+                  <button onClick={() => setLibraryTab('SETS')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-sm font-black transition-all ${libraryTab === 'SETS' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_sets')}</button>
+                  <button onClick={() => setLibraryTab('FAVORITES')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-sm font-black transition-all ${libraryTab === 'FAVORITES' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_favorites')}</button>
+              </div>
+              <div className="relative w-full md:w-80 group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-blue transition-colors" size={18} />
+                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('dashboard.search_lib')} className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white dark:bg-gray-855 border border-gray-100 dark:border-gray-800 focus:ring-2 focus:ring-brand-blue/20 outline-none font-medium transition-all" />
+              </div>
+          </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-10">
+        <div>
+            <h2 className="text-xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2 uppercase tracking-tight">
+                <Book className="text-brand-blue" /> {isLibrary ? t('dashboard.library') : 'Khám phá học phần mới'}
+            </h2>
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8`}>
                 {filteredSets.map(set => (
                     <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
                         <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-2.5 rounded-full z-10 transition-all ${set.isFavorite ? 'text-red-500 fill-red-500 scale-110' : 'text-gray-300 dark:text-gray-600 hover:text-red-400'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
                         <div className="p-6 flex-1">
                             <div className="flex flex-wrap gap-2 mb-4">
-                                <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-blue-800/30">FLASHCARD</span>
+                                <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-blue-800/30">QUIZ</span>
                                 <span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-orange-800/30">{set.subject}</span>
                                 {renderSetTypeBadge(set.type)}
                                 {renderStatusBadge(set.status)}
@@ -249,6 +235,26 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* Load More Trigger */}
+            <div ref={loadMoreRef} className="h-20 flex items-center justify-center mt-8">
+                {isLoading && filteredSets.length > 0 && (
+                    <div className="flex items-center gap-2 text-gray-400 font-bold animate-pulse">
+                        <Loader2 className="animate-spin" size={20} />
+                        <span>Đang tải thêm...</span>
+                    </div>
+                )}
+                {!isLoading && currentPage >= totalPages - 1 && filteredSets.length > 0 && (
+                    <p className="text-gray-400 text-sm font-medium">Bạn đã xem hết danh sách học phần.</p>
+                )}
+                {filteredSets.length === 0 && !isLoading && (
+                    <div className="text-center py-20 w-full">
+                        <AlertCircle size={48} className="mx-auto text-gray-200 mb-4" />
+                        <p className="text-gray-500 font-bold">{t('dashboard.no_results')}</p>
+                        <button onClick={onCreateNew} className="mt-4 text-brand-blue font-black hover:underline">{t('dashboard.upload_now')}</button>
+                    </div>
+                )}
             </div>
         </div>
       </div>
