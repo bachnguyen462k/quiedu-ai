@@ -1,10 +1,12 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, Review } from '../types';
-import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen } from 'lucide-react';
+import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
 import { useApp } from '../contexts/AppContext';
+// Fix: Add missing ThemeLoader import
+import ThemeLoader from './ThemeLoader';
 
 interface DashboardProps {
   sets: StudySet[];
@@ -37,7 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const trendingSets = useMemo(() => {
-    return [...displaySets].slice(0, 3);
+    return [...displaySets].slice(0, 4);
   }, [displaySets]);
 
   const fetchData = async (page: number, refresh: boolean = false) => {
@@ -145,74 +147,154 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   if (isInitialLoading) {
       return (
           <div className="flex flex-col items-center justify-center py-32 animate-pulse">
-              <Loader2 className="animate-spin text-brand-blue mb-4" size={48} />
-              <p className="text-gray-500 font-bold">{t('dashboard.loading')}</p>
+              <ThemeLoader size={48} className="mb-4" />
+              <p className="text-gray-500 font-black uppercase tracking-widest text-[10px]">Đang kết nối thư viện...</p>
           </div>
       );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-24 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-24 animate-fade-in transition-colors">
       {!isLibrary && (
-        <section className="mb-12">
-            <h2 className="text-xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2 uppercase tracking-tight">
-                <Flame className="text-brand-orange" fill="currentColor" /> {t('dashboard.trending')}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {trendingSets.length > 0 ? trendingSets.map((set, idx) => (
-                    <div key={set.id} onClick={() => onSelectSet(set)} className={`relative overflow-hidden rounded-3xl p-6 shadow-md border border-gray-100 dark:border-gray-800 cursor-pointer hover:shadow-xl transition-all group ${idx === 0 ? 'bg-gradient-to-br from-brand-blue to-blue-800 text-white border-transparent' : 'bg-white dark:bg-gray-855'}`}>
-                        <div className="relative z-10 flex flex-col h-full justify-between">
-                            <div>
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest ${idx === 0 ? 'bg-white/20 text-white' : 'bg-brand-orange/10 text-brand-orange'}`}>HOT</span>
-                                        {isLibrary && renderStatusBadge(set.status)}
-                                    </div>
-                                    <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`p-2 rounded-full transition-all hover:bg-white/10 ${set.isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-400 dark:text-gray-500'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
-                                </div>
-                                <h3 className={`text-xl font-bold mb-3 line-clamp-2 leading-snug ${idx === 0 ? 'text-white' : 'text-gray-900 dark:text-white group-hover:text-brand-blue dark:group-hover:text-blue-400'}`}>{set.title}</h3>
-                                <p className={`text-sm line-clamp-2 opacity-80 ${idx === 0 ? 'text-blue-50' : 'text-gray-600 dark:text-gray-400'}`}>{set.description}</p>
-                            </div>
-                            <div className="mt-6 flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${idx === 0 ? 'bg-white text-brand-blue' : 'bg-brand-blue text-white'}`}>{set.author.charAt(0)}</div>
-                                <span className={`text-sm font-bold ${idx === 0 ? 'text-white' : 'text-gray-800 dark:text-gray-300'}`}>{set.author}</span>
-                                <div className={`ml-auto flex items-center gap-1 text-xs ${idx === 0 ? 'text-blue-200' : 'text-gray-500'}`}><Play size={12} /> {set.plays}</div>
-                            </div>
+        <section className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter">
+                        <div className="p-2 bg-orange-100 dark:bg-orange-900/40 rounded-xl">
+                            <Flame className="text-brand-orange animate-pulse" fill="currentColor" size={24} />
                         </div>
+                        {t('dashboard.trending')}
+                    </h2>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1">Những học phần được quan tâm nhất hôm nay.</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {trendingSets.length > 0 ? trendingSets.map((set, idx) => {
+                    const isTop1 = idx === 0;
+                    const isTop2 = idx === 1;
+                    
+                    return (
+                        <div 
+                            key={set.id} 
+                            onClick={() => onSelectSet(set)} 
+                            className={`group relative overflow-hidden rounded-[40px] p-8 cursor-pointer transition-all duration-500 shadow-sm hover:shadow-2xl border-2 transform hover:-translate-y-2 flex flex-col justify-between min-h-[340px] ${
+                                isTop1 
+                                ? 'lg:col-span-2 bg-gradient-to-br from-indigo-600 to-blue-800 border-transparent text-white ring-4 ring-indigo-100 dark:ring-indigo-900/20' 
+                                : isTop2
+                                ? 'bg-gradient-to-br from-orange-400 to-red-600 border-transparent text-white'
+                                : 'bg-white dark:bg-gray-855 border-gray-100 dark:border-gray-800'
+                            }`}
+                        >
+                            {/* Decorative Pattern for Top Cards */}
+                            {(isTop1 || isTop2) && (
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-700">
+                                    {isTop1 ? <Trophy size={200} /> : <Zap size={160} />}
+                                </div>
+                            )}
+
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-[0.2em] shadow-sm ${
+                                            isTop1 || isTop2 ? 'bg-white/20 text-white backdrop-blur-md' : 'bg-brand-orange/10 text-brand-orange'
+                                        }`}>
+                                            RANK {idx + 1}
+                                        </span>
+                                        {isTop1 && (
+                                            <span className="flex items-center gap-1 text-[10px] font-black bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full uppercase tracking-widest animate-bounce">
+                                                <Trophy size={10} /> HOT
+                                            </span>
+                                        )}
+                                    </div>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} 
+                                        className={`p-3 rounded-2xl transition-all hover:scale-110 active:scale-90 ${
+                                            isTop1 || isTop2 
+                                            ? 'bg-white/10 text-white hover:bg-white/20' 
+                                            : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-red-500'
+                                        }`}
+                                    >
+                                        <Heart size={22} fill={set.isFavorite ? (isTop1 || isTop2 ? "white" : "currentColor") : "none"} className={set.isFavorite ? 'text-red-500' : ''} />
+                                    </button>
+                                </div>
+
+                                <h3 className={`font-black mb-4 line-clamp-3 leading-[1.2] transition-colors ${
+                                    isTop1 ? 'text-3xl md:text-4xl' : 'text-xl'
+                                } ${
+                                    isTop1 || isTop2 ? 'text-white' : 'text-gray-900 dark:text-white group-hover:text-brand-blue dark:group-hover:text-blue-400'
+                                }`}>
+                                    {set.title}
+                                </h3>
+                                
+                                <p className={`text-sm line-clamp-2 font-medium opacity-80 mb-8 leading-relaxed ${
+                                    isTop1 || isTop2 ? 'text-indigo-100' : 'text-gray-600 dark:text-gray-400'
+                                }`}>
+                                    {set.description}
+                                </p>
+                            </div>
+
+                            <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-black shadow-inner ${
+                                        isTop1 || isTop2 ? 'bg-white text-brand-blue' : 'bg-brand-blue/10 text-brand-blue dark:bg-blue-900/30'
+                                    }`}>
+                                        {set.author.charAt(0)}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className={`block text-sm font-bold truncate ${isTop1 || isTop2 ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{set.author}</span>
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${isTop1 || isTop2 ? 'text-white/60' : 'text-gray-400'}`}>{set.subject}</span>
+                                    </div>
+                                </div>
+                                <div className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl font-black text-xs shadow-lg transition-transform group-hover:scale-105 ${
+                                    isTop1 || isTop2 ? 'bg-white text-indigo-700' : 'bg-brand-blue text-white'
+                                }`}>
+                                    <Play size={14} fill="currentColor" /> {set.plays}
+                                </div>
+                            </div>
+                            
+                            {/* Hover Overlay for Standard Cards */}
+                            {!(isTop1 || isTop2) && (
+                                <div className="absolute inset-0 bg-brand-blue/0 group-hover:bg-brand-blue/5 transition-colors pointer-events-none" />
+                            )}
+                        </div>
+                    );
+                }) : (
+                    <div className="col-span-full py-20 text-center bg-gray-50 dark:bg-gray-800/50 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                        <Flame size={48} className="mx-auto text-gray-200 mb-4" />
+                        <p className="text-gray-500 font-bold italic">Đang tải học phần thịnh hành...</p>
                     </div>
-                )) : (
-                    <div className="col-span-3 py-10 text-center text-gray-500 italic">Chưa có học phần nổi bật nào.</div>
                 )}
             </div>
         </section>
       )}
 
       {isLibrary && (
-          <div className="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-6 transition-colors">
-              <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-full md:w-auto">
-                  <button onClick={() => setLibraryTab('SETS')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-sm font-black transition-all ${libraryTab === 'SETS' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_sets')}</button>
-                  <button onClick={() => setLibraryTab('FAVORITES')} className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-sm font-black transition-all ${libraryTab === 'FAVORITES' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_favorites')}</button>
+          <div className="mb-10 flex flex-col md:flex-row gap-6 items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-8 transition-colors">
+              <div className="flex p-1.5 bg-gray-100 dark:bg-gray-800 rounded-2xl w-full md:w-auto">
+                  <button onClick={() => setLibraryTab('SETS')} className={`flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-black transition-all ${libraryTab === 'SETS' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_sets')}</button>
+                  <button onClick={() => setLibraryTab('FAVORITES')} className={`flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-black transition-all ${libraryTab === 'FAVORITES' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_favorites')}</button>
               </div>
-              <div className="relative w-full md:w-80 group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-blue transition-colors" size={18} />
-                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('dashboard.search_lib')} className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white dark:bg-gray-855 border border-gray-100 dark:border-gray-800 focus:ring-2 focus:ring-brand-blue/20 outline-none font-medium transition-all" />
+              <div className="relative w-full md:w-96 group">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-blue transition-colors" size={20} />
+                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('dashboard.search_lib')} className="w-full pl-14 pr-5 py-4 rounded-[24px] bg-white dark:bg-gray-855 border-2 border-gray-100 dark:border-gray-800 focus:border-brand-blue/50 focus:ring-4 focus:ring-brand-blue/5 outline-none font-bold transition-all text-gray-900 dark:text-white" />
               </div>
           </div>
       )}
 
       <div className="grid grid-cols-1 gap-10">
         <div>
-            <h2 className="text-xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2 uppercase tracking-tight">
-                <Book className="text-brand-blue" /> {isLibrary ? t('dashboard.library') : 'Khám phá học phần mới'}
+            <h2 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3 uppercase tracking-tight">
+                <Book className="text-brand-blue" size={24} /> {isLibrary ? t('dashboard.library') : 'Khám phá học phần mới'}
             </h2>
             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8`}>
                 {filteredSets.map(set => (
-                    <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
-                        <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-2.5 rounded-full z-10 transition-all ${set.isFavorite ? 'text-red-500 fill-red-500 scale-110' : 'text-gray-300 dark:text-gray-600 hover:text-red-400'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
-                        <div className="p-6 flex-1">
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-blue-800/30">QUIZ</span>
-                                <span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-orange-800/30">{set.subject}</span>
+                    <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-[32px] shadow-sm hover:shadow-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
+                        <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-3 rounded-2xl z-10 transition-all ${set.isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20 scale-110 shadow-lg' : 'text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-800'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
+                        <div className="p-7 flex-1">
+                            <div className="flex flex-wrap gap-2 mb-5">
+                                <span className="px-3 py-1 rounded-xl bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-brand-blue/10">QUIZ</span>
+                                <span className="px-3 py-1 rounded-xl bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-brand-orange/10">{set.subject}</span>
                                 {isLibrary && (
                                     <>
                                         {renderSetTypeBadge(set.type)}
@@ -220,37 +302,41 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                     </>
                                 )}
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight pr-6">{set.title}</h3>
-                            <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 opacity-80 font-medium leading-relaxed">{set.description}</p>
+                            <h3 className="text-xl font-black text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-4 leading-[1.3] pr-6">{set.title}</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 font-medium leading-relaxed mb-6">{set.description}</p>
                         </div>
-                        <div className="px-6 py-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/20 rounded-b-3xl flex items-center justify-between text-gray-500 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-sm">{set.author.charAt(0)}</div>
-                                <span className="text-xs font-bold text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
+                        <div className="px-7 py-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 flex items-center justify-between text-gray-500 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-2xl bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-md">{set.author.charAt(0)}</div>
+                                <span className="text-xs font-black text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
                             </div>
-                            <div className="flex items-center gap-3 text-xs font-bold text-gray-500 dark:text-gray-400">
-                                <span className="flex items-center gap-1"><Clock size={14} className="text-brand-blue dark:text-blue-400" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
+                            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                <span className="flex items-center gap-1.5"><Clock size={14} className="text-brand-blue dark:text-blue-400" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            <div ref={loadMoreRef} className="h-20 flex items-center justify-center mt-8">
+            <div ref={loadMoreRef} className="h-32 flex items-center justify-center mt-12">
                 {isLoading && filteredSets.length > 0 && (
-                    <div className="flex items-center gap-2 text-gray-400 font-bold animate-pulse">
-                        <Loader2 className="animate-spin" size={20} />
+                    <div className="flex flex-col items-center gap-4 text-gray-400 font-black uppercase tracking-widest text-[10px]">
+                        <ThemeLoader size={32} />
                         <span>Đang tải thêm...</span>
                     </div>
                 )}
                 {!isLoading && currentPage >= totalPages - 1 && filteredSets.length > 0 && (
-                    <p className="text-gray-400 text-sm font-medium">Bạn đã xem hết danh sách học phần.</p>
+                    <div className="w-full flex items-center justify-center gap-4">
+                        <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
+                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Bạn đã xem hết thư viện</p>
+                        <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
+                    </div>
                 )}
                 {filteredSets.length === 0 && !isLoading && (
-                    <div className="text-center py-20 w-full">
-                        <AlertCircle size={48} className="mx-auto text-gray-200 mb-4" />
-                        <p className="text-gray-500 font-bold">{t('dashboard.no_results')}</p>
-                        <button onClick={onCreateNew} className="mt-4 text-brand-blue font-black hover:underline">{t('dashboard.upload_now')}</button>
+                    <div className="text-center py-24 w-full bg-white dark:bg-gray-855 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                        <AlertCircle size={64} className="mx-auto text-gray-100 dark:text-gray-800 mb-6" />
+                        <p className="text-gray-500 font-black text-lg">{t('dashboard.no_results')}</p>
+                        <button onClick={onCreateNew} className="mt-6 bg-brand-blue text-white px-8 py-4 rounded-[20px] font-black hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-blue/20">{t('dashboard.upload_now')}</button>
                     </div>
                 )}
             </div>
