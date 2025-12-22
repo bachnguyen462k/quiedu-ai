@@ -112,47 +112,40 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
                     </div>
                 );
             })}
-            {eventType === 'TET' && (<><div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-20 animate-pulse">🧧</div><div className="absolute top-0 right-0 w-32 h-32 text-4xl p-4 opacity-20 animate-pulse" style={{ animationDelay: '1s' }}>🏮</div></>)}
-            {eventType === 'CHRISTMAS' && (<div className="absolute top-0 left-0 w-32 h-32 text-4xl p-4 opacity-40 animate-pulse">🎄</div>)}
         </div>
     );
 };
 
-// --- Mock Data Helpers ---
-const generateMockSets = (count: number): StudySet[] => {
-    const subjects = ['Toán', 'Lý', 'Hóa', 'Sinh', 'Sử', 'Địa', 'Anh', 'GDCD'];
-    const authors = ['Cô Thu Lan', 'Thầy Hùng', 'Cô Mai', 'Bạn'];
-    return Array.from({ length: count }).map((_, i) => ({
-        id: `mock-${i}`,
-        title: `${subjects[i % subjects.length]} 12 - Bài ôn tập số ${i + 1}`,
-        description: `Bộ câu hỏi ôn tập kiến thức trọng tâm chương ${i % 5 + 1}.`,
-        author: authors[i % authors.length],
-        createdAt: Date.now() - Math.floor(Math.random() * 1000000000),
-        plays: Math.floor(Math.random() * 5000),
-        averageScore: 60 + Math.floor(Math.random() * 40),
-        cards: Array.from({ length: 5 }).map((_, j) => ({ id: `card-${i}-${j}`, term: `Câu hỏi số ${j + 1} của bài ${i + 1}?`, definition: `Lựa chọn đúng`, options: ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D'] })),
-        privacy: 'PUBLIC',
-        subject: subjects[i % subjects.length],
-        level: 'Lớp 12',
-        school: 'THPT Chu Văn An',
-        isFavorite: Math.random() > 0.8 
-    }));
-};
-
-const INITIAL_SETS = [...generateMockSets(10)];
-
 // --- Layout Component ---
 const MainLayout: React.FC<{ children: React.ReactNode, sets: StudySet[], aiHistory: AiGenerationRecord[], handleLogout: () => void, runTour: boolean, setRunTour: (val: boolean) => void }> = ({ children, sets, aiHistory, handleLogout, runTour, setRunTour }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+
   if (isLoading) return (<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900"><ThemeLoader size={48} /></div>);
   if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300 overflow-hidden relative">
-      <Sidebar currentPath={location.pathname} currentUser={user} onLogout={handleLogout} onStartTour={() => setRunTour(true)} />
-      <div className="flex-1 flex flex-col min-w-0">
-          <Header sets={sets} history={aiHistory} onSelectSet={(s) => window.location.hash = `#/set/${s.id}`} onSelectHistory={() => window.location.hash = `#/ai-planner`} />
-          <main className="flex-1 overflow-y-auto relative scroll-smooth custom-scrollbar">{children}</main>
+      <Sidebar 
+        currentPath={location.pathname} 
+        currentUser={user} 
+        onLogout={handleLogout} 
+        onStartTour={() => setRunTour(true)} 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)}
+      />
+      <div className="flex-1 flex flex-col min-w-0 relative">
+          <Header 
+            sets={sets} 
+            history={aiHistory} 
+            onSelectSet={(s) => window.location.hash = `#/set/${s.id}`} 
+            onSelectHistory={() => window.location.hash = `#/ai-planner`} 
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
+          <main className="flex-1 overflow-y-auto relative scroll-smooth custom-scrollbar">
+            {children}
+          </main>
       </div>
       {user && <UserTour currentUser={user} run={runTour} onStop={() => setRunTour(false)} />}
     </div>
@@ -161,10 +154,7 @@ const MainLayout: React.FC<{ children: React.ReactNode, sets: StudySet[], aiHist
 
 // --- Routes Manager ---
 const AppRoutes: React.FC = () => {
-  const [sets, setSets] = useState<StudySet[]>(() => {
-    const saved = localStorage.getItem('studySets');
-    return saved ? JSON.parse(saved) : INITIAL_SETS;
-  });
+  const [sets, setSets] = useState<StudySet[]>([]);
   const [aiHistory, setAiHistory] = useState<AiGenerationRecord[]>([]);
   const [runTour, setRunTour] = useState(false);
   const { addNotification, eventTheme } = useApp();
@@ -173,14 +163,12 @@ const AppRoutes: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => { localStorage.setItem('studySets', JSON.stringify(sets)); }, [sets]);
-
-  const handleLogout = useCallback(() => { logout(); addNotification(t('notifications.logged_out'), 'info'); navigate('/'); }, [logout, addNotification, t, navigate]);
+  const handleLogout = useCallback(() => { logout(); navigate('/'); }, [logout, navigate]);
   const handleUpdateUser = useCallback((updatedUser: User) => { updateUser(updatedUser); addNotification(t('notifications.profile_updated'), 'success'); }, [updateUser, addNotification, t]);
-  const handleSaveSet = useCallback((newSet: StudySet) => { const setWithAuthor = { ...newSet, author: user?.name || 'Bạn' }; setSets(prev => [setWithAuthor, ...prev]); navigate('/library'); addNotification(t('notifications.set_created'), 'success'); }, [user?.name, navigate, addNotification, t]);
+  const handleSaveSet = useCallback((newSet: StudySet) => { navigate('/library'); addNotification(t('notifications.set_created'), 'success'); }, [navigate, addNotification, t]);
   const handleAddToAiHistory = useCallback((record: AiGenerationRecord) => { setAiHistory(prev => [record, ...prev]); }, []);
-  const handleAddReview = useCallback((setId: string, review: Review) => { setSets(prevSets => prevSets.map(s => s.id === setId ? { ...s, reviews: [review, ...(s.reviews || [])] } : s)); addNotification(t('notifications.review_submitted'), 'success'); }, [addNotification, t]);
-  const handleToggleFavorite = useCallback((setId: string) => { setSets(prevSets => prevSets.map(s => s.id === setId ? { ...s, isFavorite: !s.isFavorite } : s)); }, []);
+  const handleAddReview = useCallback((setId: string, review: Review) => { addNotification(t('notifications.review_submitted'), 'success'); }, [addNotification, t]);
+  const handleToggleFavorite = useCallback((setId: string) => { /* logic */ }, []);
 
   if (isLoading) return (<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900"><ThemeLoader size={48} /></div>);
   const isAdmin = user?.roles.includes('ADMIN');
@@ -236,13 +224,11 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
     useEffect(() => {
         const fetchFullData = async () => {
             if (!setId || fetchingId.current === setId) return;
-            
             const existing = sets.find(s => s.id === setId);
             if (existing && existing.cards && existing.cards.length > 0) {
                 setFullSet(existing);
                 return;
             }
-
             fetchingId.current = setId;
             setIsFetching(true);
             try {
@@ -268,11 +254,8 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
             } catch (e) {
                 console.error("Failed to fetch full set", e);
                 fetchingId.current = null;
-            } finally {
-                setIsFetching(false);
-            }
+            } finally { setIsFetching(false); }
         };
-
         fetchFullData();
     }, [setId, sets]);
 
@@ -283,8 +266,8 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
         <div className="pb-20 animate-fade-in">
             <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-30 transition-colors">
                 <div className="max-w-4xl mx-auto px-4 py-2 flex gap-4 overflow-x-auto">
-                    <button onClick={() => navigate(`/study/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'FLASHCARD' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><BookOpen size={18} /> Thẻ ghi nhớ</button>
-                    <button onClick={() => navigate(`/quiz/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'QUIZ' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><GraduationCap size={18} /> Kiểm tra</button>
+                    <button onClick={() => navigate(`/study/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'FLASHCARD' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><BookOpen size={18} /> Thẻ ghi nhớ</button>
+                    <button onClick={() => navigate(`/quiz/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${mode === 'QUIZ' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><GraduationCap size={18} /> Kiểm tra</button>
                 </div>
             </div>
             {mode === 'FLASHCARD' ? <FlashcardView set={fullSet} onBack={handleBackToDetail} /> : <QuizView set={fullSet} currentUser={user!} onBack={handleBackToDetail} onAddReview={onAddReview} />}
@@ -295,9 +278,9 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
 const NotificationContainer = () => {
   const { notifications, removeNotification } = useApp();
   return (
-    <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none">
       {notifications.map((notif) => (
-        <div key={notif.id} className="pointer-events-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl border-l-4 p-4 flex items-start gap-3 min-w-[320px] animate-slide-in" style={{ borderColor: notif.type === 'success' ? '#10B981' : notif.type === 'error' ? '#EF4444' : notif.type === 'warning' ? '#F59E0B' : '#3B82F6' }}>
+        <div key={notif.id} className="pointer-events-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl border-l-4 p-4 flex items-start gap-3 min-w-[300px] animate-slide-in" style={{ borderColor: notif.type === 'success' ? '#10B981' : notif.type === 'error' ? '#EF4444' : notif.type === 'warning' ? '#F59E0B' : '#3B82F6' }}>
           {notif.type === 'success' && <CheckCircle size={20} className="text-green-500" />}
           {notif.type === 'error' && <AlertCircle size={20} className="text-red-500" />}
           {notif.type === 'warning' && <AlertTriangle size={20} className="text-yellow-500" />}
