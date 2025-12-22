@@ -7,6 +7,7 @@
     <title>BrainQnA - Hỏi trước - Nhớ lâu - Hiểu sâu</title>
     <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 85C30 85 15 70 15 50C15 35 25 20 45 15V85Z' fill='%23005EB8'/%3E%3Cpath d='M50 85C70 85 85 70 85 50C85 35 75 20 55 15V85Z' fill='%23F37321'/%3E%3Crect x='20' y='38' width='25' height='18' rx='6' fill='white' stroke='%231F2937' stroke-width='3'/%3E%3Crect x='55' y='38' width='25' height='18' rx='6' fill='white' stroke='%231F2937' stroke-width='3'/%3E%3Cpath d='M45 47H55' stroke='%231F2937' stroke-width='3'/%3E%3Ccircle cx='32.5' cy='47' r='4' fill='%231F2937'/%3E%3Ccircle cx='67.5' cy='47' r='4' fill='%231F2937'/%3E%3Cpath d='M40 70C45 75 55 75 60 70' stroke='white' stroke-width='3'/%3E%3C/svg%3E" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
       window.tailwind.config = {
         darkMode: 'class',
@@ -44,7 +45,13 @@
       .perspective-1000 { perspective: 1000px; }
       .transform-style-3d { transform-style: preserve-3d; }
       .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-      .flip-card-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; position: relative; width: 100%; height: 100%; }
+      .flip-card-inner { 
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+        transform-style: preserve-3d; 
+        position: relative; 
+        width: 100%; 
+        height: 100%; 
+      }
       .is-flipped { transform: rotateY(180deg); }
       .rotate-y-180 { transform: rotateY(180deg); }
       .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
@@ -55,9 +62,26 @@
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
       .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
-      @keyframes global-fall { 0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translate3d(100px, 105vh, 0) rotate(360deg); opacity: 0; } }
-      @keyframes global-sway { 0% { transform: translate3d(-20px, 0, 0); } 100% { transform: translate3d(20px, 0, 0); } }
-      .falling-item { position: fixed; top: 0; pointer-events: none; z-index: 9999; will-change: transform; }
+
+      @keyframes global-fall {
+        0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translate3d(100px, 105vh, 0) rotate(360deg); opacity: 0; }
+      }
+
+      @keyframes global-sway {
+        0% { transform: translate3d(-20px, 0, 0); }
+        100% { transform: translate3d(20px, 0, 0); }
+      }
+
+      .falling-item {
+        position: fixed;
+        top: 0;
+        pointer-events: none;
+        z-index: 9999;
+        will-change: transform;
+      }
     </style>
   <script type="importmap">
 {
@@ -85,7 +109,6 @@
 </head>
   <body class="bg-gray-50 text-gray-900 font-sans transition-colors duration-300 dark:bg-gray-900 dark:text-white">
     <div id="root"></div>
-    <!-- Chuyển sang đường dẫn tương đối (remove /) để ổn định trên môi trường Preview -->
-    <script type="module" src="index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

@@ -48,6 +48,32 @@ export const authService = {
     }
   },
 
+  // Đăng nhập bằng Google Token
+  loginWithGoogle: async (idToken: string): Promise<AuthResponse> => {
+    try {
+        const response = await apiClient.post('/auth/google', { idToken });
+        const responseData = response.data;
+
+        if (responseData.code !== 1000) {
+            throw new Error(responseData.message || "Đăng nhập Google thất bại");
+        }
+
+        const token = responseData.result?.token;
+        if (!token) throw new Error("Không nhận được token từ máy chủ");
+
+        localStorage.setItem('accessToken', token);
+        const user = await authService.getCurrentUser();
+
+        return {
+            user: user,
+            accessToken: token
+        };
+    } catch (error: any) {
+        console.error("Google Login API Error:", error);
+        throw new Error(error.response?.data?.message || error.message || "Lỗi xác thực Google");
+    }
+  },
+
   // Đăng ký tài khoản mới
   register: async (userData: any): Promise<AuthResponse> => {
     try {
@@ -143,7 +169,7 @@ export const authService = {
             email: result.username,
             roles: mappedRoles,
             permissions: permissions,
-            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`,
+            avatar: result.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff`,
             darkMode: result.darkMode
         };
     } catch (error) {
@@ -198,25 +224,5 @@ export const authService = {
         console.error("Reset Password Error:", error);
         throw error.response?.data?.message || "Không thể đặt lại mật khẩu";
     }
-  },
-
-  mockGoogleLogin: async (): Promise<AuthResponse> => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({
-                user: {
-                    id: 'g1',
-                    name: 'Nguyễn Google',
-                    email: 'nguyen.google@gmail.com',
-                    roles: ['USER'],
-                    permissions: [],
-                    avatar: 'https://lh3.googleusercontent.com/a/default-user',
-                    darkMode: false
-                },
-                accessToken: 'mock-google-token-xyz',
-                refreshToken: 'mock-refresh-token'
-            });
-        }, 1200);
-    });
   }
 };

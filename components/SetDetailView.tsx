@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { StudySet } from '../types';
 import { ArrowLeft, Clock, User, Play, BookOpen, BarChart3, Star, Calendar, Lock, Info, ShieldCheck, Share2, Link, QrCode, Copy, Check, MessageSquare, X, Download, Heart, Flag, Send } from 'lucide-react';
@@ -209,33 +208,30 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set, onBack, onStartFlash
                 
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t('set_detail.start_title')}</h3>
                 
-                {/* OPTIMIZED BUTTON GRID FOR MOBILE */}
-                <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4 mb-6">
+                <div className="space-y-4">
                     <button 
                         onClick={onStartFlashcard}
-                        className="w-full group p-3 sm:p-4 rounded-xl border-2 border-gray-100 dark:border-gray-700 hover:border-indigo-600 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4 text-center sm:text-left opacity-90 hover:opacity-100"
+                        className="w-full group p-4 rounded-xl border-2 border-gray-100 dark:border-gray-700 hover:border-indigo-600 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all flex items-center gap-4 text-left opacity-75 hover:opacity-100"
                     >
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors shrink-0">
-                            <BookOpen size={20} className="sm:hidden" />
-                            <BookOpen size={24} className="hidden sm:block" />
+                        <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <BookOpen size={24} />
                         </div>
                         <div>
-                            <span className="block font-black text-gray-900 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-400 text-xs sm:text-sm">Thẻ ghi nhớ</span>
-                            <span className="hidden sm:block text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{t('set_detail.mode_flashcard_desc')}</span>
+                            <span className="block font-bold text-gray-900 dark:text-white group-hover:text-indigo-700 dark:group-hover:text-indigo-400">{t('set_detail.mode_flashcard')}</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">{t('set_detail.mode_flashcard_desc')}</span>
                         </div>
                     </button>
 
                     <button 
                         onClick={onStartQuiz}
-                        className="w-full group p-3 sm:p-4 rounded-xl bg-indigo-600 text-white shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4 text-center sm:text-left transform hover:-translate-y-1"
+                        className="w-full group p-4 rounded-xl bg-indigo-600 text-white shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all flex items-center gap-4 text-left transform hover:-translate-y-1"
                     >
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                            <BarChart3 size={20} className="sm:hidden" />
-                            <BarChart3 size={24} className="hidden sm:block" />
+                        <div className="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center">
+                            <BarChart3 size={24} />
                         </div>
                         <div>
-                            <span className="block font-black text-xs sm:text-lg">Kiểm tra</span>
-                            <span className="hidden sm:block text-indigo-100 text-xs mt-0.5 line-clamp-1">{t('set_detail.mode_quiz_desc')}</span>
+                            <span className="block font-bold text-lg">{t('set_detail.mode_quiz')}</span>
+                            <span className="text-indigo-100 text-sm">{t('set_detail.mode_quiz_desc')}</span>
                         </div>
                     </button>
                 </div>

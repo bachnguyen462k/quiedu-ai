@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, LoginCredentials } from '../types';
 import { authService } from '../services/authService';
@@ -10,7 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (userData: any) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
   // Recovery methods
@@ -103,10 +104,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (idToken: string) => {
     setIsLoading(true);
     try {
-        const data = await authService.mockGoogleLogin();
+        const data = await authService.loginWithGoogle(idToken);
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
