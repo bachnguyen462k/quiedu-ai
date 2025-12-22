@@ -25,6 +25,7 @@ export const quizService = {
 
   /**
    * Lưu đáp án cho từng câu hỏi ngay khi chọn.
+   * Request: { attemptId, studyCardId, selectedAnswer }
    * Endpoint: POST /quiz/answer
    */
   saveAnswer: async (attemptId: number, studyCardId: number, selectedAnswer: string): Promise<any> => {
@@ -42,8 +43,9 @@ export const quizService = {
   },
 
   /**
-   * Nộp bài làm lên server để chấm điểm.
+   * Nộp bài làm lên server.
    * Endpoint: POST /quiz/submit/{attemptId}
+   * Response mong đợi: { code: 1000, message: "Quiz submitted" }
    */
   submitQuiz: async (attemptId: number, answers: { attemptQuestionId: number, answer: string }[]): Promise<any> => {
     try {

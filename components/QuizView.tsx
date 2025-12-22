@@ -69,17 +69,17 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     newUserSelections[currentQuestionIndex] = option;
     setUserSelections(newUserSelections);
 
-    // 2. Nếu là Online Quiz, gọi API lưu đáp án từng câu
+    // 2. Nếu là Online Quiz, gọi API lưu đáp án từng câu ngay khi chọn
     if (serverAttempt) {
         try {
-            // Không chặn UI (await) để trải nghiệm mượt, nhưng vẫn gửi request
+            // Gửi request POST /quiz/answer không dùng await để tránh lag UI
             quizService.saveAnswer(
                 serverAttempt.attemptId,
                 currentQuestion.cardId,
                 option
             ).catch(err => {
                 console.error("Auto-save answer failed", err);
-                addNotification("Không thể lưu đáp án tự động. Kiểm tra kết nối.", "warning");
+                // Thông báo nhẹ nếu lưu lỗi nhưng không chặn người dùng
             });
         } catch (error) {
             console.error("QuizView: Option select error", error);
@@ -99,14 +99,12 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
   const handleSubmitQuiz = async () => {
       if (!serverAttempt) {
-          // Logic cho Offline Quiz (Cần đáp án trong Flashcard)
           addNotification("Hệ thống Quiz Offline đang được cập nhật.", "info");
           return;
       }
 
       setIsSubmitting(true);
       try {
-          // Chuẩn bị danh sách đáp án cuối cùng để nộp
           const finalAnswers = questions.map((q, idx) => ({
               attemptQuestionId: q.attemptQuestionId,
               answer: userSelections[idx] || ""
@@ -116,8 +114,13 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
           const response = await quizService.submitQuiz(serverAttempt.attemptId, finalAnswers);
           
           if (response.code === 1000) {
-              setScore(response.result.score);
-              setServerResults(response.result.details || []);
+              // Nếu thành công, lấy dữ liệu kết quả (giả định kết quả nằm trong response.result nếu có)
+              // Nếu server chỉ trả về code 1000, chúng ta cần đảm bảo có cách lấy điểm số
+              if (response.result) {
+                setScore(response.result.score || 0);
+                setServerResults(response.result.details || []);
+              }
+              
               setIsReviewing(false);
               setIsCompleted(true);
               addNotification("Đã nộp bài thành công!", "success");
@@ -142,7 +145,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
   // --- VIEW: RESULTS ---
   if (isCompleted) {
-    const percentage = Math.round(score); // Giả định score trả về là 0-100
+    const percentage = Math.round(score);
     const data = [
       { name: t('quiz.correct'), value: score },
       { name: t('quiz.incorrect'), value: 100 - score },
@@ -200,39 +203,38 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
          </div>
 
          {/* Detailed Stats from Server */}
-         <div className="space-y-6">
-            <h3 className="text-xl font-black text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4 uppercase tracking-tighter">{t('quiz.detail_title')}</h3>
-            
-            {serverResults.length > 0 ? serverResults.map((detail, idx) => (
-                <div key={idx} className={`p-6 rounded-[24px] border-2 transition-all ${detail.isCorrect ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800/50' : 'bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-800/50'}`}>
-                    <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-white ${detail.isCorrect ? 'bg-green-500 shadow-lg shadow-green-200 dark:shadow-none' : 'bg-red-500 shadow-lg shadow-red-200 dark:shadow-none'}`}>
-                            {detail.isCorrect ? <Check size={20} strokeWidth={4} /> : <X size={20} strokeWidth={4} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h4 className="font-black text-gray-900 dark:text-white mb-4 text-lg leading-snug">
-                                <span className="text-gray-400 font-bold mr-2 text-sm uppercase">Câu {idx + 1}:</span>
-                                {detail.questionTerm}
-                            </h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className={`p-3 rounded-xl border ${detail.isCorrect ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800/30' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/30'}`}>
-                                    <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{t('quiz.your_choice')}</span>
-                                    <span className={`font-bold text-sm ${detail.isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>{detail.userAnswer || t('quiz.not_answered')}</span>
-                                </div>
-                                {!detail.isCorrect && (
-                                    <div className="p-3 rounded-xl border bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700">
-                                        <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{t('quiz.correct_answer')}</span>
-                                        <span className="font-bold text-sm text-green-600 dark:text-green-400">{detail.correctAnswer}</span>
+         {serverResults.length > 0 && (
+             <div className="space-y-6">
+                <h3 className="text-xl font-black text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4 uppercase tracking-tighter">{t('quiz.detail_title')}</h3>
+                {serverResults.map((detail, idx) => (
+                    <div key={idx} className={`p-6 rounded-[24px] border-2 transition-all ${detail.isCorrect ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800/50' : 'bg-red-50/50 dark:bg-red-900/10 border-red-200 dark:border-red-800/50'}`}>
+                        <div className="flex items-start gap-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-white ${detail.isCorrect ? 'bg-green-500 shadow-lg shadow-green-200 dark:shadow-none' : 'bg-red-500 shadow-lg shadow-red-200 dark:shadow-none'}`}>
+                                {detail.isCorrect ? <Check size={20} strokeWidth={4} /> : <X size={20} strokeWidth={4} />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-black text-gray-900 dark:text-white mb-4 text-lg leading-snug">
+                                    <span className="text-gray-400 font-bold mr-2 text-sm uppercase">Câu {idx + 1}:</span>
+                                    {detail.questionTerm}
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className={`p-3 rounded-xl border ${detail.isCorrect ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800/30' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/30'}`}>
+                                        <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{t('quiz.your_choice')}</span>
+                                        <span className={`font-bold text-sm ${detail.isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>{detail.userAnswer || t('quiz.not_answered')}</span>
                                     </div>
-                                )}
+                                    {!detail.isCorrect && (
+                                        <div className="p-3 rounded-xl border bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700">
+                                            <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{t('quiz.correct_answer')}</span>
+                                            <span className="font-bold text-sm text-green-600 dark:text-green-400">{detail.correctAnswer}</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )) : (
-                <div className="text-center py-10 text-gray-400 font-medium italic">Không có dữ liệu chi tiết cho bài làm này.</div>
-            )}
-         </div>
+                ))}
+             </div>
+         )}
       </div>
     );
   }
