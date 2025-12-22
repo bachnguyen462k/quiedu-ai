@@ -8,7 +8,7 @@ import { studySetService } from '../services/studySetService';
 import ThemeLoader from './ThemeLoader';
 
 interface SetDetailViewProps {
-  set: StudySet; // Initial metadata
+  set: StudySet; // Initial metadata from dashboard
   onBack: () => void;
   onStartFlashcard: () => void;
   onStartQuiz: () => void;
@@ -24,10 +24,8 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [reportReason, setReportReason] = useState('copyright');
-  const [reportDescription, setReportDescription] = useState('');
 
-  // Fetch full set details on mount
+  // Fetch full study set details when component mounts
   useEffect(() => {
     const fetchFullDetails = async () => {
         setIsLoading(true);
@@ -46,20 +44,21 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                     })),
                     description: data.description || metadata.description,
                     subject: data.topic || metadata.subject,
-                    author: data.author || metadata.author
+                    author: data.author || metadata.author,
+                    plays: data.plays || 0
                 };
                 setFullSet(mapped);
             }
         } catch (error) {
-            console.error("Failed to fetch full set info", error);
-            addNotification("Không thể tải chi tiết học phần", "error");
+            console.error("Failed to fetch full study set details", error);
+            addNotification("Không thể tải thông tin chi tiết học phần", "error");
         } finally {
             setIsLoading(false);
         }
     };
 
     fetchFullDetails();
-  }, [metadata.id]);
+  }, [metadata.id, addNotification]);
 
   const activeSet = fullSet || metadata;
 
@@ -69,14 +68,12 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     day: 'numeric'
   });
 
-  const reviews = activeSet.reviews || [];
-  const averageRating = reviews.length > 0 
-      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+  const averageRating = activeSet.reviews && activeSet.reviews.length > 0 
+      ? (activeSet.reviews.reduce((acc, r) => acc + r.rating, 0) / activeSet.reviews.length).toFixed(1)
       : "5.0";
   
   const shareUrl = window.location.href;
   const shareCode = `QZ-${activeSet.id.toUpperCase()}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(shareUrl)}`;
 
   const handleCopy = (text: string, type: 'LINK' | 'CODE') => {
     navigator.clipboard.writeText(text);
@@ -84,23 +81,18 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     setTimeout(() => setCopiedType(null), 2000);
   };
 
-  const handleReportSubmit = () => {
-      addNotification(t('notifications.report_success'), 'success');
-      setShowReportModal(false);
-  };
-
   if (isLoading) {
       return (
           <div className="min-h-[60vh] flex flex-col items-center justify-center animate-fade-in">
               <ThemeLoader size={48} className="mb-4" />
-              <p className="text-gray-500 font-bold">Đang chuẩn bị học phần...</p>
+              <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Đang chuẩn bị học phần...</p>
           </div>
       );
   }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 relative animate-fade-in">
-      {/* Header Actions */}
+      {/* Action Bar */}
       <div className="flex justify-between items-center mb-8">
         <button 
             onClick={onBack}
@@ -135,10 +127,10 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Left Column: Preparation Info */}
+        {/* Main Info Column */}
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white dark:bg-gray-855 p-10 rounded-[40px] shadow-sm border border-gray-100 dark:border-gray-800 transition-colors relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-10 opacity-5">
+            <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
                 <BookOpen size={180} className="text-brand-blue" />
             </div>
 
@@ -160,7 +152,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Người tạo</span>
                         <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-brand-blue text-white flex items-center justify-center text-[8px] font-black uppercase">{activeSet.author.charAt(0)}</div>
-                            <span className="font-bold text-gray-900 dark:text-white">{activeSet.author}</span>
+                            <span className="font-bold text-gray-900 dark:text-white truncate">{activeSet.author}</span>
                         </div>
                     </div>
                     <div className="flex flex-col gap-1">
@@ -175,7 +167,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
             </div>
           </div>
 
-          {/* Guidelines / Preparation Notice */}
+          {/* Guidelines Section */}
           <div className="bg-indigo-50 dark:bg-indigo-900/10 p-8 rounded-[32px] border border-indigo-100 dark:border-indigo-900/30 transition-colors">
             <h3 className="font-black text-indigo-900 dark:text-indigo-300 mb-6 flex items-center gap-3 uppercase tracking-tighter text-lg">
                 <Info size={24} /> {t('set_detail.info_title')}
@@ -185,9 +177,9 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                 <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
                     <div className="flex items-center gap-3 mb-3">
                         <Timer className="text-brand-blue" size={20} />
-                        <span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Thời gian ước tính</span>
+                        <span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Thời gian dự kiến</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{Math.ceil(activeSet.cards.length * 1.5)} phút</span> để hoàn thành bộ câu hỏi này ở chế độ Quiz.</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{Math.ceil(activeSet.cards.length * 1.5)} phút</span> để hoàn thành bài tập này.</p>
                 </div>
 
                 <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
@@ -195,21 +187,21 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                         <ShieldCheck className="text-brand-orange" size={20} />
                         <span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Độ tin cậy</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Nội dung được xác thực bởi <span className="text-brand-orange font-black">BrainQnA AI</span> và đội ngũ giáo viên.</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Nội dung đã được kiểm duyệt bởi hệ thống <span className="text-brand-orange font-black">BrainQnA</span>.</p>
                 </div>
             </div>
 
-            <div className="mt-8 flex flex-col items-center justify-center py-10 px-4 border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 rounded-3xl bg-white/30 dark:bg-gray-900/20 text-center">
+            <div className="mt-8 flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 rounded-3xl bg-white/30 dark:bg-gray-900/20 text-center">
                 <Lock size={32} className="text-indigo-400 mb-4" />
-                <h4 className="font-bold text-indigo-900 dark:text-indigo-200 text-lg mb-2">{t('set_detail.hidden_title')}</h4>
+                <h4 className="font-bold text-indigo-900 dark:text-indigo-200 text-lg mb-2">Xem trước giới hạn</h4>
                 <p className="text-sm text-indigo-700/60 dark:text-indigo-400/60 max-w-sm font-medium">
-                    {t('set_detail.hidden_desc', { count: activeSet.cards.length })}
+                    Hãy bắt đầu học để xem toàn bộ {activeSet.cards.length} câu hỏi và ghi lại kết quả học tập của bạn.
                 </p>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Mode Selection */}
+        {/* Start Mode Selection Column */}
         <div className="space-y-6">
             <div className="bg-white dark:bg-gray-855 p-8 rounded-[40px] shadow-2xl border border-brand-blue/10 dark:border-gray-800 sticky top-24 transition-colors">
                 <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-2">
@@ -244,7 +236,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                     </button>
                 </div>
 
-                {/* Stats & Share */}
+                {/* Stats & Share Card */}
                 <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-800">
                     <div className="flex justify-between items-end mb-4">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('set_detail.stats_title')}</p>
@@ -259,12 +251,12 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                                 <div className="bg-green-500 h-full rounded-full" style={{ width: `${activeSet.averageScore || 100}%` }}></div>
                             </div>
                          </div>
-                         <span className="text-xs font-black text-gray-500 dark:text-gray-400 whitespace-nowrap">{activeSet.averageScore || 100}% độ khó</span>
+                         <span className="text-xs font-black text-gray-500 dark:text-gray-400 whitespace-nowrap">{activeSet.averageScore || 100}% thành công</span>
                     </div>
 
                     <div className="mt-8">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                             <Share2 size={12} /> {t('set_detail.share_title')}
+                             <Share2 size={12} /> Chia sẻ với bạn bè
                         </p>
                         <div className="flex gap-2">
                             <div 
@@ -272,7 +264,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                                 className="flex-1 bg-gray-50 dark:bg-gray-800 p-3 rounded-2xl text-center cursor-pointer border border-transparent hover:border-brand-blue transition-all group relative"
                             >
                                 <span className="text-[9px] text-gray-400 font-black block mb-0.5 tracking-tighter">MÃ MỜI</span>
-                                <span className="font-black text-sm text-brand-blue tracking-widest">{shareCode}</span>
+                                <span className="font-black text-sm text-brand-blue tracking-widest uppercase">{shareCode}</span>
                                 {copiedType === 'CODE' && <div className="absolute inset-0 bg-brand-blue rounded-2xl flex items-center justify-center text-[10px] text-white font-black animate-fade-in">ĐÃ COPY!</div>}
                             </div>
                             <button 
@@ -288,44 +280,18 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
         </div>
       </div>
 
-      {/* Modals (QR, Report) */}
+      {/* QR Code Modal */}
       {showQrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowQrModal(false)}>
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-[40px] shadow-2xl max-w-sm w-full flex flex-col items-center relative transform transition-all scale-100" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-[40px] shadow-2xl max-w-sm w-full flex flex-col items-center relative" onClick={e => e.stopPropagation()}>
                 <button onClick={() => setShowQrModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"><X size={24} /></button>
-                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">{t('set_detail.qr_modal_title')}</h3>
-                <div className="bg-white p-4 rounded-3xl border-4 border-brand-blue/5 my-6"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shareUrl)}`} alt="QR" className="w-56 h-56" /></div>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Quét mã QR</h3>
+                <div className="bg-white p-4 rounded-3xl border-4 border-brand-blue/5 my-6">
+                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shareUrl)}`} alt="QR" className="w-56 h-56" />
+                </div>
                 <div className="w-full bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-4 text-center">
-                    <p className="text-[10px] text-gray-400 uppercase font-black mb-1">{t('set_detail.join_code')}</p>
-                    <p className="text-2xl font-black text-brand-blue tracking-widest">{shareCode}</p>
-                </div>
-            </div>
-        </div>
-      )}
-
-      {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowReportModal(false)}>
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-[40px] shadow-2xl max-w-md w-full relative transform transition-all" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3"><Flag size={28} className="text-red-500" /> Báo cáo</h3>
-                    <button onClick={() => setShowReportModal(false)} className="text-gray-400"><X size={24} /></button>
-                </div>
-                <div className="space-y-6">
-                    <div>
-                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Lý do</label>
-                        <select value={reportReason} onChange={(e) => setReportReason(e.target.value)} className="w-full p-4 bg-gray-50 dark:bg-gray-700 border-0 rounded-2xl focus:ring-2 focus:ring-brand-blue outline-none text-sm font-bold dark:text-white transition-all">
-                            <option value="copyright">Vi phạm bản quyền</option>
-                            <option value="inappropriate">Nội dung không phù hợp</option>
-                            <option value="spam">Spam / Quảng cáo</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Chi tiết</label>
-                        <textarea value={reportDescription} onChange={(e) => setReportDescription(e.target.value)} rows={4} className="w-full p-4 bg-gray-50 dark:bg-gray-700 border-0 rounded-2xl focus:ring-2 focus:ring-brand-blue outline-none text-sm font-medium dark:text-white resize-none" placeholder="Vui lòng cung cấp thêm thông tin..."></textarea>
-                    </div>
-                    <button onClick={handleReportSubmit} className="w-full bg-red-600 text-white py-4 rounded-2xl font-black hover:bg-red-700 transition-all shadow-lg shadow-red-100 dark:shadow-none flex items-center justify-center gap-2 mt-4">
-                        <Send size={18} /> Gửi báo cáo
-                    </button>
+                    <p className="text-[10px] text-gray-400 uppercase font-black mb-1">MÃ THAM GIA</p>
+                    <p className="text-2xl font-black text-brand-blue tracking-widest uppercase">{shareCode}</p>
                 </div>
             </div>
         </div>
