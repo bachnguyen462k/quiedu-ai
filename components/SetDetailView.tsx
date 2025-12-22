@@ -44,8 +44,8 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
   useEffect(() => {
     const handleScroll = () => {
-        // Hiện thanh nổi khi cuộn qua phần thông tin chính (khoảng 300px)
-        if (window.scrollY > 300) {
+        // Hiện thanh nổi khi cuộn qua phần thông tin chính (khoảng 350px)
+        if (window.scrollY > 350) {
             setShowFloatingActions(true);
         } else {
             setShowFloatingActions(false);
@@ -103,9 +103,9 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 relative animate-fade-in pb-24 lg:pb-8">
-      {/* Floating Bottom Bar for Mobile */}
-      <div className={`fixed bottom-0 left-0 right-0 z-[110] p-4 lg:hidden transition-all duration-500 transform ${showFloatingActions ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}>
+    <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 relative animate-fade-in pb-32 lg:pb-8">
+      {/* Floating Bottom Bar for Mobile - Hiệu ứng nổ lên giống Landing */}
+      <div className={`fixed bottom-0 left-0 right-0 z-[110] p-4 lg:hidden transition-all duration-500 transform ${showFloatingActions ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-full opacity-0 scale-95 pointer-events-none'}`}>
           <div className="bg-white/95 dark:bg-gray-855 border border-brand-blue/20 dark:border-gray-800 shadow-2xl rounded-[32px] p-3 flex gap-3 backdrop-blur-md">
               <button 
                 onClick={onStartFlashcard}
