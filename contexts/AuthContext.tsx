@@ -11,7 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (userData: any) => Promise<void>;
-  loginWithGoogle: (idToken: string) => Promise<void>;
+  loginWithGoogle: (idToken: string, roleId: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
   // Recovery methods
@@ -104,10 +104,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const loginWithGoogle = async (idToken: string) => {
+  const loginWithGoogle = async (idToken: string, roleId: string) => {
     setIsLoading(true);
     try {
-        const data = await authService.loginWithGoogle(idToken);
+        const data = await authService.loginWithGoogle(idToken, roleId);
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);

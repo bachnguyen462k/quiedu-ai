@@ -33,6 +33,8 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   const [clientConfigError, setClientConfigError] = useState(false);
 
   const [selectedRole, setSelectedRole] = useState<UserRole>('USER');
+  const selectedRoleRef = useRef<UserRole>('USER');
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -44,6 +46,11 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
   const [newPassword, setNewPassword] = useState('');
 
   const googleButtonRef = useRef<HTMLDivElement>(null);
+
+  // Sync ref with state to avoid stale closure in Google callback
+  useEffect(() => {
+    selectedRoleRef.current = selectedRole;
+  }, [selectedRole]);
 
   // Initialize Google Login
   useEffect(() => {
@@ -58,7 +65,8 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
     const handleGoogleCallback = async (response: any) => {
         setIsGoogleSubmitting(true);
         try {
-            await loginWithGoogle(response.credential);
+            // Gửi cả token và roleId hiện tại
+            await loginWithGoogle(response.credential, selectedRoleRef.current);
             addNotification(t('login.success_login'), 'success');
         } catch (error: any) {
             addNotification(error.message || t('login.error_google'), 'error');
@@ -90,11 +98,10 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
             }
         } else if (retryCount < maxRetries) {
             retryCount++;
-            setTimeout(initGsi, 500); // Thử lại sau 0.5s nếu script chưa load
+            setTimeout(initGsi, 500); 
         }
     };
 
-    // Chỉ chạy khi không ở chế độ quên mật khẩu
     if (authMode !== 'FORGOT_PASSWORD') {
         initGsi();
     }
@@ -166,6 +173,25 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
       }
   };
 
+  const RoleSelector = () => (
+    <div className="flex gap-4 mb-6">
+        <button 
+            type="button"
+            onClick={() => setSelectedRole('USER')} 
+            className={`flex-1 py-3 rounded-2xl border-2 font-black transition-all flex items-center justify-center gap-2 ${selectedRole === 'USER' ? 'border-brand-blue bg-blue-50 dark:bg-blue-900/30 text-brand-blue dark:text-blue-400' : 'border-gray-100 dark:border-gray-700 text-gray-400'}`}
+        >
+            <ShieldCheck size={20} /> {t('common.role_student')}
+        </button>
+        <button 
+            type="button"
+            onClick={() => setSelectedRole('TEACHER')} 
+            className={`flex-1 py-3 rounded-2xl border-2 font-black transition-all flex items-center justify-center gap-2 ${selectedRole === 'TEACHER' ? 'border-brand-orange bg-orange-50 dark:bg-orange-900/30 text-brand-orange' : 'border-gray-100 dark:border-gray-700 text-gray-400'}`}
+        >
+            <UserIcon size={20} /> {t('common.role_teacher')}
+        </button>
+    </div>
+  );
+
   const renderLogin = () => (
       <>
         <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">{t('login.welcome_back')}</h3>
@@ -221,14 +247,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
         <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">{t('login.register_title')}</h3>
         <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">{t('login.welcome_join')}</p>
         
-        <div className="flex gap-4 mb-6">
-            <button onClick={() => setSelectedRole('USER')} className={`flex-1 py-3 rounded-2xl border-2 font-black transition-all flex items-center justify-center gap-2 ${selectedRole === 'USER' ? 'border-brand-blue bg-blue-50 dark:bg-blue-900/30 text-brand-blue dark:text-blue-400' : 'border-gray-100 dark:border-gray-700 text-gray-400'}`}>
-                <ShieldCheck size={20} /> {t('common.role_student')}
-            </button>
-            <button onClick={() => setSelectedRole('TEACHER')} className={`flex-1 py-3 rounded-2xl border-2 font-black transition-all flex items-center justify-center gap-2 ${selectedRole === 'TEACHER' ? 'border-brand-orange bg-orange-50 dark:bg-orange-900/30 text-brand-orange' : 'border-gray-100 dark:border-gray-700 text-gray-400'}`}>
-                <UserIcon size={20} /> {t('common.role_teacher')}
-            </button>
-        </div>
+        <RoleSelector />
 
         <form onSubmit={handleRegister} className="space-y-4">
             <div className="relative group">
@@ -390,6 +409,12 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                     <div className="relative my-8">
                         <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100 dark:border-gray-700"></div></div>
                         <div className="relative flex justify-center text-sm"><span className="px-4 bg-white dark:bg-gray-855 text-gray-400 font-bold uppercase tracking-widest text-[10px]">{t('common.or_continue')}</span></div>
+                    </div>
+
+                    {/* Role Selector for Google login too */}
+                    <div className="mb-4">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 text-center">Bạn tham gia với tư cách:</p>
+                        <RoleSelector />
                     </div>
 
                     {clientConfigError ? (

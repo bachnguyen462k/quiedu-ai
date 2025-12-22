@@ -48,10 +48,13 @@ export const authService = {
     }
   },
 
-  // Đăng nhập bằng Google Token
-  loginWithGoogle: async (idToken: string): Promise<AuthResponse> => {
+  // Đăng nhập bằng Google Token và Vai trò
+  loginWithGoogle: async (idToken: string, roleId: string): Promise<AuthResponse> => {
     try {
-        const response = await apiClient.post('/auth/google', { idToken });
+        const response = await apiClient.post('/auth/google', { 
+            idToken,
+            roleId 
+        });
         const responseData = response.data;
 
         if (responseData.code !== 1000) {
