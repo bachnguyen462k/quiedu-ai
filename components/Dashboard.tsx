@@ -171,7 +171,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest ${idx === 0 ? 'bg-white/20 text-white' : 'bg-brand-orange/10 text-brand-orange'}`}>HOT</span>
-                                        {renderStatusBadge(set.status)}
+                                        {/* Bỏ trạng thái ở trang chủ */}
+                                        {isLibrary && renderStatusBadge(set.status)}
                                     </div>
                                     <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`p-2 rounded-full transition-all hover:bg-white/10 ${set.isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-400 dark:text-gray-500'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
                                 </div>
@@ -218,8 +219,14 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                             <div className="flex flex-wrap gap-2 mb-4">
                                 <span className="px-2 py-1 rounded-lg bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-blue-800/30">QUIZ</span>
                                 <span className="px-2 py-1 rounded-lg bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-transparent dark:border-orange-800/30">{set.subject}</span>
-                                {renderSetTypeBadge(set.type)}
-                                {renderStatusBadge(set.status)}
+                                
+                                {/* Chỉ hiển thị cách tạo và trạng thái khi ở trong Thư viện */}
+                                {isLibrary && (
+                                    <>
+                                        {renderSetTypeBadge(set.type)}
+                                        {renderStatusBadge(set.status)}
+                                    </>
+                                )}
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-3 leading-tight pr-6">{set.title}</h3>
                             <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 opacity-80 font-medium leading-relaxed">{set.description}</p>
