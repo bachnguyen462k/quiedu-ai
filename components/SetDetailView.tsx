@@ -8,7 +8,7 @@ import { studySetService } from '../services/studySetService';
 import ThemeLoader from './ThemeLoader';
 
 interface SetDetailViewProps {
-  set: StudySet; // Initial metadata from dashboard
+  set: StudySet; // Initial metadata from dashboard or placeholder from router
   onBack: () => void;
   onStartFlashcard: () => void;
   onStartQuiz: () => void;
@@ -28,14 +28,19 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   // Fetch full study set details when component mounts
   useEffect(() => {
     const fetchFullDetails = async () => {
+        if (!metadata.id) return;
+        
         setIsLoading(true);
         try {
+            // Gọi API để lấy thông tin chung và danh sách câu hỏi trước khi bắt đầu
             const response = await studySetService.getStudySetById(metadata.id);
             if (response.code === 1000) {
                 const data = response.result;
                 const mapped: StudySet = {
                     ...metadata,
-                    cards: data.cards.map((c: any) => ({
+                    id: data.id.toString(),
+                    title: data.title,
+                    cards: (data.cards || []).map((c: any) => ({
                         id: c.id.toString(),
                         term: c.term,
                         definition: c.definition,
@@ -48,10 +53,17 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                     plays: data.plays || 0
                 };
                 setFullSet(mapped);
+            } else {
+                addNotification("Học phần không tồn tại hoặc đã bị xóa", "error");
+                onBack();
             }
         } catch (error) {
             console.error("Failed to fetch full study set details", error);
-            addNotification("Không thể tải thông tin chi tiết học phần", "error");
+            addNotification("Không thể tải thông tin chi tiết học phần từ máy chủ", "error");
+            // Vẫn cho phép hiển thị metadata nếu có (fallback)
+            if (!metadata.title || metadata.title === 'Đang tải...') {
+                onBack();
+            }
         } finally {
             setIsLoading(false);
         }
@@ -62,17 +74,16 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
   const activeSet = fullSet || metadata;
 
-  const formattedDate = new Date(activeSet.createdAt).toLocaleDateString('vi-VN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // Xử lý ngày tháng an toàn
+  const formattedDate = activeSet.createdAt 
+    ? new Date(activeSet.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })
+    : '...';
 
   const averageRating = activeSet.reviews && activeSet.reviews.length > 0 
       ? (activeSet.reviews.reduce((acc, r) => acc + r.rating, 0) / activeSet.reviews.length).toFixed(1)
       : "5.0";
   
-  const shareUrl = window.location.href;
+  const shareUrl = `${window.location.origin}/#/set/${activeSet.id}`;
   const shareCode = `QZ-${activeSet.id.toUpperCase()}`;
 
   const handleCopy = (text: string, type: 'LINK' | 'CODE') => {
@@ -81,11 +92,11 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     setTimeout(() => setCopiedType(null), 2000);
   };
 
-  if (isLoading) {
+  if (isLoading && (!fullSet)) {
       return (
           <div className="min-h-[60vh] flex flex-col items-center justify-center animate-fade-in">
               <ThemeLoader size={48} className="mb-4" />
-              <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Đang chuẩn bị học phần...</p>
+              <p className="text-gray-500 font-black uppercase tracking-widest text-xs">Đang tải dữ liệu học phần...</p>
           </div>
       );
   }
@@ -145,7 +156,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                 </div>
                 
                 <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-6 leading-tight">{activeSet.title}</h1>
-                <p className="text-gray-600 dark:text-gray-400 text-xl mb-10 leading-relaxed font-medium">{activeSet.description}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-xl mb-10 leading-relaxed font-medium">{activeSet.description || 'Không có mô tả cho học phần này.'}</p>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-8 pt-8 border-t border-gray-100 dark:border-gray-800">
                     <div className="flex flex-col gap-1">
@@ -179,7 +190,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                         <Timer className="text-brand-blue" size={20} />
                         <span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Thời gian dự kiến</span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{Math.ceil(activeSet.cards.length * 1.5)} phút</span> để hoàn thành bài tập này.</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{Math.ceil((activeSet.cards.length || 10) * 1.5)} phút</span> để hoàn thành bài tập này.</p>
                 </div>
 
                 <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
@@ -211,7 +222,8 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                 <div className="space-y-5">
                     <button 
                         onClick={onStartFlashcard}
-                        className="w-full group p-5 rounded-3xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all flex items-center gap-5 text-left active:scale-95"
+                        disabled={isLoading}
+                        className="w-full group p-5 rounded-3xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all flex items-center gap-5 text-left active:scale-95 disabled:opacity-50"
                     >
                         <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:bg-brand-blue group-hover:text-white transition-colors flex items-center justify-center shrink-0">
                             <BookOpen size={28} />
@@ -224,7 +236,8 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
                     <button 
                         onClick={onStartQuiz}
-                        className="w-full group p-5 rounded-3xl bg-brand-blue text-white shadow-xl shadow-brand-blue/25 hover:bg-blue-700 transition-all flex items-center gap-5 text-left transform hover:-translate-y-1 active:scale-95"
+                        disabled={isLoading}
+                        className="w-full group p-5 rounded-3xl bg-brand-blue text-white shadow-xl shadow-brand-blue/25 hover:bg-blue-700 transition-all flex items-center gap-5 text-left transform hover:-translate-y-1 active:scale-95 disabled:opacity-50"
                     >
                         <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
                             <BarChart3 size={28} />
@@ -256,7 +269,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
                     <div className="mt-8">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                             <Share2 size={12} /> Chia sẻ với bạn bè
+                             <Share2 size={12} /> Chia sẻ học phần
                         </p>
                         <div className="flex gap-2">
                             <div 
