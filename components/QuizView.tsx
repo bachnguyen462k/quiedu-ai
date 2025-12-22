@@ -13,12 +13,13 @@ interface QuizViewProps {
   currentUser: User;
   onBack: () => void;
   onAddReview: (setId: string, review: Review) => void;
-  serverAttempt?: QuizAttempt; // Dữ liệu từ Server API /quiz/start
+  serverAttempt?: QuizAttempt; 
+  reviewAttemptId?: string; // Nếu có ID này, nhảy thẳng vào màn hình kết quả
 }
 
 const COLORS = ['#10B981', '#EF4444', '#E5E7EB'];
 
-const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddReview, serverAttempt }) => {
+const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddReview, serverAttempt, reviewAttemptId }) => {
   const { t } = useTranslation();
   const { addNotification } = useApp();
   
@@ -27,7 +28,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [userSelections, setUserSelections] = useState<(string | null)[]>([]); 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(!!reviewAttemptId);
   const [isReviewing, setIsReviewing] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
 
@@ -42,6 +43,29 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
+  // Fetch Review Data for Old Attempt
+  useEffect(() => {
+    if (reviewAttemptId) {
+        const fetchReview = async () => {
+            setIsSubmitting(true);
+            try {
+                const response = await quizService.getQuizReview(reviewAttemptId);
+                if (response.code === 1000) {
+                    const items = response.result;
+                    const correctCount = items.filter((i: any) => i.correct).length;
+                    setScore(Math.round((correctCount / items.length) * 100));
+                    setReviewItems(items);
+                }
+            } catch (error) {
+                addNotification("Lỗi tải kết quả thi.", "error");
+            } finally {
+                setIsSubmitting(false);
+            }
+        };
+        fetchReview();
+    }
+  }, [reviewAttemptId]);
 
   // Timer Effect
   useEffect(() => {
@@ -87,7 +111,6 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     setUserSelections(newUserSelections);
 
     if (serverAttempt) {
-        // Auto-save answer to server
         quizService.saveAnswer(
             serverAttempt.attemptId,
             currentQuestion.cardId,
@@ -115,19 +138,14 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
               answer: userSelections[idx] || ""
           }));
 
-          // 1. Gửi lệnh nộp bài qua POST /quiz/submit/{attemptId}
           const submitResponse = await quizService.submitQuiz(serverAttempt.attemptId, finalAnswers);
           
           if (submitResponse.code === 1000) {
-              // 2. Nếu nộp thành công, gọi API lấy dữ liệu review chi tiết List<QuizReviewItemResponse>
               const reviewResponse = await quizService.getQuizReview(serverAttempt.attemptId);
-              
               if (reviewResponse.code === 1000) {
                   const items = reviewResponse.result; 
                   const correctCount = items.filter((i: any) => i.correct).length;
-                  const calculatedScore = Math.round((correctCount / items.length) * 100);
-                  
-                  setScore(calculatedScore);
+                  setScore(Math.round((correctCount / items.length) * 100));
                   setReviewItems(items);
                   setIsReviewing(false);
                   setIsCompleted(true);
@@ -153,9 +171,10 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     setIsReviewing(false); 
   };
 
-  if (questions.length === 0) return <div className="p-20 text-center dark:text-white flex flex-col items-center gap-4"><Loader2 className="animate-spin text-brand-blue" /> {t('quiz.generating')}</div>;
+  if (isSubmitting && !isCompleted) return <div className="p-20 text-center dark:text-white flex flex-col items-center gap-4"><Loader2 className="animate-spin text-brand-blue" /> Đang chuẩn bị bài thi...</div>;
+  if (questions.length === 0 && !isCompleted) return <div className="p-20 text-center dark:text-white flex flex-col items-center gap-4"><Loader2 className="animate-spin text-brand-blue" /> {t('quiz.generating')}</div>;
 
-  // --- VIEW: RESULTS (Màn hình kết quả) ---
+  // --- VIEW: RESULTS ---
   if (isCompleted) {
     const percentage = score;
     const data = [
@@ -166,7 +185,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in pb-20">
          <div className="text-center mb-10">
-            <h2 className="text-3xl font-black mb-8 text-gray-900 dark:text-white uppercase tracking-tight">{t('quiz.result_title')}</h2>
+            <h2 className="text-3xl font-black mb-8 text-gray-900 dark:text-white uppercase tracking-tight">{reviewAttemptId ? "Lịch sử bài làm" : t('quiz.result_title')}</h2>
             
             <div className="bg-white dark:bg-gray-800 p-8 rounded-[40px] shadow-2xl border border-gray-100 dark:border-gray-700 mb-8 max-w-2xl mx-auto transition-colors">
                 <div className="h-64 w-full flex justify-center items-center">
@@ -183,21 +202,25 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 </div>
                 
                 <div className="text-6xl font-black text-brand-blue dark:text-blue-400 mb-2">{percentage}%</div>
-                <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 mb-8 font-bold uppercase tracking-widest text-xs">
-                    <Clock size={14} /> Thời gian hoàn thành: {formatTime(seconds)}
-                </div>
+                {!reviewAttemptId && (
+                    <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 mb-8 font-bold uppercase tracking-widest text-xs">
+                        <Clock size={14} /> Thời gian hoàn thành: {formatTime(seconds)}
+                    </div>
+                )}
 
                 <div className="flex justify-center gap-4">
                     <button onClick={onBack} className="px-8 py-3.5 rounded-2xl border-2 border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-black uppercase text-xs tracking-widest transition-all">
                         {t('quiz.back_detail')}
                     </button>
-                    <button onClick={() => window.location.reload()} className="px-8 py-3.5 rounded-2xl bg-brand-blue text-white hover:bg-blue-700 font-black uppercase text-xs tracking-widest flex items-center gap-2 transition-all shadow-xl shadow-brand-blue/20">
-                        <RefreshCw size={18} /> {t('quiz.retry')}
-                    </button>
+                    {!reviewAttemptId && (
+                        <button onClick={() => window.location.reload()} className="px-8 py-3.5 rounded-2xl bg-brand-blue text-white hover:bg-blue-700 font-black uppercase text-xs tracking-widest flex items-center gap-2 transition-all shadow-xl shadow-brand-blue/20">
+                            <RefreshCw size={18} /> {t('quiz.retry')}
+                        </button>
+                    )}
                 </div>
             </div>
             
-            {!reviewSubmitted && (
+            {!reviewSubmitted && !reviewAttemptId && (
                 <div className="bg-orange-50 dark:bg-orange-900/10 p-8 rounded-[32px] border border-orange-100 dark:border-orange-900/20 max-w-2xl mx-auto mb-8 transition-colors">
                      <h3 className="text-xl font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tight">{t('quiz.review_title')}</h3>
                      <div className="flex justify-center gap-3 mb-6">
@@ -271,7 +294,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     );
   }
 
-  // --- VIEW: REVIEW SCREEN ---
+  // --- VIEW: REVIEW BEFORE SUBMIT ---
   if (isReviewing) {
       return (
         <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
@@ -320,7 +343,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
       );
   }
 
-  // --- VIEW: ACTIVE QUIZ (Giao diện làm bài) ---
+  // --- VIEW: ACTIVE QUIZ ---
   const currentQuestion = questions[currentQuestionIndex];
   const answeredCount = userSelections.filter(a => a !== null).length;
   const progress = (answeredCount / questions.length) * 100;

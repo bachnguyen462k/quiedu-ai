@@ -63,7 +63,7 @@ export const quizService = {
    * Lấy kết quả review chi tiết của một lượt thi.
    * Endpoint: GET /quiz/{attemptId}/review
    */
-  getQuizReview: async (attemptId: number): Promise<any> => {
+  getQuizReview: async (attemptId: number | string): Promise<any> => {
     try {
       const response = await apiClient.get(`/quiz/${attemptId}/review`);
       return response.data;
@@ -71,5 +71,21 @@ export const quizService = {
       console.error("QuizService: getQuizReview failed", error);
       throw error;
     }
+  },
+
+  /**
+   * Lấy lịch sử làm bài của tôi.
+   * Endpoint: GET /quiz/my-history
+   */
+  getMyQuizHistory: async (page: number = 0, size: number = 20): Promise<any> => {
+      try {
+          const response = await apiClient.get('/quiz/my-history', {
+              params: { page, size }
+          });
+          return response.data;
+      } catch (error) {
+          console.error("QuizService: getMyQuizHistory failed", error);
+          throw error;
+      }
   }
 };

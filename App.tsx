@@ -16,7 +16,7 @@ import SettingsView from './components/SettingsView';
 import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
-import { StudySet, User, AiGenerationRecord, Review, EventTheme, QuizAttempt } from './types';
+import { StudySet, User, AiGenerationRecord, Review, EventTheme, QuizAttempt, StudyMode } from './types';
 import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2, Mail, Sparkles, LayoutDashboard, PlusCircle, Library, Users } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -220,8 +220,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/settings" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SettingsView currentUser={user!} onUpdateUser={handleUpdateUser} /></MainLayout>} />
         <Route path="/admin/theme" element={isAdmin ? <MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><AdminThemeSettings /></MainLayout> : <Navigate to="/dashboard" replace />} />
         <Route path="/set/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SetDetailRoute sets={sets} onToggleFavorite={handleToggleFavorite} /></MainLayout>} />
-        <Route path="/study/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode="FLASHCARD" /></MainLayout>} />
-        <Route path="/quiz/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode="QUIZ" onAddReview={handleAddReview} /></MainLayout>} />
+        <Route path="/study/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode={StudyMode.FLASHCARD} /></MainLayout>} />
+        <Route path="/quiz/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode={StudyMode.QUIZ} onAddReview={handleAddReview} /></MainLayout>} />
+        <Route path="/quiz/review/:attemptId/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode={StudyMode.REVIEW} onAddReview={handleAddReview} /></MainLayout>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
@@ -244,8 +245,8 @@ const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggle
     return <SetDetailView set={setPlaceholder} onBack={handleBack} onStartFlashcard={handleStartFlash} onStartQuiz={handleStartQuiz} onToggleFavorite={onToggleFavorite} />;
 };
 
-const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLASHCARD' | 'QUIZ', onAddReview?: any }) => {
-    const { setId } = useParams();
+const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: StudyMode, onAddReview?: any }) => {
+    const { setId, attemptId } = useParams();
     const { user } = useAuth();
     const { addNotification } = useApp();
     const navigate = useNavigate();
@@ -259,7 +260,7 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
 
     useEffect(() => {
         const fetchAllNeededData = async () => {
-            if (!setId || fetchingId.current === setId) return;
+            if (!setId || (fetchingId.current === setId && mode !== StudyMode.REVIEW)) return;
             fetchingId.current = setId;
             setIsFetching(true);
             
@@ -285,38 +286,37 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
                     });
                 }
 
-                // 2. If mode is QUIZ, Fetch Attempt Data from Server
-                // Fix: Cast mode to string to avoid unintentional comparison error in some environments
-                if ((mode as string) === 'QUIZ') {
+                // 2. Quiz/Review logic
+                if (mode === StudyMode.QUIZ) {
                     const attempt = await quizService.startQuiz(setId);
                     setQuizAttempt(attempt);
+                } else if (mode === StudyMode.REVIEW && attemptId) {
+                    // Logic review handled inside QuizView after component mount via initial results fetching
                 }
 
             } catch (e) {
-                console.error("Failed to fetch full study/quiz data", e);
-                addNotification("Lỗi tải dữ liệu. Vui lòng thử lại.", "error");
-                fetchingId.current = null;
+                console.error("Failed to fetch data", e);
+                addNotification("Lỗi tải dữ liệu.", "error");
             } finally { setIsFetching(false); }
         };
         fetchAllNeededData();
-    }, [setId, mode, addNotification]);
+    }, [setId, mode, attemptId, addNotification]);
 
     if (isFetching) return <div className="min-h-screen flex items-center justify-center"><ThemeLoader size={48} /></div>;
-    if (!fullSet) return <div className="p-8 text-center text-gray-500">Học phần không tồn tại hoặc lỗi tải dữ liệu.</div>;
+    if (!fullSet) return <div className="p-8 text-center text-gray-500">Học phần không tồn tại.</div>;
 
     return (
         <div className="pb-20 animate-fade-in">
-            {/* Header selection only for Flashcard mode, hidden in Quiz mode to focus */}
-            {/* Fix: Cast mode to string to avoid unintentional comparison error when narrowing occurs */}
-            {(mode as string) === 'FLASHCARD' && (
+            {mode === StudyMode.FLASHCARD && (
                 <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-30 transition-colors">
                     <div className="max-w-4xl mx-auto px-4 py-2 flex gap-4 overflow-x-auto">
-                        <button onClick={() => navigate(`/study/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${(mode as string) === 'FLASHCARD' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><BookOpen size={18} /> Thẻ ghi nhớ</button>
-                        <button onClick={() => navigate(`/quiz/${setId}`)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${(mode as string) === 'QUIZ' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}><GraduationCap size={18} /> Kiểm tra</button>
+                        <button onClick={() => navigate(`/study/${setId}`)} className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700"><BookOpen size={18} /> Thẻ ghi nhớ</button>
+                        <button onClick={() => navigate(`/quiz/${setId}`)} className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700"><GraduationCap size={18} /> Kiểm tra</button>
                     </div>
                 </div>
             )}
-            {(mode as string) === 'FLASHCARD' ? (
+            
+            {mode === StudyMode.FLASHCARD ? (
                 <FlashcardView set={fullSet} onBack={handleBackToDetail} />
             ) : (
                 <QuizView 
@@ -325,6 +325,7 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: 'FLAS
                     onBack={handleBackToDetail} 
                     onAddReview={onAddReview}
                     serverAttempt={quizAttempt || undefined}
+                    reviewAttemptId={mode === StudyMode.REVIEW ? attemptId : undefined}
                 />
             )}
         </div>

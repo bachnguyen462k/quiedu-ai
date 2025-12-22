@@ -65,11 +65,21 @@ export interface QuizAttempt {
   startedAt: string;
 }
 
+export interface QuizHistoryItem {
+  attemptId: number;
+  studySetId: number;
+  studySetTitle: string;
+  score: number;
+  correctAnswers: number;
+  totalQuestions: number;
+  completedAt: string;
+}
+
 export interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
-  correctAnswer: string; // Vẫn giữ cho client-side quiz cũ
+  correctAnswer: string; 
   relatedLink?: string; 
 }
 
@@ -77,7 +87,8 @@ export type ViewState = 'LANDING' | 'LOGIN' | 'DASHBOARD' | 'LIBRARY' | 'CLASSES
 
 export enum StudyMode {
   FLASHCARD = 'FLASHCARD',
-  QUIZ = 'QUIZ'
+  QUIZ = 'QUIZ',
+  REVIEW = 'REVIEW'
 }
 
 // --- Auth & Class Management Types ---

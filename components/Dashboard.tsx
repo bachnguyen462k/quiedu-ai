@@ -1,10 +1,12 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { StudySet, AiGenerationRecord, User, Review } from '../types';
-import { Plus, Search, ArrowUpRight, Book, Clock, Flame, Play, Loader2, FileText, Layers, ChevronRight, Heart, MessageSquare, Star, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Zap, Crown, Medal } from 'lucide-react';
+import { StudySet, AiGenerationRecord, User, QuizHistoryItem } from '../types';
+import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
+import { quizService } from '../services/quizService';
 import { useApp } from '../contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 import ThemeLoader from './ThemeLoader';
 
 interface DashboardProps {
@@ -23,11 +25,13 @@ const ITEMS_PER_PAGE = 20;
 const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, currentUser, onCreateNew, onSelectSet, onSelectUpload, onToggleFavorite, isLibrary }) => {
   const { t } = useTranslation();
   const { addNotification } = useApp();
+  const navigate = useNavigate();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [libraryTab, setLibraryTab] = useState<'SETS' | 'FAVORITES' | 'FILES'>('SETS');
+  const [libraryTab, setLibraryTab] = useState<'SETS' | 'FAVORITES' | 'HISTORY'>('SETS');
   
   const [displaySets, setDisplaySets] = useState<StudySet[]>([]);
+  const [quizHistory, setQuizHistory] = useState<QuizHistoryItem[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +42,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const trendingSets = useMemo(() => {
-    // Chỉ lấy Top 3 học phần thịnh hành nhất
     return [...displaySets].slice(0, 3);
   }, [displaySets]);
 
@@ -51,36 +54,43 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       setIsLoading(true);
       
       try {
-          const response = isLibrary && libraryTab === 'SETS' 
-            ? await studySetService.getMyStudySets(page, ITEMS_PER_PAGE)
-            : await studySetService.getPublicStudySets(page, ITEMS_PER_PAGE);
-
-          if (response.code === 1000) {
-              const { content, totalPages: total } = response.result;
-              const mappedSets: StudySet[] = content.map((item: any) => ({
-                  id: item.id.toString(),
-                  title: item.title,
-                  description: item.description,
-                  author: item.author || 'Thành viên',
-                  createdAt: new Date(item.createdAt).getTime(),
-                  privacy: item.privacy || 'PUBLIC',
-                  subject: item.topic || 'Khác',
-                  type: item.type,
-                  status: item.status,
-                  plays: item.plays || 0,
-                  cards: []
-              }));
-
-              if (refresh) {
-                  setDisplaySets(mappedSets);
-              } else {
-                  setDisplaySets(prev => [...prev, ...mappedSets]);
+          if (libraryTab === 'HISTORY') {
+              const response = await quizService.getMyQuizHistory(page, ITEMS_PER_PAGE);
+              if (response.code === 1000) {
+                  const { content, totalPages: total } = response.result;
+                  if (refresh) setQuizHistory(content);
+                  else setQuizHistory(prev => [...prev, ...content]);
+                  setTotalPages(total);
               }
-              setTotalPages(total);
+          } else {
+              const response = isLibrary && libraryTab === 'SETS' 
+                ? await studySetService.getMyStudySets(page, ITEMS_PER_PAGE)
+                : await studySetService.getPublicStudySets(page, ITEMS_PER_PAGE);
+
+              if (response.code === 1000) {
+                  const { content, totalPages: total } = response.result;
+                  const mappedSets: StudySet[] = content.map((item: any) => ({
+                      id: item.id.toString(),
+                      title: item.title,
+                      description: item.description,
+                      author: item.author || 'Thành viên',
+                      createdAt: new Date(item.createdAt).getTime(),
+                      privacy: item.privacy || 'PUBLIC',
+                      subject: item.topic || 'Khác',
+                      type: item.type,
+                      status: item.status,
+                      plays: item.plays || 0,
+                      cards: []
+                  }));
+
+                  if (refresh) setDisplaySets(mappedSets);
+                  else setDisplaySets(prev => [...prev, ...mappedSets]);
+                  setTotalPages(total);
+              }
           }
       } catch (error) {
-          console.error("Failed to load sets", error);
-          addNotification("Không thể tải danh sách học phần từ máy chủ", "error");
+          console.error("Failed to load data", error);
+          addNotification("Không thể kết nối máy chủ", "error");
       } finally {
           setIsLoading(false);
           setIsInitialLoading(false);
@@ -106,7 +116,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
 
     if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
     return () => { if (observerRef.current) observerRef.current.disconnect(); };
-  }, [currentPage, totalPages, isLoading, isInitialLoading, isLibrary, libraryTab]);
+  }, [currentPage, totalPages, isLoading, isInitialLoading, libraryTab]);
 
   const filteredSets = useMemo(() => {
     let base = displaySets;
@@ -187,7 +197,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                             onClick={() => onSelectSet(set)} 
                             className={`group relative overflow-hidden rounded-[36px] p-7 cursor-pointer transition-all duration-500 shadow-xl hover:shadow-2xl border-transparent transform hover:-translate-y-2 flex flex-col justify-between min-h-[300px] text-white ${cardTheme}`}
                         >
-                            {/* Background Decorations */}
                             <div className="absolute -top-10 -right-10 opacity-10 group-hover:scale-125 transition-transform duration-700">
                                 {isTop1 ? <Crown size={220} /> : isTop2 ? <Trophy size={200} /> : <Medal size={180} />}
                             </div>
@@ -236,21 +245,17 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                             </div>
                         </div>
                     );
-                }) : (
-                    <div className="col-span-full py-20 text-center bg-gray-50 dark:bg-gray-800/50 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
-                        <Flame size={48} className="mx-auto text-gray-200 mb-4" />
-                        <p className="text-gray-500 font-bold italic">Đang cập nhật xu hướng học tập...</p>
-                    </div>
-                )}
+                }) : null}
             </div>
         </section>
       )}
 
       {isLibrary && (
           <div className="mb-10 flex flex-col md:flex-row gap-6 items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-8 transition-colors">
-              <div className="flex p-1.5 bg-gray-100 dark:bg-gray-800 rounded-2xl w-full md:w-auto">
-                  <button onClick={() => setLibraryTab('SETS')} className={`flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-black transition-all ${libraryTab === 'SETS' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_sets')}</button>
-                  <button onClick={() => setLibraryTab('FAVORITES')} className={`flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-black transition-all ${libraryTab === 'FAVORITES' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_favorites')}</button>
+              <div className="flex p-1.5 bg-gray-100 dark:bg-gray-800 rounded-[22px] w-full md:w-auto overflow-x-auto custom-scrollbar scrollbar-hide">
+                  <button onClick={() => setLibraryTab('SETS')} className={`flex-1 md:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${libraryTab === 'SETS' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_sets')}</button>
+                  <button onClick={() => setLibraryTab('FAVORITES')} className={`flex-1 md:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${libraryTab === 'FAVORITES' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_favorites')}</button>
+                  <button onClick={() => setLibraryTab('HISTORY')} className={`flex-1 md:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap flex items-center gap-2 ${libraryTab === 'HISTORY' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}><History size={16}/> Lịch sử Quiz</button>
               </div>
               <div className="relative w-full md:w-96 group">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-blue transition-colors" size={20} />
@@ -260,64 +265,109 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       )}
 
       <div className="grid grid-cols-1 gap-10">
-        <div>
-            <h2 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3 uppercase tracking-tight">
-                <Book className="text-brand-blue" size={24} /> {isLibrary ? t('dashboard.library') : 'Khám phá học phần mới'}
-            </h2>
-            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8`}>
-                {filteredSets.map(set => (
-                    <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-[32px] shadow-sm hover:shadow-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
-                        <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-3 rounded-2xl z-10 transition-all ${set.isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20 scale-110 shadow-lg' : 'text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-800'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
-                        <div className="p-7 flex-1">
-                            <div className="flex flex-wrap gap-2 mb-5">
-                                <span className="px-3 py-1 rounded-xl bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-brand-blue/10">QUIZ</span>
-                                <span className="px-3 py-1 rounded-xl bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-brand-orange/10">{set.subject}</span>
-                                {isLibrary && (
-                                    <>
-                                        {renderSetTypeBadge(set.type)}
-                                        {renderStatusBadge(set.status)}
-                                    </>
-                                )}
+        {libraryTab === 'HISTORY' ? (
+            <div className="animate-fade-in">
+                <h2 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3 uppercase tracking-tight">
+                    <History className="text-brand-blue" size={24} /> Lịch sử ôn luyện của bạn
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {quizHistory.map((item) => {
+                        const scoreColor = item.score >= 80 ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : item.score >= 50 ? 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20';
+                        return (
+                            <div key={item.attemptId} className="bg-white dark:bg-gray-855 p-6 rounded-[32px] border border-gray-100 dark:border-gray-800 hover:shadow-xl transition-all group flex flex-col justify-between min-h-[220px]">
+                                <div>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className={`px-4 py-1 rounded-full text-lg font-black ${scoreColor}`}>
+                                            {item.score}%
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(item.completedAt).toLocaleDateString()}</span>
+                                            <span className="block text-[10px] font-bold text-gray-400">{new Date(item.completedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-black text-gray-900 dark:text-white mb-2 line-clamp-2 leading-snug group-hover:text-brand-blue transition-colors">{item.studySetTitle}</h3>
+                                    <p className="text-xs text-gray-500 font-medium flex items-center gap-1.5"><CheckCircle2 size={12} className="text-green-500"/> {item.correctAnswers}/{item.totalQuestions} câu đúng</p>
+                                </div>
+                                <button 
+                                    onClick={() => navigate(`/quiz/review/${item.attemptId}/${item.studySetId}`)}
+                                    className="mt-6 w-full py-3 bg-gray-50 dark:bg-gray-800 text-brand-blue dark:text-blue-400 rounded-2xl font-black uppercase text-[10px] tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-brand-blue hover:text-white transition-all active:scale-95"
+                                >
+                                    Xem chi tiết bài làm <ChevronRight size={14} />
+                                </button>
                             </div>
-                            <h3 className="text-xl font-black text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-4 leading-[1.3] pr-6">{set.title}</h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 font-medium leading-relaxed mb-6">{set.description}</p>
-                        </div>
-                        <div className="px-7 py-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 flex items-center justify-between text-gray-500 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-2xl bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-md">{set.author.charAt(0)}</div>
-                                <span className="text-xs font-black text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
-                            </div>
-                            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                                <span className="flex items-center gap-1.5"><Clock size={14} className="text-brand-blue dark:text-blue-400" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
-                            </div>
-                        </div>
+                        );
+                    })}
+                </div>
+                
+                {quizHistory.length === 0 && !isLoading && (
+                    <div className="text-center py-24 bg-white dark:bg-gray-855 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                        <History size={64} className="mx-auto text-gray-100 dark:text-gray-800 mb-6" />
+                        <p className="text-gray-500 font-black text-lg">Bạn chưa tham gia Quiz nào.</p>
+                        <button onClick={() => navigate('/dashboard')} className="mt-6 bg-brand-blue text-white px-8 py-4 rounded-[20px] font-black hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-blue/20">Luyện tập ngay</button>
                     </div>
-                ))}
+                )}
             </div>
+        ) : (
+            <div>
+                <h2 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3 uppercase tracking-tight">
+                    <Book className="text-brand-blue" size={24} /> {isLibrary ? t('dashboard.library') : 'Khám phá học phần mới'}
+                </h2>
+                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8`}>
+                    {filteredSets.map(set => (
+                        <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-[32px] shadow-sm hover:shadow-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
+                            <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-3 rounded-2xl z-10 transition-all ${set.isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20 scale-110 shadow-lg' : 'text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-800'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
+                            <div className="p-7 flex-1">
+                                <div className="flex flex-wrap gap-2 mb-5">
+                                    <span className="px-3 py-1 rounded-xl bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-brand-blue/10">QUIZ</span>
+                                    <span className="px-3 py-1 rounded-xl bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-brand-orange/10">{set.subject}</span>
+                                    {isLibrary && (
+                                        <>
+                                            {renderSetTypeBadge(set.type)}
+                                            {renderStatusBadge(set.status)}
+                                        </>
+                                    )}
+                                </div>
+                                <h3 className="text-xl font-black text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-4 leading-[1.3] pr-6">{set.title}</h3>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 font-medium leading-relaxed mb-6">{set.description}</p>
+                            </div>
+                            <div className="px-7 py-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 flex items-center justify-between text-gray-500 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-2xl bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-md">{set.author.charAt(0)}</div>
+                                    <span className="text-xs font-black text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                    <span className="flex items-center gap-1.5"><Clock size={14} className="text-brand-blue dark:text-blue-400" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
-            <div ref={loadMoreRef} className="h-32 flex items-center justify-center mt-12">
-                {isLoading && filteredSets.length > 0 && (
-                    <div className="flex flex-col items-center gap-4 text-gray-400 font-black uppercase tracking-widest text-[10px]">
-                        <ThemeLoader size={32} />
-                        <span>Đang tải thêm...</span>
-                    </div>
-                )}
-                {!isLoading && currentPage >= totalPages - 1 && filteredSets.length > 0 && (
-                    <div className="w-full flex items-center justify-center gap-4">
-                        <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
-                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Bạn đã xem hết thư viện</p>
-                        <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
-                    </div>
-                )}
-                {filteredSets.length === 0 && !isLoading && (
-                    <div className="text-center py-24 w-full bg-white dark:bg-gray-855 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
-                        <AlertCircle size={64} className="mx-auto text-gray-100 dark:text-gray-800 mb-6" />
-                        <p className="text-gray-500 font-black text-lg">{t('dashboard.no_results')}</p>
-                        <button onClick={onCreateNew} className="mt-6 bg-brand-blue text-white px-8 py-4 rounded-[20px] font-black hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-blue/20">{t('dashboard.upload_now')}</button>
-                    </div>
-                )}
+                <div ref={loadMoreRef} className="h-32 flex items-center justify-center mt-12">
+                    {isLoading && filteredSets.length > 0 && (
+                        <div className="flex flex-col items-center gap-4 text-gray-400 font-black uppercase tracking-widest text-[10px]">
+                            <ThemeLoader size={32} />
+                            <span>Đang tải thêm...</span>
+                        </div>
+                    )}
+                    {!isLoading && currentPage >= totalPages - 1 && filteredSets.length > 0 && (
+                        <div className="w-full flex items-center justify-center gap-4">
+                            <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
+                            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Bạn đã xem hết thư viện</p>
+                            <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
+                        </div>
+                    )}
+                    {filteredSets.length === 0 && !isLoading && (
+                        <div className="text-center py-24 w-full bg-white dark:bg-gray-855 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                            <AlertCircle size={64} className="mx-auto text-gray-100 dark:text-gray-800 mb-6" />
+                            <p className="text-gray-500 font-black text-lg">{t('dashboard.no_results')}</p>
+                            <button onClick={onCreateNew} className="mt-6 bg-brand-blue text-white px-8 py-4 rounded-[20px] font-black hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-blue/20">{t('dashboard.upload_now')}</button>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        )}
       </div>
     </div>
   );
