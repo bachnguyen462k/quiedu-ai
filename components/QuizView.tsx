@@ -41,13 +41,37 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
   const totalQuestionCount = serverAttempt?.totalQuestions || set.cards.length;
 
-  // Initialize questions and selections
+  // Initialize questions and sync initial answers from server
   useEffect(() => {
     if (serverAttempt) {
       setLoadedQuestions(serverAttempt.questions);
+      
+      const initialSelections = new Array(serverAttempt.totalQuestions).fill(null);
+      serverAttempt.questions.forEach(q => {
+          if (q.selectedAnswer) {
+              initialSelections[q.questionNo - 1] = q.selectedAnswer;
+          }
+      });
+      setUserSelections(initialSelections);
+    } else {
+      setUserSelections(new Array(totalQuestionCount).fill(null));
     }
-    setUserSelections(new Array(totalQuestionCount).fill(null));
-  }, [serverAttempt, totalQuestionCount]);
+  }, [serverAttempt]);
+
+  // Sync userSelections when a new batch of questions is loaded
+  useEffect(() => {
+    if (loadedQuestions.length > 0) {
+        setUserSelections(prev => {
+            const next = [...prev];
+            loadedQuestions.forEach(q => {
+                if (q.selectedAnswer && next[q.questionNo - 1] === null) {
+                    next[q.questionNo - 1] = q.selectedAnswer;
+                }
+            });
+            return next;
+        });
+    }
+  }, [loadedQuestions]);
 
   // Lazy load questions when index changes
   useEffect(() => {
@@ -60,14 +84,12 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
       if (!alreadyLoaded && !isLoadingBatch) {
         setIsLoadingBatch(true);
         try {
-          // Tính toán offset để load 1 batch 10 câu quanh vị trí hiện tại
-          const offset = Math.max(0, currentQuestionIndex);
-          const newBatch = await quizService.getQuestionsBatch(serverAttempt.attemptId, offset, 10);
+          const offset = currentQuestionIndex;
+          const newQuestions = await quizService.getQuestionsBatch(serverAttempt.attemptId, offset, 10);
           
-          if (newBatch.length > 0) {
+          if (newQuestions.length > 0) {
             setLoadedQuestions(prev => {
-                // Merge unique questions
-                const combined = [...prev, ...newBatch];
+                const combined = [...prev, ...newQuestions];
                 const unique = Array.from(new Map(combined.map(q => [q.questionNo, q])).values());
                 return unique.sort((a, b) => a.questionNo - b.questionNo);
             });
@@ -140,7 +162,6 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
             option
         ).catch(err => {
             console.error("Auto-save answer failed", err);
-            // Optionally notify user of save failure, but keep quiz going
         });
     }
 
@@ -157,8 +178,6 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
       if (!serverAttempt) return;
       setIsSubmitting(true);
       try {
-          // Chỉ gửi các câu đã load lên (Backend thường đã lưu lẻ tẻ qua API /answer)
-          // Tuy nhiên vẫn gửi full payload submit theo thiết kế endpoint
           const finalAnswers = loadedQuestions.map(q => ({
               attemptQuestionId: q.attemptQuestionId,
               answer: userSelections[q.questionNo - 1] || ""
@@ -286,7 +305,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 {Array.from({ length: totalQuestionCount }).map((_, index) => {
                     const isAnswered = !!userSelections[index];
                     return (
-                        <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center font-black text-sm border transition-all hover:scale-105 active:scale-95 ${isAnswered ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-gray-100 text-gray-300 border-transparent'}`}>{index + 1}</button>
+                        <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-2xl flex items-center justify-center font-black text-sm border transition-all hover:scale-105 active:scale-95 ${isAnswered ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-gray-100 text-gray-300 border-transparent'}`}>{index + 1}</button>
                     )
                 })}
              </div>
@@ -350,7 +369,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
               </div>
               <div className="flex gap-2">
                   <button onClick={() => setIsReviewing(true)} className="px-5 py-3 rounded-2xl bg-indigo-50 text-indigo-600 font-black uppercase text-xs tracking-widest hover:bg-indigo-100 transition-all flex items-center gap-2"><Eye size={18} /> <span className="hidden sm:inline">Tiến độ</span></button>
-                  <button onClick={() => setIsReviewing(true)} className={`px-6 md:px-10 py-3 md:py-4 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition-all transform active:scale-95 shadow-xl ${userSelections.every(a=>a!==null) ? 'bg-brand-blue text-white shadow-brand-blue/30 hover:bg-blue-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'}`}><Send size={18} /> {t('quiz.submit_btn')}</button>
+                  <button onClick={() => setIsReviewing(true)} className={`px-6 md:px-10 py-3 md:py-4 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition-all transform active:scale-95 shadow-xl ${userSelections.filter(a=>a!==null).length === totalQuestionCount ? 'bg-brand-blue text-white shadow-brand-blue/30 hover:bg-blue-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'}`}><Send size={18} /> {t('quiz.submit_btn')}</button>
               </div>
           </div>
       </div>

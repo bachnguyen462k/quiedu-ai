@@ -52,6 +52,7 @@ export interface ServerQuestion {
   cardId: number;
   term: string;
   options: string[];
+  selectedAnswer: string | null; // Đáp án đã chọn (nếu có)
 }
 
 export interface QuizAttempt {
@@ -62,7 +63,7 @@ export interface QuizAttempt {
     description: string;
   };
   questions: ServerQuestion[];
-  totalQuestions: number; // Thêm tổng số câu để hiển thị UI
+  totalQuestions: number; 
   startedAt: string;
 }
 

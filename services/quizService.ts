@@ -26,7 +26,7 @@ export const quizService = {
 
   /**
    * Lấy thêm một nhóm câu hỏi (Lazy load).
-   * Giả định Endpoint: GET /quiz/{attemptId}/questions?offset=X&limit=Y
+   * Cấu trúc trả về: { offset, limit, total, questions: [] }
    */
   getQuestionsBatch: async (attemptId: number, offset: number, limit: number = 10): Promise<ServerQuestion[]> => {
     try {
@@ -34,7 +34,8 @@ export const quizService = {
         params: { offset, limit }
       });
       if (response.data && response.data.code === 1000) {
-        return response.data.result; // Trả về mảng ServerQuestion
+        // Lấy trường questions bên trong result theo cấu trúc bạn cung cấp
+        return response.data.result.questions || [];
       }
       return [];
     } catch (error) {
@@ -45,7 +46,7 @@ export const quizService = {
 
   /**
    * Lưu đáp án cho từng câu hỏi (SubmitAnswerRequest).
-   * Request: { attemptId, studyCardId, selectedAnswer }
+   * DTO: { attemptId: Long, studyCardId: Long, selectedAnswer: String }
    */
   saveAnswer: async (attemptId: number, studyCardId: number, selectedAnswer: string): Promise<any> => {
     try {
