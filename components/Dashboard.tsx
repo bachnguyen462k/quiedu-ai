@@ -469,7 +469,10 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                 </div>
                             </div>
                             
-                            <button className="w-full mt-8 py-3 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-brand-blue dark:hover:text-blue-400 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2">
+                            <button 
+                                onClick={() => navigate('/schedule')}
+                                className="w-full mt-8 py-3 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-brand-blue dark:hover:text-blue-400 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2"
+                            >
                                 Xem toàn bộ lịch <ChevronRight size={12} />
                             </button>
                         </div>

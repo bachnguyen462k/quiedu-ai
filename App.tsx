@@ -16,6 +16,7 @@ import SettingsView from './components/SettingsView';
 import AdminThemeSettings from './components/AdminThemeSettings';
 import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
+import ScheduleView from './components/ScheduleView';
 import { StudySet, User, AiGenerationRecord, Review, EventTheme, QuizAttempt, StudyMode } from './types';
 import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2, Mail, Sparkles, LayoutDashboard, PlusCircle, Library, Users } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
@@ -223,6 +224,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/study/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode={StudyMode.FLASHCARD} /></MainLayout>} />
         <Route path="/quiz/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode={StudyMode.QUIZ} onAddReview={handleAddReview} /></MainLayout>} />
         <Route path="/quiz/review/:attemptId/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><StudyRoute sets={sets} mode={StudyMode.REVIEW} onAddReview={handleAddReview} /></MainLayout>} />
+        <Route path="/schedule" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><ScheduleView /></MainLayout>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
