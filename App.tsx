@@ -288,7 +288,8 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: Study
 
                 // 2. Quiz/Review logic
                 if (mode === StudyMode.QUIZ) {
-                    const attempt = await quizService.startQuiz(setId);
+                    // CẬP NHẬT: Load tối đa 30 câu hỏi để tránh quá tải
+                    const attempt = await quizService.startQuiz(setId, 30);
                     setQuizAttempt(attempt);
                 } else if (mode === StudyMode.REVIEW && attemptId) {
                     // Logic review handled inside QuizView after component mount via initial results fetching

@@ -5,12 +5,14 @@ import { QuizAttempt } from '../types';
 export const quizService = {
   /**
    * Bắt đầu một lượt thi mới.
-   * Server sẽ tạo attemptId và trả về danh sách câu hỏi không có đáp án.
+   * Request DTO: { studySetId: Long, limit: Integer }
    */
-  startQuiz: async (studySetId: number | string): Promise<QuizAttempt> => {
+  startQuiz: async (studySetId: number | string, limit: number = 30): Promise<QuizAttempt> => {
     try {
+      // Sửa lại cách gửi request body cho đúng chuẩn của bạn
       const response = await apiClient.post('/quiz/start', {
-        studySetId: Number(studySetId)
+        studySetId: Number(studySetId),
+        limit: limit
       });
       
       if (response.data && response.data.code === 1000) {
@@ -25,8 +27,6 @@ export const quizService = {
 
   /**
    * Lưu đáp án cho từng câu hỏi ngay khi chọn.
-   * Request: { attemptId, studyCardId, selectedAnswer }
-   * Endpoint: POST /quiz/answer
    */
   saveAnswer: async (attemptId: number, studyCardId: number, selectedAnswer: string): Promise<any> => {
     try {
@@ -44,8 +44,6 @@ export const quizService = {
 
   /**
    * Nộp bài làm lên server.
-   * Endpoint: POST /quiz/submit/{attemptId}
-   * Response mong đợi: { code: 1000, message: "Quiz submitted" }
    */
   submitQuiz: async (attemptId: number, answers: { attemptQuestionId: number, answer: string }[]): Promise<any> => {
     try {
@@ -61,7 +59,6 @@ export const quizService = {
 
   /**
    * Lấy kết quả review chi tiết của một lượt thi.
-   * Endpoint: GET /quiz/{attemptId}/review
    */
   getQuizReview: async (attemptId: number | string): Promise<any> => {
     try {
@@ -74,8 +71,7 @@ export const quizService = {
   },
 
   /**
-   * Lấy lịch sử làm bài của tôi.
-   * Endpoint: GET /quiz/my
+   * Lấy lịch sử làm bài.
    */
   getMyQuizHistory: async (page: number = 0, size: number = 20): Promise<any> => {
       try {

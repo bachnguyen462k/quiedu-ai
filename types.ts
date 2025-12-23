@@ -62,6 +62,7 @@ export interface QuizAttempt {
     description: string;
   };
   questions: ServerQuestion[];
+  totalQuestions: number; // Thêm tổng số câu để hiển thị UI
   startedAt: string;
 }
 
