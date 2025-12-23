@@ -1,8 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { StudySet, Review, User, QuizAttempt, ServerQuestion } from '../types';
-// Added List to the imports from lucide-react to fix "Cannot find name 'List'" error on line 206.
-import { ArrowLeft, CheckCircle, XCircle, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle, Star, MessageSquare, Loader2, Timer, Award, BarChart3, List } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle, Star, MessageSquare, Loader2, Timer, Award, BarChart3, List, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
@@ -123,9 +122,8 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
       setSelectedOption(null);
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
-      } else {
-        setIsReviewing(true);
       }
+      // Khác với trước, không tự động nhảy sang màn hình nộp bài để tránh gây phiền hà nếu muốn xem lại
     }, 300);
   };
 
@@ -175,7 +173,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   if (isSubmitting && !isCompleted) return <div className="p-20 text-center dark:text-white flex flex-col items-center gap-4"><Loader2 className="animate-spin text-brand-blue" /> Đang chuẩn bị kết quả...</div>;
   if (questions.length === 0 && !isCompleted) return <div className="p-20 text-center dark:text-white flex flex-col items-center gap-4"><Loader2 className="animate-spin text-brand-blue" /> {t('quiz.generating')}</div>;
 
-  // --- VIEW: RESULTS (Restructured) ---
+  // --- VIEW: RESULTS ---
   if (isCompleted) {
     const data = [
       { name: t('quiz.correct'), value: score },
@@ -261,7 +259,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 )}
             </div>
 
-            {/* RIGHT COLUMN: SCORE & EVALUATION (1/3) */}
+            {/* RIGHT COLUMN: SCORE & EVALUATION */}
             <div className="lg:col-span-1 space-y-6">
                 <div className="lg:sticky lg:top-24 space-y-6">
                     {/* Score Chart Card */}
@@ -279,9 +277,11 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                                     </Pie>
                                 </PieChart>
                             </ResponsiveContainer>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white leading-none">{score}%</span>
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter mt-1">Hoàn thành</span>
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="flex flex-col items-center">
+                                    <span className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white leading-none">{score}%</span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter mt-1">Hoàn thành</span>
+                                </div>
                             </div>
                         </div>
 
@@ -366,7 +366,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
         <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in pb-20">
              <div className="mb-6">
                  <button onClick={() => setIsReviewing(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-colors">
-                    <ArrowLeft size={16} /> {t('quiz.review_questions')}
+                    <ArrowLeft size={16} /> Quay lại làm bài
                  </button>
              </div>
 
@@ -396,7 +396,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
              <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 mb-6 flex items-center gap-2 uppercase tracking-[0.2em]">
                 <LayoutGrid size={16} /> {t('quiz.overview')}
              </h3>
-             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
+             <div className={`grid gap-3 ${questions.length > 40 ? 'grid-cols-5 sm:grid-cols-8 md:grid-cols-12' : 'grid-cols-4 sm:grid-cols-6 md:grid-cols-10'}`}>
                 {questions.map((_, index) => {
                     const hasAnswered = !!userSelections[index];
                     let statusClass = "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 border-transparent";
@@ -418,41 +418,44 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   const answeredCount = userSelections.filter(a => a !== null).length;
   const progress = (answeredCount / questions.length) * 100;
   const isAllAnswered = userSelections.every(a => a !== null);
+  const isManyQuestions = questions.length > 20;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-10 animate-fade-in transition-colors pb-24">
       <div className="flex-1">
-          <div className="flex justify-between items-center mb-8 gap-4">
-            <button onClick={onBack} className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-colors shrink-0">
-              <ArrowLeft size={18} /> <span className="hidden sm:inline">{t('quiz.exit')}</span>
-            </button>
-            
-            <div className="flex-1 flex flex-col items-center min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                    <Clock size={18} className="text-brand-blue" />
-                    <span className="text-lg md:text-xl font-black text-gray-900 dark:text-white font-mono">{formatTime(seconds)}</span>
-                </div>
-                <div className="w-full max-w-md bg-gray-100 dark:bg-gray-800 rounded-full h-2 md:h-2.5 overflow-hidden">
-                    <div className="bg-brand-blue h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase whitespace-nowrap tracking-widest">{answeredCount}/{questions.length}</span>
-                <button onClick={() => setShowGrid(!showGrid)} className="lg:hidden p-2 text-brand-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl transition-all active:scale-90">
-                    <LayoutGrid size={22} />
+          <div className="sticky top-0 z-50 bg-gray-50 dark:bg-gray-900 pb-6 pt-2 transition-colors">
+              <div className="flex justify-between items-center mb-6 gap-4">
+                <button onClick={onBack} className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-colors shrink-0">
+                  <ArrowLeft size={18} /> <span className="hidden sm:inline">{t('quiz.exit')}</span>
                 </button>
-            </div>
+                
+                <div className="flex-1 flex flex-col items-center min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Clock size={18} className="text-brand-blue" />
+                        <span className="text-lg md:text-xl font-black text-gray-900 dark:text-white font-mono">{formatTime(seconds)}</span>
+                    </div>
+                    <div className="w-full max-w-md bg-gray-100 dark:bg-gray-800 rounded-full h-2 md:h-2.5 overflow-hidden">
+                        <div className="bg-brand-blue h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase whitespace-nowrap tracking-widest">{answeredCount}/{questions.length}</span>
+                    <button onClick={() => setShowGrid(!showGrid)} className="lg:hidden p-2 text-brand-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl transition-all active:scale-90">
+                        <LayoutGrid size={22} />
+                    </button>
+                </div>
+              </div>
           </div>
 
           <div className="bg-white dark:bg-gray-855 rounded-[32px] md:rounded-[40px] shadow-sm border-2 border-gray-50 dark:border-gray-800 p-6 md:p-12 mb-8 min-h-[220px] md:min-h-[280px] flex flex-col justify-center relative overflow-hidden transition-colors">
             <div className="absolute top-6 left-6 md:top-8 md:left-8">
                  <h3 className="text-[10px] font-black text-brand-blue bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full uppercase tracking-widest">{t('quiz.question_prefix')} {currentQuestionIndex + 1}</h3>
             </div>
-            <p className="text-xl md:text-4xl font-black text-gray-900 dark:text-white leading-[1.3] text-center pt-8">{currentQuestion.term}</p>
+            <p className="text-xl md:text-3xl lg:text-4xl font-black text-gray-900 dark:text-white leading-[1.3] text-center pt-8">{currentQuestion.term}</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {currentQuestion.options.map((option, idx) => {
               const isSelected = (selectedOption === option) || (userSelections[currentQuestionIndex] === option);
               
@@ -469,19 +472,48 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                   <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 font-black text-base md:text-lg transition-colors ${badgeStyle}`}>
                       {isSelected ? <Check size={20} md:size={24} strokeWidth={4} /> : String.fromCharCode(65 + idx)}
                   </div>
-                  <span className="font-bold text-base md:text-xl leading-tight">{option}</span>
+                  <span className="font-bold text-base md:text-lg leading-tight">{option}</span>
                 </button>
               );
             })}
           </div>
 
-          {isAllAnswered && (
-              <div className="flex justify-end animate-fade-in">
-                  <button onClick={() => setIsReviewing(true)} className="w-full sm:w-auto bg-brand-blue text-white px-8 md:px-10 py-4 md:py-5 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-3 hover:bg-blue-700 shadow-2xl shadow-brand-blue/30 transition-all transform hover:-translate-y-1 active:scale-95">
-                      {t('quiz.to_submit_page')} <ArrowRight size={18} />
+          {/* Navigation Controls Row */}
+          <div className="flex items-center justify-between gap-4 mt-8 bg-white dark:bg-gray-855 p-4 rounded-[32px] border-2 border-gray-50 dark:border-gray-800 transition-colors">
+              <div className="flex gap-2">
+                  <button 
+                    onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                    disabled={currentQuestionIndex === 0}
+                    className="p-3 md:px-5 md:py-3 rounded-2xl border-2 border-gray-100 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                      <ChevronLeft size={24} className="md:hidden" />
+                      <span className="hidden md:flex items-center gap-2 font-black uppercase text-xs tracking-widest"><ChevronLeft size={16}/> Câu trước</span>
+                  </button>
+                  <button 
+                    onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
+                    disabled={currentQuestionIndex === questions.length - 1}
+                    className="p-3 md:px-5 md:py-3 rounded-2xl border-2 border-gray-100 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                      <ChevronRight size={24} className="md:hidden" />
+                      <span className="hidden md:flex items-center gap-2 font-black uppercase text-xs tracking-widest">Câu tiếp <ChevronRight size={16}/></span>
                   </button>
               </div>
-          )}
+
+              <div className="flex gap-2">
+                  <button 
+                    onClick={() => setIsReviewing(true)}
+                    className="px-5 py-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-black uppercase text-xs tracking-widest hover:bg-indigo-100 transition-all flex items-center gap-2"
+                  >
+                      <Eye size={18} /> <span className="hidden sm:inline">Tiến độ</span>
+                  </button>
+                  <button 
+                    onClick={() => setIsReviewing(true)}
+                    className={`px-6 md:px-10 py-3 md:py-4 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-3 transition-all transform active:scale-95 shadow-xl ${isAllAnswered ? 'bg-brand-blue text-white shadow-brand-blue/30 hover:bg-blue-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed opacity-50'}`}
+                  >
+                      <Send size={18} /> {t('quiz.submit_btn')}
+                  </button>
+              </div>
+          </div>
       </div>
 
       {/* Sidebar question grid */}
@@ -495,18 +527,20 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 <button onClick={() => setShowGrid(false)} className="lg:hidden text-gray-400 hover:text-gray-900 transition-colors"><XCircle size={24} /></button>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 md:gap-3">
+            <div className={`grid gap-2 ${isManyQuestions ? 'grid-cols-5' : 'grid-cols-4 md:gap-3'}`}>
                 {questions.map((_, index) => {
                     const hasAnswered = !!userSelections[index];
+                    const isCurrent = index === currentQuestionIndex;
+                    
                     let statusClass = "bg-gray-50 dark:bg-gray-855 text-gray-400 dark:text-gray-600 border-transparent hover:border-gray-200 dark:hover:border-gray-700";
-                    if (index === currentQuestionIndex) {
-                        statusClass = "bg-brand-blue text-white shadow-lg shadow-brand-blue/20 scale-110 z-10 border-transparent";
+                    if (isCurrent) {
+                        statusClass = "bg-brand-blue text-white shadow-lg shadow-brand-blue/30 scale-110 z-10 border-transparent ring-4 ring-brand-blue/20";
                     } else if (hasAnswered) {
-                        statusClass = "bg-blue-50 dark:bg-blue-900/30 text-brand-blue dark:text-blue-400 font-black border-blue-100 dark:border-blue-900/50";
+                        statusClass = "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-black border-green-100 dark:border-green-900/50";
                     }
 
                     return (
-                        <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-xl md:rounded-2xl flex items-center justify-center text-xs md:text-sm font-black border transition-all ${statusClass}`}>
+                        <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-xl md:rounded-2xl flex items-center justify-center font-black border transition-all ${isManyQuestions ? 'text-[10px]' : 'text-xs md:text-sm'} ${statusClass}`}>
                             {index + 1}
                         </button>
                     )
@@ -515,22 +549,24 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
             <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-700 space-y-4">
                 <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                    <div className="w-3 h-3 rounded-full bg-brand-blue"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
                     <span>{t('quiz.status_answered')}</span>
                 </div>
                 <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
                     <div className="w-3 h-3 rounded-full bg-gray-100 dark:bg-gray-800"></div>
                     <span>{t('quiz.status_unanswered')}</span>
                 </div>
+                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-brand-blue">
+                    <div className="w-3 h-3 rounded-full bg-brand-blue animate-pulse"></div>
+                    <span>Đang làm</span>
+                </div>
             </div>
             
-            {isAllAnswered && (
-                <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-700 animate-fade-in">
-                    <button onClick={() => setIsReviewing(true)} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/20 active:scale-95">
-                        <CheckCircle size={18} /> {t('quiz.submit_btn')}
-                    </button>
-                </div>
-            )}
+            <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-700 animate-fade-in">
+                <button onClick={() => setIsReviewing(true)} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/20 active:scale-95">
+                    <CheckCircle size={18} /> {t('quiz.submit_btn')}
+                </button>
+            </div>
          </div>
       </div>
     </div>
