@@ -1,16 +1,18 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { StudySet, Review, User, QuizAttempt, ServerQuestion } from '../types';
-import { ArrowLeft, CheckCircle, XCircle, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle, Star, MessageSquare, Loader2, Timer, Award, BarChart3, List, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, RefreshCw, LayoutGrid, Clock, Check, X, Send, ArrowRight, HelpCircle, Star, MessageSquare, Loader2, Timer, Award, BarChart3, List, ChevronLeft, ChevronRight, Eye, Play, Layers, User as UserIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
 import { quizService } from '../services/quizService';
 import { useApp } from '../contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 import ThemeLoader from './ThemeLoader';
 
 interface QuizViewProps {
   set: StudySet;
+  allSets?: StudySet[];
   currentUser: User;
   onBack: () => void;
   onAddReview: (setId: string, review: Review) => void;
@@ -20,9 +22,10 @@ interface QuizViewProps {
 
 const COLORS = ['#10B981', '#EF4444'];
 
-const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddReview, serverAttempt, reviewAttemptId }) => {
+const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onBack, onAddReview, serverAttempt, reviewAttemptId }) => {
   const { t } = useTranslation();
   const { addNotification } = useApp();
+  const navigate = useNavigate();
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -41,6 +44,14 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
   // Lấy tổng số câu hỏi an toàn từ JSON Backend (studySet.totalQuestions)
   const totalQuestionCount = serverAttempt?.studySet?.totalQuestions || serverAttempt?.totalQuestions || set.cards.length;
+
+  // Gợi ý học phần khác
+  const recommendations = useMemo(() => {
+      return allSets
+          .filter(s => s.id !== set.id)
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 3);
+  }, [allSets, set.id]);
 
   // Initialize questions and sync initial answers from server
   useEffect(() => {
@@ -218,7 +229,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   if (isCompleted) {
     const data = [{ name: t('quiz.correct'), value: score }, { name: t('quiz.incorrect'), value: 100 - score }];
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in pb-32">
+      <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in pb-32 transition-colors">
          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div>
                 <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
@@ -230,32 +241,32 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
             <button onClick={onBack} className="flex items-center gap-2 text-gray-400 hover:text-brand-blue font-black uppercase text-[10px] tracking-widest transition-colors"><ArrowLeft size={16} /> {t('quiz.back_detail')}</button>
          </div>
 
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
             <div className="lg:col-span-2 space-y-6">
                 <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4">
                     <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter flex items-center gap-3"><List className="text-brand-blue" size={24} /> {t('quiz.detail_title')}</h3>
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-lg border border-gray-100 dark:border-gray-700">Tổng {reviewItems.length} câu</span>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-lg border border-gray-100 dark:border-gray-700 transition-colors">Tổng {reviewItems.length} câu</span>
                 </div>
 
                 {reviewItems.map((item, idx) => (
-                    <div key={idx} className={`p-5 md:p-8 rounded-[32px] border-2 transition-all group ${item.correct ? 'bg-green-50/30 border-green-100' : 'bg-red-50/30 border-red-100'}`}>
+                    <div key={idx} className={`p-5 md:p-8 rounded-[32px] border-2 transition-all group ${item.correct ? 'bg-green-50/30 border-green-100 dark:bg-green-900/10 dark:border-green-800/30' : 'bg-red-50/30 border-red-100 dark:bg-red-900/10 dark:border-red-800/30'}`}>
                         <div className="flex flex-col md:flex-row md:items-start gap-6">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white shadow-lg ${item.correct ? 'bg-green-500 shadow-green-100' : 'bg-red-500 shadow-red-100'}`}>{item.correct ? <Check size={24} strokeWidth={4} /> : <X size={24} strokeWidth={4} />}</div>
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white shadow-lg ${item.correct ? 'bg-green-500 shadow-green-100 dark:shadow-none' : 'bg-red-500 shadow-red-100 dark:shadow-none'}`}>{item.correct ? <Check size={24} strokeWidth={4} /> : <X size={24} strokeWidth={4} />}</div>
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-black text-gray-900 dark:text-white text-lg leading-snug mb-4"><span className="text-gray-400 font-bold mr-2 text-sm uppercase">Câu {item.questionNo}:</span>{item.term}</h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                    <div className={`p-4 rounded-2xl border ${item.correct ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                                    <div className={`p-4 rounded-2xl border ${item.correct ? 'bg-green-50 border-green-100 dark:bg-green-900/20 dark:border-green-800' : 'bg-red-50 border-red-100 dark:bg-red-900/20 dark:border-red-800'}`}>
                                         <span className="block text-[9px] font-black uppercase text-gray-400 mb-1">{t('quiz.your_choice')}</span>
-                                        <span className={`font-bold text-sm ${item.correct ? 'text-green-700' : 'text-red-700'}`}>{item.selectedAnswer || t('quiz.not_answered')}</span>
+                                        <span className={`font-bold text-sm ${item.correct ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>{item.selectedAnswer || t('quiz.not_answered')}</span>
                                     </div>
                                     {!item.correct && (
-                                        <div className="p-4 rounded-2xl border bg-white border-gray-200">
+                                        <div className="p-4 rounded-2xl border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                                             <span className="block text-[9px] font-black uppercase text-gray-400 mb-1">{t('quiz.correct_answer')}</span>
-                                            <span className="font-bold text-sm text-green-600">{item.correctAnswer}</span>
+                                            <span className="font-bold text-sm text-green-600 dark:text-green-400">{item.correctAnswer}</span>
                                         </div>
                                     )}
                                 </div>
-                                {item.explanation && <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 border-l-4 border-l-brand-blue"><p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium italic">{item.explanation}</p></div>}
+                                {item.explanation && <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 border-l-4 border-l-brand-blue transition-colors"><p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium italic">{item.explanation}</p></div>}
                             </div>
                         </div>
                     </div>
@@ -264,7 +275,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
             <div className="lg:col-span-1 space-y-6">
                 <div className="lg:sticky lg:top-24 space-y-6">
-                    <div className="bg-white dark:bg-gray-855 p-8 rounded-[40px] shadow-xl border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden">
+                    <div className="bg-white dark:bg-gray-855 p-8 rounded-[40px] shadow-xl border border-gray-100 dark:border-gray-800 text-center relative overflow-hidden transition-colors">
                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-blue"></div>
                         <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Thống kê điểm số</h3>
                         <div className="h-40 md:h-48 w-full relative flex justify-center items-center mb-4">
@@ -285,6 +296,44 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 </div>
             </div>
          </div>
+
+         {/* Recommendations Section */}
+         {recommendations.length > 0 && (
+             <div className="mt-20 pt-16 border-t border-gray-100 dark:border-gray-800 animate-fade-in">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+                    <div>
+                        <h3 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Tiếp tục bứt phá kiến thức 🚀</h3>
+                        <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Học thêm một chút mỗi ngày để trở nên xuất sắc hơn.</p>
+                    </div>
+                    <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-brand-blue font-black uppercase text-xs tracking-widest hover:underline transition-all">Khám phá tất cả <ArrowRight size={16} /></button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                    {recommendations.map(recSet => (
+                        <div 
+                            key={recSet.id} 
+                            onClick={() => navigate(`/set/${recSet.id}`)}
+                            className="group bg-white dark:bg-gray-855 p-6 md:p-8 rounded-[32px] border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue dark:hover:border-blue-400 transition-all cursor-pointer shadow-sm hover:shadow-xl relative overflow-hidden"
+                        >
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="bg-brand-blue/10 dark:bg-blue-900/30 text-brand-blue dark:text-blue-400 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest">Gợi ý cho bạn</span>
+                                <span className="flex items-center gap-1 text-[9px] font-black text-gray-400 uppercase tracking-widest"><Layers size={12} /> {recSet.cards.length || 0} câu</span>
+                            </div>
+                            
+                            <h4 className="text-lg md:text-xl font-black text-gray-900 dark:text-white mb-4 line-clamp-2 leading-tight group-hover:text-brand-blue transition-colors">{recSet.title}</h4>
+                            
+                            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-50 dark:border-gray-800">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <div className="w-8 h-8 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-[10px] text-gray-400 font-black shrink-0"><UserIcon size={14} /></div>
+                                    <span className="text-xs font-bold text-gray-500 truncate">{recSet.author}</span>
+                                </div>
+                                <div className="p-2.5 bg-gray-50 dark:bg-gray-800 text-gray-400 rounded-xl group-hover:bg-brand-blue group-hover:text-white transition-all"><Play size={16} fill="currentColor" /></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+             </div>
+         )}
       </div>
     );
   }

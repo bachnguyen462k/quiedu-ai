@@ -18,7 +18,7 @@ import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
 import ScheduleView from './components/ScheduleView';
 import { StudySet, User, AiGenerationRecord, Review, EventTheme, QuizAttempt, StudyMode } from './types';
-import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2, Mail, Sparkles, LayoutDashboard, PlusCircle, Library, Users } from 'lucide-react';
+import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2, Mail, Sparkles, LayoutDashboard, PlusCircle, Library, Users, Calendar as CalendarIcon } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -124,6 +124,7 @@ const MobileNavBar: React.FC = () => {
     
     const menuItems = [
         { path: '/dashboard', icon: LayoutDashboard, label: 'Trang chủ' },
+        { path: '/schedule', icon: CalendarIcon, label: 'Lịch nhắc' },
         { path: '/create', icon: PlusCircle, label: 'Tạo mới' },
         { path: '/library', icon: Library, label: 'Thư viện' },
         { path: '/classes', icon: Users, label: 'Lớp học' },
@@ -324,6 +325,7 @@ const StudyRoute = ({ sets, mode, onAddReview }: { sets: StudySet[], mode: Study
             ) : (
                 <QuizView 
                     set={fullSet} 
+                    allSets={sets}
                     currentUser={user!} 
                     onBack={handleBackToDetail} 
                     onAddReview={onAddReview}

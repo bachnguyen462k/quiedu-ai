@@ -14,6 +14,7 @@ export const en = {
     },
     sidebar: {
       dashboard: "Home",
+      schedule: "Schedule",
       create: "Create Set",
       library: "Library",
       classes: "Classes",

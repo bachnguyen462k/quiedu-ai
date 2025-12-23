@@ -24,15 +24,27 @@ const INITIAL_SCHEDULE: Task[] = [
 const SantaHat = () => (
     <svg 
         viewBox="0 0 100 100" 
-        className="absolute -top-3 -right-2 w-8 h-8 drop-shadow-md z-20 -rotate-12 transition-transform group-hover:scale-125 group-hover:-rotate-6 duration-300"
+        className="absolute -top-3 -right-2 w-7 h-7 md:w-8 md:h-8 drop-shadow-md z-20 -rotate-12 transition-transform group-hover:scale-125 group-hover:-rotate-6 duration-300"
     >
-        {/* Hat body */}
         <path d="M20 70 Q50 10 80 70 Z" fill="#ef4444" />
-        {/* White trim */}
         <rect x="15" y="65" width="70" height="12" rx="6" fill="white" />
-        {/* Pom pom */}
         <circle cx="80" cy="70" r="8" fill="white" />
         <circle cx="20" cy="70" r="4" fill="white" opacity="0.5" />
+    </svg>
+);
+
+const RedEnvelope = () => (
+    <svg 
+        viewBox="0 0 100 100" 
+        className="absolute -top-2 -right-1 w-6 h-6 md:w-7 md:h-7 drop-shadow-md z-20 rotate-12 transition-transform group-hover:scale-125 group-hover:rotate-0 duration-300"
+    >
+        {/* Envelope Body */}
+        <rect x="20" y="20" width="60" height="75" rx="6" fill="#e11d48" />
+        {/* Flap */}
+        <path d="M20 20 L50 45 L80 20 Z" fill="#be123c" />
+        {/* Gold Circle/Seal */}
+        <circle cx="50" cy="45" r="10" fill="#facc15" />
+        <text x="50" y="49" fontSize="10" fill="#854d0e" fontWeight="bold" textAnchor="middle">福</text>
     </svg>
 );
 
@@ -66,10 +78,10 @@ const ScheduleView: React.FC = () => {
         const d = date.getDate();
         const m = date.getMonth() + 1;
 
-        if (d === 24 && m === 12) return { type: 'CHRISTMAS', label: 'Đêm Noel', detail: 'Giáng Sinh an lành! ✨', color: 'from-red-600 to-red-700', icon: Snowflake, hasHat: true, textColor: 'text-red-500' };
-        if (d === 25 && m === 12) return { type: 'CHRISTMAS', label: 'Giáng Sinh', detail: 'Ngày lễ Giáng Sinh 🎁', color: 'from-red-500 to-red-600', icon: Gift, hasHat: true, textColor: 'text-red-500' };
-        if (d === 31 && m === 12) return { type: 'NEWYEAR', label: 'Tất Niên', detail: 'Giao thừa rộn ràng! 🎇', color: 'from-indigo-600 to-blue-700', icon: Sparkles, hasHat: false, textColor: 'text-indigo-500' };
-        if (d === 1 && m === 1) return { type: 'NEWYEAR', label: 'Năm Mới', detail: 'Chúc mừng năm mới! 🎆', color: 'from-amber-500 to-orange-600', icon: Star, hasHat: false, textColor: 'text-orange-500' };
+        if (d === 24 && m === 12) return { type: 'CHRISTMAS', label: 'Đêm Noel', detail: 'Giáng Sinh an lành! ✨', color: 'from-red-600 to-red-700', icon: Snowflake, decoration: 'HAT', textColor: 'text-red-500' };
+        if (d === 25 && m === 12) return { type: 'CHRISTMAS', label: 'Giáng Sinh', detail: 'Ngày lễ Giáng Sinh 🎁', color: 'from-red-500 to-red-600', icon: Gift, decoration: 'HAT', textColor: 'text-red-500' };
+        if (d === 31 && m === 12) return { type: 'NEWYEAR', label: 'Tất Niên', detail: 'Giao thừa rộn ràng! 🎇', color: 'from-indigo-600 to-blue-700', icon: Sparkles, decoration: 'ENVELOPE', textColor: 'text-indigo-500' };
+        if (d === 1 && m === 1) return { type: 'NEWYEAR', label: 'Năm Mới', detail: 'Chúc mừng năm mới! 🎆', color: 'from-amber-500 to-orange-600', icon: Star, decoration: 'ENVELOPE', textColor: 'text-orange-500' };
         return null;
     };
 
@@ -117,17 +129,17 @@ const ScheduleView: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 items-start">
                 
                 {/* Left Side: Tasks List */}
-                <div className={`lg:col-span-2 bg-white dark:bg-gray-855 rounded-[40px] p-6 md:p-10 shadow-xl border transition-all duration-500 ${selectedSpecial?.type === 'CHRISTMAS' ? 'border-red-200 dark:border-red-900/50 ring-4 ring-red-50 dark:ring-red-950/20' : 'border-gray-100 dark:border-gray-800'}`}>
+                <div className={`lg:col-span-2 bg-white dark:bg-gray-855 rounded-[40px] p-6 md:p-10 shadow-xl border transition-all duration-500 ${selectedSpecial?.type === 'CHRISTMAS' ? 'border-red-200 dark:border-red-900/50 ring-4 ring-red-50 dark:ring-red-950/20' : selectedSpecial?.type === 'NEWYEAR' ? 'border-amber-200 dark:border-amber-900/50 ring-4 ring-amber-50 dark:ring-amber-950/20' : 'border-gray-100 dark:border-gray-800'}`}>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                         <div>
-                            <h1 className={`text-2xl md:text-4xl font-black mb-2 uppercase tracking-tighter transition-colors ${selectedSpecial?.type === 'CHRISTMAS' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                            <h1 className={`text-2xl md:text-4xl font-black mb-2 uppercase tracking-tighter transition-colors ${selectedSpecial?.type === 'CHRISTMAS' ? 'text-red-600 dark:text-red-400' : selectedSpecial?.type === 'NEWYEAR' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>
                                 {isSameDay(selectedDate, new Date()) ? 'Hôm nay' : selectedSpecial ? selectedSpecial.label : selectedDate.toLocaleDateString('vi-VN')}
                             </h1>
                             <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">
                                 {selectedSpecial ? `✨ Một ngày đặc biệt! Chúc bạn học tập vui vẻ.` : `Kế hoạch chi tiết cho ngày của bạn.`}
                             </p>
                         </div>
-                        <button className={`px-6 py-3.5 rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95 text-sm shrink-0 ${selectedSpecial?.type === 'CHRISTMAS' ? 'bg-red-600 text-white shadow-red-500/20' : 'bg-brand-blue text-white shadow-brand-blue/20'}`}>
+                        <button className={`px-6 py-3.5 rounded-2xl font-black flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95 text-sm shrink-0 ${selectedSpecial?.type === 'CHRISTMAS' ? 'bg-red-600 text-white shadow-red-500/20' : selectedSpecial?.type === 'NEWYEAR' ? 'bg-amber-600 text-white shadow-amber-500/20' : 'bg-brand-blue text-white shadow-brand-blue/20'}`}>
                             <Plus size={20} /> Thêm mới
                         </button>
                     </div>
@@ -218,8 +230,9 @@ const ScheduleView: React.FC = () => {
                                         onClick={() => setSelectedDate(date)}
                                         className={`w-full aspect-square rounded-xl md:rounded-2xl flex flex-col items-center justify-center relative transition-all active:scale-95 ${dayClasses}`}
                                     >
-                                        {/* Mũ Giáng Sinh */}
-                                        {special?.hasHat && <SantaHat />}
+                                        {/* Hiển thị Icon trang trí dựa trên loại ngày lễ */}
+                                        {special?.decoration === 'HAT' && <SantaHat />}
+                                        {special?.decoration === 'ENVELOPE' && <RedEnvelope />}
 
                                         <div className="flex flex-col items-center leading-none">
                                             <span className={`text-[10px] md:text-[12px] font-black ${isSelected || special ? 'text-white' : isToday ? 'text-brand-blue' : ''}`}>
@@ -238,7 +251,7 @@ const ScheduleView: React.FC = () => {
                                         )}
                                     </button>
 
-                                    {/* Tooltip hiển thị khi hover (đặc biệt cho ngày lễ) */}
+                                    {/* Tooltip hiển thị khi hover */}
                                     {special && (
                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 pointer-events-none transition-all duration-300 z-[100] whitespace-nowrap">
                                             <div className="flex items-center gap-2">
@@ -250,7 +263,6 @@ const ScheduleView: React.FC = () => {
                                                     <span className="text-xs font-bold text-gray-900 dark:text-white">{special.detail}</span>
                                                 </div>
                                             </div>
-                                            {/* Triangle arrow */}
                                             <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 rotate-45"></div>
                                         </div>
                                     )}

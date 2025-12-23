@@ -16,6 +16,7 @@ export const vi = {
     },
     sidebar: {
       dashboard: "Trang chủ",
+      schedule: "Lịch nhắc",
       create: "Tạo học phần",
       library: "Thư viện",
       classes: "Lớp học",

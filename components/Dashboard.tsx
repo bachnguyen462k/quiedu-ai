@@ -427,7 +427,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                     </div>
                 </div>
 
-                {/* Schedule Widget (25% on desktop) */}
+                {/* Schedule Widget (25% on desktop) - Dark Mode Optimized */}
                 {!isLibrary && (
                     <div className="lg:w-80 shrink-0">
                         <div className="bg-white dark:bg-gray-855 rounded-[32px] border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden p-6 md:p-8 sticky top-24 transition-colors">
@@ -440,14 +440,14 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
 
                             <div className="space-y-4">
                                 {FAKE_SCHEDULE.map((item) => (
-                                    <div key={item.id} className={`group p-4 rounded-2xl border transition-all ${item.done ? 'bg-green-50/30 border-green-100 opacity-60' : 'bg-gray-50 dark:bg-gray-800 border-transparent hover:border-brand-blue/20'}`}>
+                                    <div key={item.id} className={`group p-4 rounded-2xl border transition-all ${item.done ? 'bg-green-50/30 dark:bg-green-500/10 border-green-100 dark:border-green-900/30 opacity-70' : 'bg-gray-50 dark:bg-gray-800/40 border-transparent hover:border-brand-blue/20'}`}>
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <Clock size={12} className={item.done ? 'text-green-500' : 'text-brand-blue'} />
-                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{item.time}</span>
+                                                    <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-tighter">{item.time}</span>
                                                 </div>
-                                                <p className={`text-xs font-bold leading-snug truncate ${item.done ? 'text-green-700 line-through' : 'text-gray-800 dark:text-gray-100'}`}>
+                                                <p className={`text-xs font-bold leading-snug truncate ${item.done ? 'text-green-700 dark:text-green-400 line-through' : 'text-gray-800 dark:text-gray-100'}`}>
                                                     {item.task}
                                                 </p>
                                             </div>
@@ -471,7 +471,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                             
                             <button 
                                 onClick={() => navigate('/schedule')}
-                                className="w-full mt-8 py-3 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-brand-blue dark:hover:text-blue-400 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2"
+                                className="w-full mt-8 py-3 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-brand-blue dark:hover:text-blue-400 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm"
                             >
                                 Xem toàn bộ lịch <ChevronRight size={12} />
                             </button>
