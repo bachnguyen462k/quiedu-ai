@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, QuizHistoryItem } from '../types';
-import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2, Timer } from 'lucide-react';
+import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2, Timer, Calendar as CalendarIcon, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
 import { quizService } from '../services/quizService';
@@ -21,6 +21,13 @@ interface DashboardProps {
 }
 
 const ITEMS_PER_PAGE = 20;
+
+const FAKE_SCHEDULE = [
+  { id: 1, time: '08:00', task: 'Ôn tập Từ vựng Tiếng Anh', done: true },
+  { id: 2, time: '14:30', task: 'Làm Quiz Toán Giải Tích 12', done: false },
+  { id: 3, time: '19:00', task: 'Học nhóm Lịch Sử VN', done: false },
+  { id: 4, time: '21:00', task: 'Làm bài tập Hóa học hữu cơ', done: false },
+];
 
 const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, currentUser, onCreateNew, onSelectSet, onSelectUpload, onToggleFavorite, isLibrary }) => {
   const { t } = useTranslation();
@@ -322,63 +329,115 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                 )}
             </div>
         ) : (
-            <div>
-                <h2 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3 uppercase tracking-tight">
-                    <Book className="text-brand-blue" size={24} /> {isLibrary ? t('dashboard.library') : 'Khám phá học phần mới'}
-                </h2>
-                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8`}>
-                    {filteredSets.map(set => (
-                        <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-[32px] shadow-sm hover:shadow-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
-                            <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-3 rounded-2xl z-10 transition-all ${set.isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20 scale-110 shadow-lg' : 'text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-800'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
-                            <div className="p-6 md:p-7 flex-1">
-                                <div className="flex flex-wrap gap-2 mb-5">
-                                    <span className="px-3 py-1 rounded-xl bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-brand-blue/10">QUIZ</span>
-                                    <span className="px-3 py-1 rounded-xl bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-brand-orange/10 truncate max-w-[100px]">{set.subject}</span>
-                                    {isLibrary && (
-                                        <>
-                                            {renderSetTypeBadge(set.type)}
-                                            {renderStatusBadge(set.status)}
-                                        </>
-                                    )}
+            <div className="flex flex-col lg:flex-row gap-8">
+                {/* Explore Area (75% on desktop) */}
+                <div className="flex-1 min-w-0">
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3 uppercase tracking-tight">
+                        <Book className="text-brand-blue" size={24} /> {isLibrary ? t('dashboard.library') : 'Khám phá học phần mới'}
+                    </h2>
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8`}>
+                        {filteredSets.map(set => (
+                            <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-[32px] shadow-sm hover:shadow-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
+                                <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-3 rounded-2xl z-10 transition-all ${set.isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20 scale-110 shadow-lg' : 'text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-800'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
+                                <div className="p-6 md:p-7 flex-1">
+                                    <div className="flex flex-wrap gap-2 mb-5">
+                                        <span className="px-3 py-1 rounded-xl bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-brand-blue/10">QUIZ</span>
+                                        <span className="px-3 py-1 rounded-xl bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-brand-orange/10 truncate max-w-[100px]">{set.subject}</span>
+                                        {isLibrary && (
+                                            <>
+                                                {renderSetTypeBadge(set.type)}
+                                                {renderStatusBadge(set.status)}
+                                            </>
+                                        )}
+                                    </div>
+                                    <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-4 leading-[1.3] pr-6">{set.title}</h3>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 font-medium leading-relaxed mb-6">{set.description}</p>
                                 </div>
-                                <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-4 leading-[1.3] pr-6">{set.title}</h3>
-                                <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 font-medium leading-relaxed mb-6">{set.description}</p>
+                                <div className="px-6 md:px-7 py-5 md:py-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 flex items-center justify-between text-gray-500 transition-colors mt-auto">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-8 h-8 rounded-2xl bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-md shrink-0">{set.author.charAt(0)}</div>
+                                        <span className="text-xs font-black text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400 shrink-0">
+                                        <span className="flex items-center gap-1.5"><Clock size={14} className="text-brand-blue dark:text-blue-400" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="px-6 md:px-7 py-5 md:py-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 flex items-center justify-between text-gray-500 transition-colors mt-auto">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-8 h-8 rounded-2xl bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-md shrink-0">{set.author.charAt(0)}</div>
-                                    <span className="text-xs font-black text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400 shrink-0">
-                                    <span className="flex items-center gap-1.5"><Clock size={14} className="text-brand-blue dark:text-blue-400" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
-                                </div>
+                        ))}
+                    </div>
+
+                    <div ref={loadMoreRef} className="h-32 flex items-center justify-center mt-12">
+                        {isLoading && filteredSets.length > 0 && (
+                            <div className="flex flex-col items-center gap-4 text-gray-400 font-black uppercase tracking-widest text-[10px]">
+                                <ThemeLoader size={32} />
+                                <span>Đang tải thêm...</span>
                             </div>
-                        </div>
-                    ))}
+                        )}
+                        {!isLoading && currentPage >= totalPages - 1 && filteredSets.length > 0 && (
+                            <div className="w-full flex items-center justify-center gap-4">
+                                <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
+                                <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Bạn đã xem hết thư viện</p>
+                                <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
+                            </div>
+                        )}
+                        {filteredSets.length === 0 && !isLoading && (
+                            <div className="text-center py-24 w-full bg-white dark:bg-gray-855 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
+                                <AlertCircle size={64} className="mx-auto text-gray-100 dark:text-gray-800 mb-6" />
+                                <p className="text-gray-500 font-black text-lg">{t('dashboard.no_results')}</p>
+                                <button onClick={onCreateNew} className="mt-6 bg-brand-blue text-white px-8 py-4 rounded-[20px] font-black hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-blue/20">{t('dashboard.upload_now')}</button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div ref={loadMoreRef} className="h-32 flex items-center justify-center mt-12">
-                    {isLoading && filteredSets.length > 0 && (
-                        <div className="flex flex-col items-center gap-4 text-gray-400 font-black uppercase tracking-widest text-[10px]">
-                            <ThemeLoader size={32} />
-                            <span>Đang tải thêm...</span>
+                {/* Schedule Widget (25% on desktop) */}
+                {!isLibrary && (
+                    <div className="lg:w-80 shrink-0">
+                        <div className="bg-white dark:bg-gray-855 rounded-[32px] border border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden p-6 md:p-8 sticky top-24 transition-colors">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-2 uppercase text-[10px] tracking-widest">
+                                    <CalendarIcon size={18} className="text-brand-blue" /> Lịch nhắc hôm nay
+                                </h3>
+                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {FAKE_SCHEDULE.map((item) => (
+                                    <div key={item.id} className={`group p-4 rounded-2xl border transition-all ${item.done ? 'bg-green-50/30 border-green-100 opacity-60' : 'bg-gray-50 dark:bg-gray-800 border-transparent hover:border-brand-blue/20'}`}>
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Clock size={12} className={item.done ? 'text-green-500' : 'text-brand-blue'} />
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{item.time}</span>
+                                                </div>
+                                                <p className={`text-xs font-bold leading-snug truncate ${item.done ? 'text-green-700 line-through' : 'text-gray-800 dark:text-gray-100'}`}>
+                                                    {item.task}
+                                                </p>
+                                            </div>
+                                            <button className={`shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${item.done ? 'bg-green-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-300 group-hover:text-brand-blue shadow-sm'}`}>
+                                                {item.done ? <CheckCircle size={14} strokeWidth={4} /> : <div className="w-2 h-2 rounded-full border-2 border-current"></div>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-8 pt-6 border-t border-gray-50 dark:border-gray-800">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tiến độ ngày</span>
+                                    <span className="text-xs font-black text-brand-blue">25%</span>
+                                </div>
+                                <div className="h-2 w-full bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden">
+                                    <div className="h-full bg-brand-blue rounded-full transition-all duration-1000" style={{ width: '25%' }}></div>
+                                </div>
+                            </div>
+                            
+                            <button className="w-full mt-8 py-3 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-brand-blue dark:hover:text-blue-400 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center justify-center gap-2">
+                                Xem toàn bộ lịch <ChevronRight size={12} />
+                            </button>
                         </div>
-                    )}
-                    {!isLoading && currentPage >= totalPages - 1 && filteredSets.length > 0 && (
-                        <div className="w-full flex items-center justify-center gap-4">
-                            <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
-                            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Bạn đã xem hết thư viện</p>
-                            <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800"></div>
-                        </div>
-                    )}
-                    {filteredSets.length === 0 && !isLoading && (
-                        <div className="text-center py-24 w-full bg-white dark:bg-gray-855 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
-                            <AlertCircle size={64} className="mx-auto text-gray-100 dark:text-gray-800 mb-6" />
-                            <p className="text-gray-500 font-black text-lg">{t('dashboard.no_results')}</p>
-                            <button onClick={onCreateNew} className="mt-6 bg-brand-blue text-white px-8 py-4 rounded-[20px] font-black hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-blue/20">{t('dashboard.upload_now')}</button>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         )}
       </div>
