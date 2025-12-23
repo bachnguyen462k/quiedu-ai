@@ -75,6 +75,17 @@
         100% { transform: translate3d(20px, 0, 0); }
       }
 
+      @keyframes marquee {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+      }
+
+      .animate-marquee {
+        display: inline-block;
+        white-space: nowrap;
+        animation: marquee 25s linear infinite;
+      }
+
       .falling-item {
         position: fixed;
         top: 0;

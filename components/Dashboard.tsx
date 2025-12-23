@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, QuizHistoryItem } from '../types';
-import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2, Timer, Calendar as CalendarIcon, CheckCircle } from 'lucide-react';
+import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2, Timer, Calendar as CalendarIcon, CheckCircle, Megaphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
 import { quizService } from '../services/quizService';
@@ -27,6 +27,14 @@ const FAKE_SCHEDULE = [
   { id: 2, time: '14:30', task: 'Làm Quiz Toán Giải Tích 12', done: false },
   { id: 3, time: '19:00', task: 'Học nhóm Lịch Sử VN', done: false },
   { id: 4, time: '21:00', task: 'Làm bài tập Hóa học hữu cơ', done: false },
+];
+
+const FAKE_NOTIFICATIONS = [
+  "🎉 Chúc mừng bạn Minh Anh vừa đạt 100/100 điểm Quiz Sinh học 12!",
+  "🚀 Hệ thống vừa cập nhật thêm 500 câu hỏi ôn thi THPT Quốc gia mới.",
+  "🔥 Top 1 tuần này thuộc về bạn Hoàng Nam với 45 học phần hoàn thành.",
+  "📢 Nhắc nhở: Lớp 12A1 có bài tập mới cần hoàn thành trước 21h tối nay.",
+  "✨ Tính năng 'AI Soạn Giáo Án' đã hỗ trợ tệp Word (.docx) mượt mà hơn."
 ];
 
 const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, currentUser, onCreateNew, onSelectSet, onSelectUpload, onToggleFavorite, isLibrary }) => {
@@ -181,8 +189,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-24 animate-fade-in transition-colors">
       {!isLibrary && (
         <section className="mb-16">
-            <div className="flex items-center justify-between mb-8">
-                <div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                <div className="shrink-0">
                     <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter">
                         <div className="p-2 bg-orange-100 dark:bg-orange-900/40 rounded-xl">
                             <Flame className="text-brand-orange animate-pulse" fill="currentColor" size={24} />
@@ -190,6 +198,35 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                         {t('dashboard.trending')}
                     </h2>
                     <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1">Top 3 học phần bùng nổ nhất tuần qua.</p>
+                </div>
+
+                {/* News Ticker / Marquee */}
+                <div className="flex-1 min-w-0 max-w-2xl bg-gray-100 dark:bg-gray-800/50 rounded-2xl h-12 flex items-center px-4 relative overflow-hidden group">
+                    <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-gray-100 dark:from-gray-800 to-transparent z-10"></div>
+                    <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-gray-100 dark:from-gray-800 to-transparent z-10"></div>
+                    
+                    <div className="shrink-0 mr-3 text-brand-blue flex items-center gap-2 z-20">
+                        <Megaphone size={18} className="animate-bounce" />
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Tin mới:</span>
+                    </div>
+                    
+                    <div className="overflow-hidden flex-1 relative h-full flex items-center">
+                        <div className="animate-marquee whitespace-nowrap flex gap-12 items-center">
+                            {FAKE_NOTIFICATIONS.map((note, i) => (
+                                <span key={i} className="text-xs font-black text-gray-600 dark:text-gray-300 uppercase tracking-tight flex items-center gap-3">
+                                    {note}
+                                    <div className="w-1.5 h-1.5 rounded-full bg-brand-orange"></div>
+                                </span>
+                            ))}
+                            {/* Duplicate for seamless scroll */}
+                            {FAKE_NOTIFICATIONS.map((note, i) => (
+                                <span key={`dup-${i}`} className="text-xs font-black text-gray-600 dark:text-gray-300 uppercase tracking-tight flex items-center gap-3">
+                                    {note}
+                                    <div className="w-1.5 h-1.5 rounded-full bg-brand-orange"></div>
+                                </span>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
 
