@@ -61,9 +61,10 @@ export interface QuizAttempt {
     id: number;
     title: string;
     description: string;
+    totalQuestions?: number; // Backend trả ở đây
   };
-  questions: ServerQuestion[];
-  totalQuestions: number; 
+  questions: ServerQuestion[] | null; // Có thể null khi mới start
+  totalQuestions: number; // Dự phòng
   startedAt: string;
 }
 
