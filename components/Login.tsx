@@ -189,7 +189,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                     <form onSubmit={handleLogin} className="space-y-4">
                         <div className="relative group">
                             <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-blue transition-colors" size={20} />
-                            <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email tài khoản..." className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50 dark:text-white border border-transparent focus:bg-white focus:ring-4 focus:ring-brand-blue/10 outline-none font-bold transition-all" />
+                            <input type="text" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email hoặc tên đăng nhập..." className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-50 dark:bg-gray-700/50 dark:text-white border border-transparent focus:bg-white focus:ring-4 focus:ring-brand-blue/10 outline-none font-bold transition-all" />
                         </div>
                         <div className="relative group">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-blue transition-colors" size={20} />
@@ -210,7 +210,7 @@ const Login: React.FC<LoginProps> = ({ onBack, initialMode = 'LOGIN' }) => {
                     <RoleSelector />
                     <form onSubmit={handleRegister} className="space-y-3">
                         <input type="text" required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Họ và tên..." className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 dark:text-white border border-transparent focus:bg-white focus:ring-4 focus:ring-brand-blue/10 outline-none font-bold transition-all" />
-                        <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email liên hệ..." className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 dark:text-white border border-transparent focus:bg-white focus:ring-4 focus:ring-brand-blue/10 outline-none font-bold transition-all" />
+                        <input type="text" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email hoặc tên đăng nhập dự kiến..." className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 dark:text-white border border-transparent focus:bg-white focus:ring-4 focus:ring-brand-blue/10 outline-none font-bold transition-all" />
                         <div className="grid grid-cols-2 gap-3">
                             <input type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mật khẩu..." className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 dark:text-white border border-transparent focus:bg-white focus:ring-4 focus:ring-brand-blue/10 outline-none font-bold transition-all" />
                             <input type="password" required value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="Xác nhận..." className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 dark:text-white border border-transparent focus:bg-white focus:ring-4 focus:ring-brand-blue/10 outline-none font-bold transition-all" />
