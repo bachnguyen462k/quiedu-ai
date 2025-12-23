@@ -1,6 +1,6 @@
 
 import apiClient from './apiClient';
-import { QuizAttempt } from '../types';
+import { QuizAttempt, ServerQuestion } from '../types';
 
 export const quizService = {
   /**
@@ -9,7 +9,6 @@ export const quizService = {
    */
   startQuiz: async (studySetId: number | string, limit: number = 30): Promise<QuizAttempt> => {
     try {
-      // Sửa lại cách gửi request body cho đúng chuẩn của bạn
       const response = await apiClient.post('/quiz/start', {
         studySetId: Number(studySetId),
         limit: limit
@@ -26,14 +25,34 @@ export const quizService = {
   },
 
   /**
-   * Lưu đáp án cho từng câu hỏi ngay khi chọn.
+   * Lấy thêm một nhóm câu hỏi (Lazy load).
+   * Giả định Endpoint: GET /quiz/{attemptId}/questions?offset=X&limit=Y
+   */
+  getQuestionsBatch: async (attemptId: number, offset: number, limit: number = 10): Promise<ServerQuestion[]> => {
+    try {
+      const response = await apiClient.get(`/quiz/${attemptId}/questions`, {
+        params: { offset, limit }
+      });
+      if (response.data && response.data.code === 1000) {
+        return response.data.result; // Trả về mảng ServerQuestion
+      }
+      return [];
+    } catch (error) {
+      console.error("QuizService: getQuestionsBatch failed", error);
+      return [];
+    }
+  },
+
+  /**
+   * Lưu đáp án cho từng câu hỏi (SubmitAnswerRequest).
+   * Request: { attemptId, studyCardId, selectedAnswer }
    */
   saveAnswer: async (attemptId: number, studyCardId: number, selectedAnswer: string): Promise<any> => {
     try {
       const response = await apiClient.post('/quiz/answer', {
-        attemptId,
-        studyCardId,
-        selectedAnswer
+        attemptId: Number(attemptId),
+        studyCardId: Number(studyCardId),
+        selectedAnswer: selectedAnswer
       });
       return response.data;
     } catch (error) {
@@ -58,7 +77,7 @@ export const quizService = {
   },
 
   /**
-   * Lấy kết quả review chi tiết của một lượt thi.
+   * Lấy kết quả review chi tiết.
    */
   getQuizReview: async (attemptId: number | string): Promise<any> => {
     try {

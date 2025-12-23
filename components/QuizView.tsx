@@ -7,7 +7,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
 import { quizService } from '../services/quizService';
 import { useApp } from '../contexts/AppContext';
-// Add ThemeLoader import to fix the error on line 287
 import ThemeLoader from './ThemeLoader';
 
 interface QuizViewProps {
@@ -28,24 +27,63 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [userSelections, setUserSelections] = useState<(string | null)[]>([]); 
+  const [loadedQuestions, setLoadedQuestions] = useState<ServerQuestion[]>([]);
+  const [isLoadingBatch, setIsLoadingBatch] = useState(false);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(!!reviewAttemptId);
   const [isReviewing, setIsReviewing] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [seconds, setSeconds] = useState(0);
 
-  // Stats / Results
   const [score, setScore] = useState(0);
   const [reviewItems, setReviewItems] = useState<any[]>([]);
 
-  // Rating
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
-
-  // Total questions knowledge
   const totalQuestionCount = serverAttempt?.totalQuestions || set.cards.length;
 
+  // Initialize questions and selections
+  useEffect(() => {
+    if (serverAttempt) {
+      setLoadedQuestions(serverAttempt.questions);
+    }
+    setUserSelections(new Array(totalQuestionCount).fill(null));
+  }, [serverAttempt, totalQuestionCount]);
+
+  // Lazy load questions when index changes
+  useEffect(() => {
+    const checkAndLoadMore = async () => {
+      if (!serverAttempt) return;
+      
+      const questionNo = currentQuestionIndex + 1;
+      const alreadyLoaded = loadedQuestions.some(q => q.questionNo === questionNo);
+      
+      if (!alreadyLoaded && !isLoadingBatch) {
+        setIsLoadingBatch(true);
+        try {
+          // Tính toán offset để load 1 batch 10 câu quanh vị trí hiện tại
+          const offset = Math.max(0, currentQuestionIndex);
+          const newBatch = await quizService.getQuestionsBatch(serverAttempt.attemptId, offset, 10);
+          
+          if (newBatch.length > 0) {
+            setLoadedQuestions(prev => {
+                // Merge unique questions
+                const combined = [...prev, ...newBatch];
+                const unique = Array.from(new Map(combined.map(q => [q.questionNo, q])).values());
+                return unique.sort((a, b) => a.questionNo - b.questionNo);
+            });
+          }
+        } catch (error) {
+          console.error("Load more questions failed", error);
+        } finally {
+          setIsLoadingBatch(false);
+        }
+      }
+    };
+    
+    checkAndLoadMore();
+  }, [currentQuestionIndex, loadedQuestions, serverAttempt, isLoadingBatch]);
+
+  // Handle attempt review fetch
   useEffect(() => {
     if (reviewAttemptId) {
         const fetchReview = async () => {
@@ -68,6 +106,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     }
   }, [reviewAttemptId, addNotification]);
 
+  // Timer
   useEffect(() => {
     if (isCompleted || isSubmitting) return;
     const interval = setInterval(() => {
@@ -82,40 +121,30 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  useEffect(() => {
-    setUserSelections(new Array(totalQuestionCount).fill(null));
-  }, [totalQuestionCount]);
-
-  const questions = useMemo(() => {
-    if (serverAttempt) return serverAttempt.questions;
-    // Fallback if no server attempt (manual mode)
-    return set.cards.map((card, idx) => ({
-        attemptQuestionId: idx,
-        questionNo: idx + 1,
-        cardId: Number(card.id),
-        term: card.term,
-        options: [...(card.options || []), card.definition].sort(() => 0.5 - Math.random())
-    })) as any as ServerQuestion[];
-  }, [serverAttempt, set.cards]);
-
-  const currentQuestion = questions.find(q => q.questionNo === currentQuestionIndex + 1);
+  const currentQuestion = loadedQuestions.find(q => q.questionNo === currentQuestionIndex + 1);
 
   const handleOptionSelect = async (option: string) => {
     if (isCompleted || isSubmitting || !currentQuestion) return;
     
+    // 1. Cập nhật UI ngay lập tức
     setSelectedOption(option);
     const newUserSelections = [...userSelections];
     newUserSelections[currentQuestionIndex] = option;
     setUserSelections(newUserSelections);
 
+    // 2. Gọi API /quiz/answer để lưu đáp án (Request: attemptId, studyCardId, selectedAnswer)
     if (serverAttempt) {
         quizService.saveAnswer(
             serverAttempt.attemptId,
             currentQuestion.cardId,
             option
-        ).catch(err => console.error("Auto-save answer failed", err));
+        ).catch(err => {
+            console.error("Auto-save answer failed", err);
+            // Optionally notify user of save failure, but keep quiz going
+        });
     }
 
+    // 3. Tự động chuyển câu sau 300ms
     setTimeout(() => {
       setSelectedOption(null);
       if (currentQuestionIndex < totalQuestionCount - 1) {
@@ -128,7 +157,9 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
       if (!serverAttempt) return;
       setIsSubmitting(true);
       try {
-          const finalAnswers = questions.map((q, idx) => ({
+          // Chỉ gửi các câu đã load lên (Backend thường đã lưu lẻ tẻ qua API /answer)
+          // Tuy nhiên vẫn gửi full payload submit theo thiết kế endpoint
+          const finalAnswers = loadedQuestions.map(q => ({
               attemptQuestionId: q.attemptQuestionId,
               answer: userSelections[q.questionNo - 1] || ""
           }));
@@ -265,7 +296,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
   // --- ACTIVE QUIZ VIEW ---
   const progress = (userSelections.filter(a => a !== null).length / totalQuestionCount) * 100;
-  const isLoaded = !!currentQuestion;
+  const isLoaded = !!currentQuestion && !isLoadingBatch;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-10 animate-fade-in transition-colors pb-24">
@@ -287,7 +318,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
           {!isLoaded ? (
               <div className="bg-white dark:bg-gray-855 rounded-[32px] md:rounded-[40px] border-2 border-gray-50 dark:border-gray-800 p-20 flex flex-col items-center justify-center text-center">
                   <ThemeLoader size={48} className="mb-4" />
-                  <p className="text-gray-500 font-black uppercase tracking-widest text-[10px]">Đang tải dữ liệu câu hỏi...</p>
+                  <p className="text-gray-500 font-black uppercase tracking-widest text-[10px]">{isLoadingBatch ? "Đang tải thêm câu hỏi..." : "Đang tải dữ liệu câu hỏi..."}</p>
               </div>
           ) : (
               <>
@@ -335,7 +366,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
             <div className={`grid gap-2 ${totalQuestionCount > 100 ? 'grid-cols-6' : totalQuestionCount > 40 ? 'grid-cols-5' : 'grid-cols-4 md:gap-3'}`}>
                 {Array.from({ length: totalQuestionCount }).map((_, index) => {
                     const isAnswered = !!userSelections[index];
-                    const isLoadedItem = questions.some(q => q.questionNo === index + 1);
+                    const isLoadedItem = loadedQuestions.some(q => q.questionNo === index + 1);
                     const isCurrent = index === currentQuestionIndex;
                     
                     let statusClass = "bg-gray-50 dark:bg-gray-855 text-gray-400 border-transparent hover:border-gray-200 dark:hover:border-gray-700";
@@ -344,7 +375,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                     else if (!isLoadedItem) statusClass = "bg-gray-100 dark:bg-gray-900 text-gray-300 opacity-50";
 
                     return (
-                        <button key={index} disabled={!isLoadedItem && !isCurrent} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-xl md:rounded-2xl flex items-center justify-center font-black border transition-all ${totalQuestionCount > 100 ? 'text-[9px]' : totalQuestionCount > 50 ? 'text-[10px]' : 'text-xs md:text-sm'} ${statusClass}`}>
+                        <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-xl md:rounded-2xl flex items-center justify-center font-black border transition-all ${totalQuestionCount > 100 ? 'text-[9px]' : totalQuestionCount > 50 ? 'text-[10px]' : 'text-xs md:text-sm'} ${statusClass}`}>
                             {index + 1}
                         </button>
                     )
