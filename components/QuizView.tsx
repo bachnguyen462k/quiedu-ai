@@ -185,15 +185,15 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in pb-32">
          {/* Title Section */}
-         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div>
-                <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
-                    <Award className="text-yellow-500" size={32} /> 
+                <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
+                    <Award className="text-yellow-500 shrink-0" size={32} /> 
                     {reviewAttemptId ? "Lịch sử ôn tập" : t('quiz.result_title')}
                 </h2>
                 <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">Chúc mừng bạn đã hoàn thành học phần: <span className="text-brand-blue font-bold">{set.title}</span></p>
             </div>
-            <button onClick={onBack} className="flex items-center gap-2 text-gray-400 hover:text-brand-blue font-black uppercase text-[10px] tracking-widest transition-colors">
+            <button onClick={onBack} className="flex items-center gap-2 text-gray-400 hover:text-brand-blue font-black uppercase text-[10px] tracking-widest transition-colors self-start md:self-auto">
                 <ArrowLeft size={16} /> {t('quiz.back_detail')}
             </button>
          </div>
@@ -203,32 +203,32 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
             {/* LEFT COLUMN: DETAILED RESULTS (2/3) */}
             <div className="lg:col-span-2 space-y-6">
                 <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4">
-                    <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter flex items-center gap-3">
+                    <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter flex items-center gap-3">
                         <List className="text-brand-blue" size={24} /> {t('quiz.detail_title')}
                     </h3>
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-lg border border-gray-100 dark:border-gray-700">Tổng {reviewItems.length} câu</span>
                 </div>
 
                 {reviewItems.length > 0 ? reviewItems.map((item, idx) => (
-                    <div key={idx} className={`p-6 md:p-8 rounded-[32px] border-2 transition-all group ${item.correct ? 'bg-green-50/30 dark:bg-green-900/5 border-green-100 dark:border-green-800/30 hover:border-green-300' : 'bg-red-50/30 dark:bg-red-900/5 border-red-100 dark:border-red-800/30 hover:border-red-300'}`}>
+                    <div key={idx} className={`p-5 md:p-8 rounded-[32px] border-2 transition-all group ${item.correct ? 'bg-green-50/30 dark:bg-green-900/5 border-green-100 dark:border-green-800/30 hover:border-green-300' : 'bg-red-50/30 dark:bg-red-900/5 border-red-100 dark:border-red-800/30 hover:border-red-300'}`}>
                         <div className="flex flex-col md:flex-row md:items-start gap-6">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-black text-white shadow-lg transition-transform group-hover:scale-110 ${item.correct ? 'bg-green-500 shadow-green-200 dark:shadow-none' : 'bg-red-500 shadow-red-200 dark:shadow-none'}`}>
                                 {item.correct ? <Check size={24} strokeWidth={4} /> : <X size={24} strokeWidth={4} />}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start mb-4">
+                                <div className="flex flex-col sm:flex-row justify-between items-start mb-4 gap-2">
                                     <h4 className="font-black text-gray-900 dark:text-white text-lg leading-snug">
                                         <span className="text-gray-400 font-bold mr-2 text-sm uppercase">Câu {item.questionNo}:</span>
                                         {item.term}
                                     </h4>
                                     {item.timeSpentMs > 0 && (
-                                        <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap ml-4 bg-white dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-100 dark:border-gray-700">
+                                        <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap bg-white dark:bg-gray-800 px-2 py-1 rounded-md border border-gray-100 dark:border-gray-700">
                                             <Timer size={12} /> {(item.timeSpentMs / 1000).toFixed(1)}s
                                         </span>
                                     )}
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                                     <div className={`p-4 rounded-2xl border ${item.correct ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800/30' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/30'}`}>
                                         <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">{t('quiz.your_choice')}</span>
                                         <span className={`font-bold text-sm ${item.correct ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>{item.selectedAnswer || t('quiz.not_answered')}</span>
@@ -263,13 +263,13 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
             {/* RIGHT COLUMN: SCORE & EVALUATION (1/3) */}
             <div className="lg:col-span-1 space-y-6">
-                <div className="sticky top-24 space-y-6">
+                <div className="lg:sticky lg:top-24 space-y-6">
                     {/* Score Chart Card */}
                     <div className="bg-white dark:bg-gray-855 p-8 rounded-[40px] shadow-xl border border-gray-100 dark:border-gray-800 transition-colors text-center relative overflow-hidden">
                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-blue"></div>
                         <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Thống kê điểm số</h3>
                         
-                        <div className="h-48 w-full relative flex justify-center items-center mb-4">
+                        <div className="h-40 md:h-48 w-full relative flex justify-center items-center mb-4">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie data={data} innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value" stroke="none">
@@ -280,7 +280,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-4xl font-black text-gray-900 dark:text-white leading-none">{score}%</span>
+                                <span className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white leading-none">{score}%</span>
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter mt-1">Hoàn thành</span>
                             </div>
                         </div>
@@ -310,9 +310,9 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
                     {/* Evaluation/Review Card */}
                     {!reviewAttemptId && !reviewSubmitted && (
-                        <div className="bg-orange-50 dark:bg-orange-900/10 p-8 rounded-[40px] border border-orange-100 dark:border-orange-900/30 transition-colors shadow-sm">
+                        <div className="bg-orange-50 dark:bg-orange-900/10 p-6 md:p-8 rounded-[40px] border border-orange-100 dark:border-orange-900/30 transition-colors shadow-sm">
                             <h3 className="text-center text-xs font-black text-brand-orange uppercase tracking-widest mb-6">Đánh giá học phần</h3>
-                            <div className="flex justify-center gap-3 mb-6">
+                            <div className="flex justify-center gap-2 md:gap-3 mb-6">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <button 
                                         key={star} 
@@ -370,24 +370,24 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                  </button>
              </div>
 
-             <div className="bg-white dark:bg-gray-855 rounded-[40px] shadow-2xl border border-gray-100 dark:border-gray-800 p-10 text-center mb-10 transition-colors relative overflow-hidden">
+             <div className="bg-white dark:bg-gray-855 rounded-[32px] md:rounded-[40px] shadow-2xl border border-gray-100 dark:border-gray-800 p-6 md:p-10 text-center mb-10 transition-colors relative overflow-hidden">
                  <div className="absolute top-0 left-0 right-0 h-2 bg-indigo-600"></div>
-                 <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-[28px] flex items-center justify-center mx-auto mb-6 transform -rotate-6 shadow-xl">
+                 <div className="w-16 h-16 md:w-20 md:h-20 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-[28px] flex items-center justify-center mx-auto mb-6 transform -rotate-6 shadow-xl">
                      <HelpCircle size={40} />
                  </div>
-                 <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-4 uppercase tracking-tight">{t('quiz.ready_submit')}</h2>
-                 <p className="text-gray-500 dark:text-gray-400 mb-10 font-medium max-w-md mx-auto">{t('quiz.ready_desc')}</p>
+                 <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-4 uppercase tracking-tight">{t('quiz.ready_submit')}</h2>
+                 <p className="text-gray-500 dark:text-gray-400 mb-8 md:mb-10 font-medium max-w-md mx-auto text-sm md:text-base">{t('quiz.ready_desc')}</p>
                  
                  <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <button 
                         onClick={handleSubmitQuiz}
                         disabled={isSubmitting}
-                        className="bg-brand-blue text-white px-12 py-5 rounded-2xl font-black text-lg hover:bg-blue-700 shadow-2xl shadow-brand-blue/30 flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+                        className="bg-brand-blue text-white px-8 md:px-12 py-4 md:py-5 rounded-2xl font-black text-base md:text-lg hover:bg-blue-700 shadow-2xl shadow-brand-blue/30 flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-50"
                     >
                         {isSubmitting ? <Loader2 className="animate-spin" size={24} /> : <Send size={24} />} 
                         {isSubmitting ? "ĐANG NỘP..." : t('quiz.confirm_submit')}
                     </button>
-                    <button onClick={() => setIsReviewing(false)} className="px-8 py-5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-black uppercase text-xs tracking-widest hover:bg-gray-200 transition-all">
+                    <button onClick={() => setIsReviewing(false)} className="px-8 py-4 md:py-5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-black uppercase text-xs tracking-widest hover:bg-gray-200 transition-all">
                         Kiểm tra lại
                     </button>
                  </div>
@@ -396,7 +396,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
              <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 mb-6 flex items-center gap-2 uppercase tracking-[0.2em]">
                 <LayoutGrid size={16} /> {t('quiz.overview')}
              </h3>
-             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 gap-3">
+             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
                 {questions.map((_, index) => {
                     const hasAnswered = !!userSelections[index];
                     let statusClass = "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 border-transparent";
@@ -423,33 +423,33 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
     <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-10 animate-fade-in transition-colors pb-24">
       <div className="flex-1">
           <div className="flex justify-between items-center mb-8 gap-4">
-            <button onClick={onBack} className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-colors">
-              <ArrowLeft size={18} /> {t('quiz.exit')}
+            <button onClick={onBack} className="text-gray-400 hover:text-gray-900 dark:hover:text-white font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-colors shrink-0">
+              <ArrowLeft size={18} /> <span className="hidden sm:inline">{t('quiz.exit')}</span>
             </button>
             
-            <div className="flex-1 flex flex-col items-center">
+            <div className="flex-1 flex flex-col items-center min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                     <Clock size={18} className="text-brand-blue" />
-                    <span className="text-xl font-black text-gray-900 dark:text-white font-mono">{formatTime(seconds)}</span>
+                    <span className="text-lg md:text-xl font-black text-gray-900 dark:text-white font-mono">{formatTime(seconds)}</span>
                 </div>
-                <div className="w-full max-w-md bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                <div className="w-full max-w-md bg-gray-100 dark:bg-gray-800 rounded-full h-2 md:h-2.5 overflow-hidden">
                     <div className="bg-brand-blue h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase whitespace-nowrap tracking-widest">{answeredCount}/{questions.length}</span>
-                <button onClick={() => setShowGrid(!showGrid)} className="lg:hidden p-2.5 text-brand-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl transition-all active:scale-90">
+                <button onClick={() => setShowGrid(!showGrid)} className="lg:hidden p-2 text-brand-blue dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl transition-all active:scale-90">
                     <LayoutGrid size={22} />
                 </button>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-855 rounded-[40px] shadow-sm border-2 border-gray-50 dark:border-gray-800 p-8 md:p-12 mb-8 min-h-[280px] flex flex-col justify-center relative overflow-hidden transition-colors">
-            <div className="absolute top-8 left-8">
+          <div className="bg-white dark:bg-gray-855 rounded-[32px] md:rounded-[40px] shadow-sm border-2 border-gray-50 dark:border-gray-800 p-6 md:p-12 mb-8 min-h-[220px] md:min-h-[280px] flex flex-col justify-center relative overflow-hidden transition-colors">
+            <div className="absolute top-6 left-6 md:top-8 md:left-8">
                  <h3 className="text-[10px] font-black text-brand-blue bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full uppercase tracking-widest">{t('quiz.question_prefix')} {currentQuestionIndex + 1}</h3>
             </div>
-            <p className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white leading-[1.3] text-center pt-8">{currentQuestion.term}</p>
+            <p className="text-xl md:text-4xl font-black text-gray-900 dark:text-white leading-[1.3] text-center pt-8">{currentQuestion.term}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
@@ -465,11 +465,11 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
               }
 
               return (
-                <button key={idx} onClick={() => handleOptionSelect(option)} className={`group p-6 text-left rounded-[32px] transition-all duration-300 flex items-center gap-5 active:scale-[0.98] ${buttonStyle}`}>
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 font-black text-lg transition-colors ${badgeStyle}`}>
-                      {isSelected ? <Check size={24} strokeWidth={4} /> : String.fromCharCode(65 + idx)}
+                <button key={idx} onClick={() => handleOptionSelect(option)} className={`group p-4 md:p-6 text-left rounded-[28px] md:rounded-[32px] transition-all duration-300 flex items-center gap-4 md:gap-5 active:scale-[0.98] ${buttonStyle}`}>
+                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 font-black text-base md:text-lg transition-colors ${badgeStyle}`}>
+                      {isSelected ? <Check size={20} md:size={24} strokeWidth={4} /> : String.fromCharCode(65 + idx)}
                   </div>
-                  <span className="font-bold text-lg md:text-xl leading-tight">{option}</span>
+                  <span className="font-bold text-base md:text-xl leading-tight">{option}</span>
                 </button>
               );
             })}
@@ -477,7 +477,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
           {isAllAnswered && (
               <div className="flex justify-end animate-fade-in">
-                  <button onClick={() => setIsReviewing(true)} className="bg-brand-blue text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center gap-3 hover:bg-blue-700 shadow-2xl shadow-brand-blue/30 transition-all transform hover:-translate-y-1 active:scale-95">
+                  <button onClick={() => setIsReviewing(true)} className="w-full sm:w-auto bg-brand-blue text-white px-8 md:px-10 py-4 md:py-5 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-3 hover:bg-blue-700 shadow-2xl shadow-brand-blue/30 transition-all transform hover:-translate-y-1 active:scale-95">
                       {t('quiz.to_submit_page')} <ArrowRight size={18} />
                   </button>
               </div>
@@ -486,7 +486,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
 
       {/* Sidebar question grid */}
       <div className={`fixed inset-0 bg-black/50 z-[160] lg:static lg:bg-transparent lg:z-auto lg:w-80 flex-shrink-0 ${showGrid ? 'flex justify-end' : 'hidden lg:block'}`} onClick={() => setShowGrid(false)}>
-         <div className="bg-white dark:bg-gray-800 h-full w-80 lg:w-full lg:h-auto lg:rounded-[40px] lg:shadow-xl lg:border lg:border-gray-100 dark:lg:border-gray-800 p-8 overflow-y-auto transition-colors" onClick={e => e.stopPropagation()}>
+         <div className="bg-white dark:bg-gray-800 h-full w-72 md:w-80 lg:w-full lg:h-auto lg:rounded-[40px] lg:shadow-xl lg:border lg:border-gray-100 dark:lg:border-gray-800 p-6 md:p-8 overflow-y-auto transition-colors" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-8">
                 <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-3 uppercase text-[10px] tracking-[0.2em]">
                     <LayoutGrid size={18} className="text-brand-blue" /> 
@@ -495,7 +495,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                 <button onClick={() => setShowGrid(false)} className="lg:hidden text-gray-400 hover:text-gray-900 transition-colors"><XCircle size={24} /></button>
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-2 md:gap-3">
                 {questions.map((_, index) => {
                     const hasAnswered = !!userSelections[index];
                     let statusClass = "bg-gray-50 dark:bg-gray-855 text-gray-400 dark:text-gray-600 border-transparent hover:border-gray-200 dark:hover:border-gray-700";
@@ -506,7 +506,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, currentUser, onBack, onAddRevi
                     }
 
                     return (
-                        <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-2xl flex items-center justify-center text-sm font-black border transition-all ${statusClass}`}>
+                        <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-xl md:rounded-2xl flex items-center justify-center text-xs md:text-sm font-black border transition-all ${statusClass}`}>
                             {index + 1}
                         </button>
                     )

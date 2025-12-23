@@ -186,7 +186,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {trendingSets.length > 0 ? trendingSets.map((set, idx) => {
                     const isTop1 = idx === 0;
                     const isTop2 = idx === 1;
@@ -202,7 +202,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                         <div 
                             key={set.id} 
                             onClick={() => onSelectSet(set)} 
-                            className={`group relative overflow-hidden rounded-[36px] p-7 cursor-pointer transition-all duration-500 shadow-xl hover:shadow-2xl border-transparent transform hover:-translate-y-2 flex flex-col justify-between min-h-[300px] text-white ${cardTheme}`}
+                            className={`group relative overflow-hidden rounded-[32px] md:rounded-[36px] p-6 md:p-7 cursor-pointer transition-all duration-500 shadow-xl hover:shadow-2xl border-transparent transform hover:-translate-y-2 flex flex-col justify-between min-h-[280px] md:min-h-[300px] text-white ${cardTheme} ${!isTop1 && !isTop2 ? 'sm:col-span-2 md:col-span-1' : ''}`}
                         >
                             <div className="absolute -top-10 -right-10 opacity-10 group-hover:scale-125 transition-transform duration-700">
                                 {isTop1 ? <Crown size={220} /> : isTop2 ? <Trophy size={200} /> : <Medal size={180} />}
@@ -237,16 +237,16 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                             </div>
 
                             <div className="relative z-10 pt-5 border-t border-white/10 flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-9 h-9 rounded-2xl bg-white text-brand-blue flex items-center justify-center text-xs font-black shadow-lg">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-9 h-9 rounded-2xl bg-white text-brand-blue flex items-center justify-center text-xs font-black shadow-lg shrink-0">
                                         {set.author.charAt(0)}
                                     </div>
                                     <div className="min-w-0">
                                         <span className="block text-xs font-bold truncate text-white">{set.author}</span>
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/60">{set.subject}</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-white/60 truncate block">{set.subject}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-brand-blue rounded-xl font-black text-[10px] shadow-lg transition-transform group-hover:scale-105">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-brand-blue rounded-xl font-black text-[10px] shadow-lg transition-transform group-hover:scale-105 shrink-0">
                                     <Play size={12} fill="currentColor" /> {set.plays}
                                 </div>
                             </div>
@@ -258,13 +258,13 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       )}
 
       {isLibrary && (
-          <div className="mb-10 flex flex-col md:flex-row gap-6 items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-8 transition-colors">
-              <div className="flex p-1.5 bg-gray-100 dark:bg-gray-800 rounded-[22px] w-full md:w-auto overflow-x-auto custom-scrollbar scrollbar-hide">
-                  <button onClick={() => setLibraryTab('SETS')} className={`flex-1 md:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${libraryTab === 'SETS' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_sets')}</button>
-                  <button onClick={() => setLibraryTab('FAVORITES')} className={`flex-1 md:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${libraryTab === 'FAVORITES' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_favorites')}</button>
-                  <button onClick={() => setLibraryTab('HISTORY')} className={`flex-1 md:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap flex items-center gap-2 ${libraryTab === 'HISTORY' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}><History size={16}/> Lịch sử Quiz</button>
+          <div className="mb-10 flex flex-col lg:flex-row gap-6 items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-8 transition-colors">
+              <div className="flex p-1.5 bg-gray-100 dark:bg-gray-800 rounded-[22px] w-full lg:w-auto overflow-x-auto custom-scrollbar scrollbar-hide">
+                  <button onClick={() => setLibraryTab('SETS')} className={`flex-1 lg:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${libraryTab === 'SETS' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_sets')}</button>
+                  <button onClick={() => setLibraryTab('FAVORITES')} className={`flex-1 lg:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${libraryTab === 'FAVORITES' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_favorites')}</button>
+                  <button onClick={() => setLibraryTab('HISTORY')} className={`flex-1 lg:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap flex items-center gap-2 ${libraryTab === 'HISTORY' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}><History size={16}/> Lịch sử Quiz</button>
               </div>
-              <div className="relative w-full md:w-96 group">
+              <div className="relative w-full lg:w-96 group">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-blue transition-colors" size={20} />
                   <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('dashboard.search_lib')} className="w-full pl-14 pr-5 py-4 rounded-[24px] bg-white dark:bg-gray-855 border-2 border-gray-100 dark:border-gray-800 focus:border-brand-blue/50 focus:ring-4 focus:ring-brand-blue/5 outline-none font-bold transition-all text-gray-900 dark:text-white" />
               </div>
@@ -278,14 +278,14 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                     <History className="text-brand-blue" size={24} /> Lịch sử ôn luyện của bạn
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {quizHistory.map((item) => {
                         const scoreValue = item.totalScore ?? 0;
                         const scoreColor = scoreValue >= 80 ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : scoreValue >= 50 ? 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20';
                         const displayDate = item.submittedAt ? new Date(item.submittedAt) : new Date();
                         
                         return (
-                            <div key={item.attemptId} className="bg-white dark:bg-gray-855 p-6 rounded-[32px] border border-gray-100 dark:border-gray-800 hover:shadow-xl transition-all group flex flex-col justify-between min-h-[220px]">
+                            <div key={item.attemptId} className="bg-white dark:bg-gray-855 p-5 md:p-6 rounded-[32px] border border-gray-100 dark:border-gray-800 hover:shadow-xl transition-all group flex flex-col justify-between min-h-[220px]">
                                 <div>
                                     <div className="flex justify-between items-start mb-4">
                                         <div className={`px-4 py-1 rounded-full text-lg font-black ${scoreColor}`}>
@@ -326,14 +326,14 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                 <h2 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3 uppercase tracking-tight">
                     <Book className="text-brand-blue" size={24} /> {isLibrary ? t('dashboard.library') : 'Khám phá học phần mới'}
                 </h2>
-                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8`}>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8`}>
                     {filteredSets.map(set => (
                         <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-[32px] shadow-sm hover:shadow-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
                             <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-3 rounded-2xl z-10 transition-all ${set.isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20 scale-110 shadow-lg' : 'text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-800'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
-                            <div className="p-7 flex-1">
+                            <div className="p-6 md:p-7 flex-1">
                                 <div className="flex flex-wrap gap-2 mb-5">
                                     <span className="px-3 py-1 rounded-xl bg-brand-blue/5 dark:bg-blue-400/10 text-brand-blue dark:text-blue-400 text-[10px] font-black uppercase tracking-widest border border-brand-blue/10">QUIZ</span>
-                                    <span className="px-3 py-1 rounded-xl bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-brand-orange/10">{set.subject}</span>
+                                    <span className="px-3 py-1 rounded-xl bg-brand-orange/5 text-brand-orange text-[10px] font-black uppercase tracking-widest border border-brand-orange/10 truncate max-w-[100px]">{set.subject}</span>
                                     {isLibrary && (
                                         <>
                                             {renderSetTypeBadge(set.type)}
@@ -341,15 +341,15 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                         </>
                                     )}
                                 </div>
-                                <h3 className="text-xl font-black text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-4 leading-[1.3] pr-6">{set.title}</h3>
+                                <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors line-clamp-2 mb-4 leading-[1.3] pr-6">{set.title}</h3>
                                 <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 font-medium leading-relaxed mb-6">{set.description}</p>
                             </div>
-                            <div className="px-7 py-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 flex items-center justify-between text-gray-500 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-2xl bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-md">{set.author.charAt(0)}</div>
+                            <div className="px-6 md:px-7 py-5 md:py-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 flex items-center justify-between text-gray-500 transition-colors mt-auto">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-8 h-8 rounded-2xl bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-md shrink-0">{set.author.charAt(0)}</div>
                                     <span className="text-xs font-black text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400 shrink-0">
                                     <span className="flex items-center gap-1.5"><Clock size={14} className="text-brand-blue dark:text-blue-400" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
                                 </div>
                             </div>
