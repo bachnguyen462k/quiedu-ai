@@ -5,7 +5,7 @@ import { ArrowLeft, CheckCircle, XCircle, RefreshCw, LayoutGrid, Clock, Check, X
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { v4 as uuidv4 } from 'uuid';
 import { useTranslation } from 'react-i18next';
-import { quizService } from '../services/quizService';
+import { quizService, AnswerResponse } from '../services/quizService';
 import { useApp } from '../contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
 import ThemeLoader from './ThemeLoader';
@@ -33,6 +33,9 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
   const [loadedQuestions, setLoadedQuestions] = useState<ServerQuestion[]>([]);
   const [isLoadingBatch, setIsLoadingBatch] = useState(false);
   
+  // New state: Map to store real-time correct/incorrect results from API
+  const [resultsMap, setResultsMap] = useState<Record<number, { correct: boolean; correctAnswer: string; explanation?: string }>>({});
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(!!reviewAttemptId);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -42,10 +45,8 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
   const [score, setScore] = useState(0);
   const [reviewItems, setReviewItems] = useState<any[]>([]);
 
-  // Lấy tổng số câu hỏi an toàn từ JSON Backend (studySet.totalQuestions)
   const totalQuestionCount = serverAttempt?.studySet?.totalQuestions || serverAttempt?.totalQuestions || set.cards.length;
 
-  // Gợi ý học phần khác
   const recommendations = useMemo(() => {
       return allSets
           .filter(s => s.id !== set.id)
@@ -53,17 +54,19 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
           .slice(0, 3);
   }, [allSets, set.id]);
 
-  // Initialize questions and sync initial answers from server
   useEffect(() => {
     if (serverAttempt) {
-      // FIX: Tránh crash nếu questions là null
       const questionsFromServer = serverAttempt.questions || [];
       setLoadedQuestions(questionsFromServer);
       
       const initialSelections = new Array(totalQuestionCount).fill(null);
+      const initialResults: Record<number, any> = {};
+      
       questionsFromServer.forEach(q => {
           if (q.selectedAnswer) {
               initialSelections[q.questionNo - 1] = q.selectedAnswer;
+              // Nếu backend đã có thông tin đúng sai từ trước (ví dụ resume quiz), ta có thể map ở đây
+              // Hiện tại giả định client sẽ nhận kết quả mới mỗi lần click
           }
       });
       setUserSelections(initialSelections);
@@ -72,36 +75,17 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
     }
   }, [serverAttempt, totalQuestionCount]);
 
-  // Sync userSelections when a new batch of questions is loaded
-  useEffect(() => {
-    if (loadedQuestions.length > 0) {
-        setUserSelections(prev => {
-            const next = [...prev];
-            loadedQuestions.forEach(q => {
-                if (q.selectedAnswer && next[q.questionNo - 1] === null) {
-                    next[q.questionNo - 1] = q.selectedAnswer;
-                }
-            });
-            return next;
-        });
-    }
-  }, [loadedQuestions]);
-
-  // Lazy load questions when index changes
   useEffect(() => {
     const checkAndLoadMore = async () => {
       if (!serverAttempt) return;
-      
       const questionNo = currentQuestionIndex + 1;
       const alreadyLoaded = loadedQuestions.some(q => q.questionNo === questionNo);
       
-      // Nếu câu hiện tại chưa được load (questions: null ban đầu sẽ kích hoạt cái này)
       if (!alreadyLoaded && !isLoadingBatch) {
         setIsLoadingBatch(true);
         try {
           const offset = currentQuestionIndex;
           const newQuestions = await quizService.getQuestionsBatch(serverAttempt.attemptId, offset, 10);
-          
           if (newQuestions && newQuestions.length > 0) {
             setLoadedQuestions(prev => {
                 const combined = [...prev, ...newQuestions];
@@ -116,11 +100,9 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
         }
       }
     };
-    
     checkAndLoadMore();
   }, [currentQuestionIndex, loadedQuestions, serverAttempt, isLoadingBatch]);
 
-  // Handle attempt review fetch
   useEffect(() => {
     if (reviewAttemptId) {
         const fetchReview = async () => {
@@ -143,7 +125,6 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
     }
   }, [reviewAttemptId, addNotification]);
 
-  // Timer
   useEffect(() => {
     if (isCompleted || isSubmitting) return;
     const interval = setInterval(() => {
@@ -161,32 +142,46 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
   const currentQuestion = loadedQuestions.find(q => q.questionNo === currentQuestionIndex + 1);
 
   const handleOptionSelect = async (option: string) => {
-    if (isCompleted || isSubmitting || !currentQuestion) return;
+    // Nếu đã có kết quả cho câu này, không cho chọn lại (tránh spam API)
+    if (isCompleted || isSubmitting || !currentQuestion || resultsMap[currentQuestionIndex]) return;
     
-    // 1. Cập nhật UI ngay lập tức
+    // 1. Cập nhật UI tạm thời
     setSelectedOption(option);
     const newUserSelections = [...userSelections];
     newUserSelections[currentQuestionIndex] = option;
     setUserSelections(newUserSelections);
 
-    // 2. Gọi API /quiz/answer để lưu đáp án (Request: attemptId, studyCardId, selectedAnswer)
+    // 2. Gọi API và nhận kết quả đúng/sai ngay lập tức
     if (serverAttempt) {
-        quizService.saveAnswer(
-            serverAttempt.attemptId,
-            currentQuestion.cardId,
-            option
-        ).catch(err => {
-            console.error("Auto-save answer failed", err);
-        });
-    }
+        try {
+            const result: AnswerResponse = await quizService.saveAnswer(
+                serverAttempt.attemptId,
+                currentQuestion.cardId,
+                option
+            );
+            
+            // Cập nhật kết quả vào Map để hiển thị màu sắc Xanh/Đỏ
+            setResultsMap(prev => ({
+                ...prev,
+                [currentQuestionIndex]: {
+                    correct: result.correct,
+                    correctAnswer: result.correctAnswer,
+                    explanation: result.explanation
+                }
+            }));
 
-    // 3. Tự động chuyển câu sau 300ms
-    setTimeout(() => {
-      setSelectedOption(null);
-      if (currentQuestionIndex < totalQuestionCount - 1) {
-        setCurrentQuestionIndex(prev => prev + 1);
-      }
-    }, 300);
+            // 3. Tự động chuyển câu sau 800ms (để người dùng kịp nhìn thấy đúng/sai)
+            setTimeout(() => {
+                setSelectedOption(null);
+                if (currentQuestionIndex < totalQuestionCount - 1) {
+                    setCurrentQuestionIndex(prev => prev + 1);
+                }
+            }, 800);
+        } catch (err) {
+            console.error("Auto-save answer failed", err);
+            addNotification("Không thể lưu đáp án.", "error");
+        }
+    }
   };
 
   const handleSubmitQuiz = async () => {
@@ -350,15 +345,26 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
                  <p className="text-gray-500 dark:text-gray-400 mb-8 md:mb-10 font-medium max-w-md mx-auto text-sm md:text-base">{t('quiz.ready_desc')}</p>
                  <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <button onClick={handleSubmitQuiz} className="bg-brand-blue text-white px-8 md:px-12 py-4 md:py-5 rounded-2xl font-black text-base md:text-lg shadow-2xl shadow-brand-blue/30 active:scale-95 transition-all flex items-center justify-center gap-3"><Send size={24} /> {t('quiz.confirm_submit')}</button>
-                    <button onClick={() => setIsReviewing(false)} className="px-8 py-4 md:py-5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-black uppercase text-xs tracking-widest transition-all">Kiểm tra lại</button>
+                    <button onClick={() => setIsReviewing(false)} className="px-8 py-4 md:py-5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 text-gray-400 font-black uppercase text-xs tracking-widest transition-all">Kiểm tra lại</button>
                  </div>
              </div>
              <h3 className="text-[10px] font-black text-gray-400 mb-6 flex items-center gap-2 uppercase tracking-[0.2em]"><LayoutGrid size={16} /> {t('quiz.overview')}</h3>
              <div className={`grid gap-3 ${totalQuestionCount > 40 ? 'grid-cols-5 sm:grid-cols-8 md:grid-cols-12' : 'grid-cols-4 sm:grid-cols-6 md:grid-cols-10'}`}>
                 {Array.from({ length: totalQuestionCount }).map((_, index) => {
                     const isAnswered = !!userSelections[index];
+                    const result = resultsMap[index];
+                    
+                    let bgClass = "bg-gray-100 text-gray-300 border-transparent";
+                    if (result) {
+                        bgClass = result.correct 
+                            ? "bg-green-500 text-white border-green-600 shadow-md shadow-green-200" 
+                            : "bg-red-500 text-white border-red-600 shadow-md shadow-red-200";
+                    } else if (isAnswered) {
+                        bgClass = "bg-indigo-50 text-indigo-600 border-indigo-200";
+                    }
+
                     return (
-                        <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center font-black text-sm border transition-all hover:scale-105 active:scale-95 ${isAnswered ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-gray-100 text-gray-300 border-transparent'}`}>{index + 1}</button>
+                        <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-2xl flex flex-col items-center justify-center font-black text-sm border transition-all hover:scale-105 active:scale-95 ${bgClass}`}>{index + 1}</button>
                     )
                 })}
              </div>
@@ -369,6 +375,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
   // --- ACTIVE QUIZ VIEW ---
   const progress = (userSelections.filter(a => a !== null).length / totalQuestionCount) * 100;
   const isLoaded = !!currentQuestion && !isLoadingBatch;
+  const currentResult = resultsMap[currentQuestionIndex];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-10 animate-fade-in transition-colors pb-24">
@@ -403,15 +410,58 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     {currentQuestion.options.map((option, idx) => {
-                      const isSelected = (selectedOption === option) || (userSelections[currentQuestionIndex] === option);
+                      const userSelection = userSelections[currentQuestionIndex];
+                      const isSelected = (selectedOption === option) || (userSelection === option);
+                      
+                      let styleClass = "bg-white dark:bg-gray-855 border-gray-100 dark:border-gray-800 hover:border-brand-blue";
+                      let iconClass = "bg-gray-50 dark:bg-gray-800 text-gray-400";
+                      let iconContent: React.ReactNode = String.fromCharCode(65 + idx);
+
+                      if (currentResult) {
+                          const isCorrectOption = option === currentResult.correctAnswer;
+                          const isWrongSelection = isSelected && !currentResult.correct;
+
+                          if (isCorrectOption) {
+                              styleClass = "border-green-500 bg-green-50/50 text-green-700 dark:text-green-400 ring-4 ring-green-100 dark:ring-green-900/20";
+                              iconClass = "bg-green-500 text-white";
+                              iconContent = <Check size={20} strokeWidth={4} />;
+                          } else if (isWrongSelection) {
+                              styleClass = "border-red-500 bg-red-50/50 text-red-700 dark:text-red-400 ring-4 ring-red-100 dark:ring-red-900/20";
+                              iconClass = "bg-red-500 text-white";
+                              iconContent = <X size={20} strokeWidth={4} />;
+                          } else if (isSelected) {
+                             styleClass = "border-brand-blue bg-blue-50/50 text-brand-blue";
+                          }
+                      } else if (isSelected) {
+                          styleClass = "border-brand-blue bg-blue-50/50 ring-8 ring-brand-blue/5 text-brand-blue";
+                          iconClass = "bg-brand-blue text-white";
+                      }
+
                       return (
-                        <button key={idx} onClick={() => handleOptionSelect(option)} className={`group p-4 md:p-6 text-left rounded-[28px] md:rounded-[32px] transition-all duration-300 flex items-center gap-4 md:gap-5 active:scale-[0.98] border-2 ${isSelected ? 'border-brand-blue bg-blue-50/50 ring-8 ring-brand-blue/5 text-brand-blue' : 'bg-white dark:bg-gray-855 border-gray-100 dark:border-gray-800 hover:border-brand-blue'}`}>
-                          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 font-black text-base md:text-lg transition-colors ${isSelected ? 'bg-brand-blue text-white' : 'bg-gray-50 dark:bg-gray-800 text-gray-400'}`}>{isSelected ? <Check size={20} strokeWidth={4} /> : String.fromCharCode(65 + idx)}</div>
+                        <button 
+                            key={idx} 
+                            onClick={() => handleOptionSelect(option)} 
+                            disabled={!!currentResult}
+                            className={`group p-4 md:p-6 text-left rounded-[28px] md:rounded-[32px] transition-all duration-300 flex items-center gap-4 md:gap-5 active:scale-[0.98] border-2 ${styleClass} ${currentResult ? 'cursor-default' : ''}`}
+                        >
+                          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 font-black text-base md:text-lg transition-colors ${iconClass}`}>
+                              {iconContent}
+                          </div>
                           <span className="font-bold text-base md:text-lg leading-tight">{option}</span>
                         </button>
                       );
                     })}
                   </div>
+
+                  {currentResult && currentResult.explanation && (
+                      <div className="bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-brand-blue p-6 rounded-2xl mb-8 animate-fade-in transition-colors">
+                          <div className="flex items-center gap-2 mb-2">
+                              <HelpCircle size={18} className="text-brand-blue" />
+                              <span className="text-xs font-black text-brand-blue uppercase tracking-widest">Giải thích</span>
+                          </div>
+                          <p className="text-gray-700 dark:text-gray-200 text-sm font-medium leading-relaxed italic">{currentResult.explanation}</p>
+                      </div>
+                  )}
               </>
           )}
 
@@ -440,11 +490,22 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
                     const isAnswered = !!userSelections[index];
                     const isLoadedItem = loadedQuestions.some(q => q.questionNo === index + 1);
                     const isCurrent = index === currentQuestionIndex;
+                    const result = resultsMap[index];
                     
                     let statusClass = "bg-gray-50 dark:bg-gray-855 text-gray-400 border-transparent hover:border-gray-200 dark:hover:border-gray-700";
-                    if (isCurrent) statusClass = "bg-brand-blue text-white shadow-lg ring-4 ring-brand-blue/20 z-10 border-transparent scale-110";
-                    else if (isAnswered) statusClass = "bg-green-50 text-green-600 font-black border-green-100";
-                    else if (!isLoadedItem) statusClass = "bg-gray-100 dark:bg-gray-900 text-gray-300 opacity-50";
+                    
+                    if (result) {
+                        // HIỂN THỊ MÀU XANH/ĐỎ KHI ĐÃ CÓ KẾT QUẢ TỪ API
+                        statusClass = result.correct 
+                            ? "bg-green-500 text-white border-green-600 shadow-md shadow-green-200" 
+                            : "bg-red-500 text-white border-red-600 shadow-md shadow-red-200";
+                    } else if (isCurrent) {
+                        statusClass = "bg-white dark:bg-gray-700 text-brand-blue shadow-lg ring-4 ring-brand-blue/20 z-10 border-brand-blue scale-110";
+                    } else if (isAnswered) {
+                        statusClass = "bg-indigo-50 text-indigo-600 font-black border-indigo-100";
+                    } else if (!isLoadedItem) {
+                        statusClass = "bg-gray-100 dark:bg-gray-900 text-gray-300 opacity-50";
+                    }
 
                     return (
                         <button key={index} onClick={() => handleJumpToQuestion(index)} className={`aspect-square rounded-xl md:rounded-2xl flex items-center justify-center font-black border transition-all ${totalQuestionCount > 100 ? 'text-[9px]' : totalQuestionCount > 50 ? 'text-[10px]' : 'text-xs md:text-sm'} ${statusClass}`}>
@@ -455,9 +516,9 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
             </div>
 
             <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-700 space-y-4">
-                <div className="flex items-center gap-3 text-[10px] font-black uppercase text-gray-500"><div className="w-3 h-3 rounded-full bg-green-500"></div><span>{t('quiz.status_answered')}</span></div>
+                <div className="flex items-center gap-3 text-[10px] font-black uppercase text-gray-500"><div className="w-3 h-3 rounded-full bg-green-500"></div><span>Đúng</span></div>
+                <div className="flex items-center gap-3 text-[10px] font-black uppercase text-gray-500"><div className="w-3 h-3 rounded-full bg-red-500"></div><span>Sai</span></div>
                 <div className="flex items-center gap-3 text-[10px] font-black uppercase text-gray-400"><div className="w-3 h-3 rounded-full bg-gray-100"></div><span>{t('quiz.status_unanswered')}</span></div>
-                <div className="flex items-center gap-3 text-[10px] font-black uppercase text-brand-blue"><div className="w-3 h-3 rounded-full bg-brand-blue animate-pulse"></div><span>Đang làm</span></div>
             </div>
             
             <div className="mt-10 pt-8 border-t border-gray-100 dark:border-gray-700 animate-fade-in">

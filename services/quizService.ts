@@ -2,10 +2,20 @@
 import apiClient from './apiClient';
 import { QuizAttempt, ServerQuestion } from '../types';
 
+export interface AnswerResponse {
+  attemptId: number;
+  attemptQuestionId: number;
+  questionNo: number;
+  selectedAnswer: string;
+  correct: boolean;
+  correctAnswer: string;
+  explanation: string;
+  answeredAt: string;
+}
+
 export const quizService = {
   /**
    * Bắt đầu một lượt thi mới.
-   * Request DTO: { studySetId: Long, limit: Integer }
    */
   startQuiz: async (studySetId: number | string, limit: number = 30): Promise<QuizAttempt> => {
     try {
@@ -26,7 +36,6 @@ export const quizService = {
 
   /**
    * Lấy thêm một nhóm câu hỏi (Lazy load).
-   * Cấu trúc trả về: { offset, limit, total, questions: [] }
    */
   getQuestionsBatch: async (attemptId: number, offset: number, limit: number = 10): Promise<ServerQuestion[]> => {
     try {
@@ -34,7 +43,6 @@ export const quizService = {
         params: { offset, limit }
       });
       if (response.data && response.data.code === 1000) {
-        // Lấy trường questions bên trong result theo cấu trúc bạn cung cấp
         return response.data.result.questions || [];
       }
       return [];
@@ -45,17 +53,20 @@ export const quizService = {
   },
 
   /**
-   * Lưu đáp án cho từng câu hỏi (SubmitAnswerRequest).
-   * DTO: { attemptId: Long, studyCardId: Long, selectedAnswer: String }
+   * Lưu đáp án và nhận kết quả đúng/sai ngay lập tức.
+   * DTO trả về: { attemptId, correct, correctAnswer, explanation, ... }
    */
-  saveAnswer: async (attemptId: number, studyCardId: number, selectedAnswer: string): Promise<any> => {
+  saveAnswer: async (attemptId: number, studyCardId: number, selectedAnswer: string): Promise<AnswerResponse> => {
     try {
       const response = await apiClient.post('/quiz/answer', {
         attemptId: Number(attemptId),
         studyCardId: Number(studyCardId),
         selectedAnswer: selectedAnswer
       });
-      return response.data;
+      if (response.data && response.data.code === 1000) {
+        return response.data.result;
+      }
+      throw new Error("Lỗi lưu đáp án");
     } catch (error) {
       console.error("QuizService: saveAnswer failed", error);
       throw error;
