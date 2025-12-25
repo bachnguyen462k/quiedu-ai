@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { StudySet } from '../types';
-import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Languages, Layers, Loader2, MessageSquare, MessageCircle, ChevronDown, Send } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Languages, Layers, Loader2, MessageSquare, MessageCircle, ChevronDown, Send, Image as ImageIcon, Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -143,8 +143,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
         if (response.code === 1000) {
             addNotification("Đã gửi bình luận!", "success");
             setNewComment('');
-            // Thêm bình luận mới vào đầu danh sách để người dùng thấy ngay
-            setComments(prev => [response.result, ...prev]);
+            setComments(prev => [...prev, response.result]);
             setTotalComments(prev => prev + 1);
         }
     } catch (error) {
@@ -193,7 +192,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 relative animate-fade-in pb-32 lg:pb-8">
-      {/* Floating Bottom Bar for Mobile */}
+      {/* Floating Bottom Bar for Mobile - Hidden when comment input is likely visible */}
       <div className={`fixed bottom-0 left-0 right-0 z-[110] p-4 lg:hidden transition-all duration-500 transform ${showFloatingActions ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-full opacity-0 scale-95 pointer-events-none'}`}>
           <div className="bg-white/95 dark:bg-gray-855 border border-brand-blue/20 dark:border-gray-800 shadow-2xl rounded-[32px] p-3 flex gap-3 backdrop-blur-md">
               <button onClick={onStartFlashcard} className="flex-1 py-4 px-2 rounded-2xl font-black text-xs text-gray-900 dark:text-white border-2 border-gray-100 dark:border-gray-800 active:scale-95 transition-transform flex items-center justify-center gap-2">
@@ -243,59 +242,32 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
             </div>
           </div>
 
-          {/* Info & Comments Column */}
-          <div className="space-y-6 md:space-y-8">
-              <div className="bg-indigo-50 dark:bg-indigo-900/10 p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-indigo-100 dark:border-indigo-900/30 transition-colors">
-                <h3 className="font-black text-indigo-900 dark:text-indigo-300 mb-6 flex items-center gap-3 uppercase tracking-tighter text-base md:text-lg"><Info size={24} /> {t('set_detail.info_title')}</h3>
-                <div className="grid md:grid-cols-2 gap-4 md:gap-6">
-                    <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
-                        <div className="flex items-center gap-3 mb-3"><Timer className="text-brand-blue" size={20} /><span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Thời gian</span></div>
-                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{preview.durationMinutes || 15} phút</span> để hoàn thành.</p>
-                    </div>
-                    <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
-                        <div className="flex items-center gap-3 mb-3"><ShieldCheck className="text-brand-orange" size={20} /><span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Kiểm duyệt</span></div>
-                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">Nội dung đã được xác thực bởi <span className="text-brand-orange font-black">AI System</span>.</p>
-                    </div>
+          {/* Info Column */}
+          <div className="bg-indigo-50 dark:bg-indigo-900/10 p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-indigo-100 dark:border-indigo-900/30 transition-colors">
+            <h3 className="font-black text-indigo-900 dark:text-indigo-300 mb-6 flex items-center gap-3 uppercase tracking-tighter text-base md:text-lg"><Info size={24} /> {t('set_detail.info_title')}</h3>
+            <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
+                    <div className="flex items-center gap-3 mb-3"><Timer className="text-brand-blue" size={20} /><span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Thời gian</span></div>
+                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{preview.durationMinutes || 15} phút</span> để hoàn thành.</p>
                 </div>
-              </div>
+                <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
+                    <div className="flex items-center gap-3 mb-3"><ShieldCheck className="text-brand-orange" size={20} /><span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Kiểm duyệt</span></div>
+                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">Nội dung đã được xác thực bởi <span className="text-brand-orange font-black">AI System</span>.</p>
+                </div>
+            </div>
+          </div>
 
-              {/* Comments Section */}
-              <div className="bg-white dark:bg-gray-855 p-6 md:p-10 rounded-[32px] md:rounded-[40px] border border-gray-100 dark:border-gray-800 transition-colors">
-                  <div className="flex justify-between items-center mb-8">
+          {/* Comments Section - Container for Sticky Footer */}
+          <div className="bg-white dark:bg-gray-855 rounded-[32px] md:rounded-[40px] border border-gray-100 dark:border-gray-800 transition-colors overflow-hidden flex flex-col relative">
+              <div className="p-6 md:p-10 pb-4">
+                  <div className="flex justify-between items-center mb-8 border-b border-gray-50 dark:border-gray-800 pb-4">
                     <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter text-base md:text-lg">
                         <MessageSquare size={24} className="text-brand-blue" /> {t('set_detail.comments_title')} 
                         <span className="bg-gray-100 dark:bg-gray-800 text-gray-500 px-2.5 py-0.5 rounded-lg text-xs">{totalComments}</span>
                     </h3>
                   </div>
 
-                  {/* Add Comment Input */}
-                  <div className="mb-10 bg-gray-50 dark:bg-gray-800/40 p-5 rounded-[24px] border border-gray-100 dark:border-gray-700">
-                        <div className="flex gap-4">
-                            <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black text-sm shrink-0">
-                                {user?.name?.charAt(0).toUpperCase() || '?'}
-                            </div>
-                            <div className="flex-1 min-w-0 space-y-3">
-                                <textarea 
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    placeholder="Chia sẻ ý kiến của bạn về học phần này..."
-                                    className="w-full bg-transparent border-none outline-none text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 resize-none min-h-[60px] custom-scrollbar"
-                                />
-                                <div className="flex justify-end pt-2 border-t border-gray-200/50 dark:border-gray-700/50">
-                                    <button 
-                                        onClick={handlePostComment}
-                                        disabled={!newComment.trim() || isSubmittingComment}
-                                        className="bg-brand-blue text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-brand-blue/20 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:scale-100 active:scale-95"
-                                    >
-                                        {isSubmittingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                                        {isSubmittingComment ? 'Đang gửi...' : 'Gửi bình luận'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                  </div>
-
-                  <div className="space-y-6">
+                  <div className="space-y-8 mb-6">
                       {comments.length === 0 && !commentsLoading ? (
                           <div className="text-center py-10">
                               <MessageCircle size={48} className="mx-auto text-gray-100 dark:text-gray-800 mb-4" />
@@ -303,37 +275,76 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                           </div>
                       ) : (
                           <>
-                            {comments.map((comment) => (
-                                <div key={comment.id} className="flex gap-4 group animate-fade-in">
-                                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-blue to-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg">
-                                        {comment.userId.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-black text-gray-900 dark:text-white text-sm">@{comment.userId}</span>
-                                            <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{formattedDate(comment.createdAt)}</span>
+                            <div className="space-y-6">
+                                {comments.map((comment) => (
+                                    <div key={comment.id} className="flex gap-3 group animate-fade-in items-start">
+                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center font-black text-xs shrink-0 shadow-sm overflow-hidden">
+                                            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(comment.userId)}&background=random`} alt="AV" className="w-full h-full object-cover" />
                                         </div>
-                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl rounded-tl-none border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
-                                            {comment.content}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="inline-block bg-gray-100 dark:bg-gray-800/80 px-4 py-2.5 rounded-[20px] max-w-full">
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <span className="font-black text-gray-900 dark:text-white text-xs hover:underline cursor-pointer">{comment.userId}</span>
+                                                </div>
+                                                <div className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-medium break-words">
+                                                    {comment.content}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4 mt-1 ml-3">
+                                                <button className="text-[11px] font-black text-gray-500 hover:text-brand-blue transition-colors">Thích</button>
+                                                <button className="text-[11px] font-black text-gray-500 hover:text-brand-blue transition-colors">Phản hồi</button>
+                                                <span className="text-[10px] font-medium text-gray-400">{formattedDate(comment.createdAt)}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                             
                             {!isLastCommentsPage && (
                                 <button 
                                     onClick={handleLoadMoreComments}
                                     disabled={commentsLoading}
-                                    className="w-full py-4 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl text-gray-400 font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:border-brand-blue hover:text-brand-blue transition-all"
+                                    className="w-full py-4 text-gray-500 font-black text-[11px] uppercase tracking-wider hover:underline flex items-center justify-center gap-2 transition-all border-t border-gray-50 dark:border-gray-800 mt-4"
                                 >
-                                    {commentsLoading ? <Loader2 size={16} className="animate-spin" /> : <ChevronDown size={16} />}
+                                    {commentsLoading ? <Loader2 size={14} className="animate-spin" /> : <ChevronDown size={14} />}
                                     Xem thêm bình luận
                                 </button>
                             )}
                           </>
                       )}
                   </div>
+              </div>
+
+              {/* STICKY FOOTER COMMENT INPUT */}
+              <div className="sticky bottom-0 bg-white/95 dark:bg-gray-855/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-800 p-4 md:p-6 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-20 transition-all">
+                    <div className="flex gap-3 items-end">
+                        <div className="w-9 h-9 rounded-full bg-brand-blue text-white flex items-center justify-center font-black text-xs shrink-0 shadow-md mb-1">
+                            {user?.name?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-[24px] px-4 py-2 flex flex-col focus-within:ring-2 focus-within:ring-brand-blue/20 transition-all">
+                            <textarea 
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Viết bình luận..."
+                                className="w-full bg-transparent border-none outline-none text-sm font-medium text-gray-900 dark:text-white placeholder-gray-500 resize-none min-h-[40px] py-1 custom-scrollbar"
+                                onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePostComment(); } }}
+                            />
+                            <div className="flex justify-between items-center mt-1 pt-1">
+                                <div className="flex gap-1">
+                                    <button className="p-1.5 text-gray-400 hover:text-brand-blue transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><ImageIcon size={16}/></button>
+                                    <button className="p-1.5 text-gray-400 hover:text-brand-blue transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><Smile size={16}/></button>
+                                </div>
+                                <button 
+                                    onClick={handlePostComment}
+                                    disabled={!newComment.trim() || isSubmittingComment}
+                                    className={`p-1.5 rounded-full transition-all ${newComment.trim() ? 'text-brand-blue hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-gray-300'}`}
+                                >
+                                    {isSubmittingComment ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p className="ml-12 mt-2 text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Nhấn Enter để gửi</p>
               </div>
           </div>
         </div>
