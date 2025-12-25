@@ -70,19 +70,20 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   setTotalPages(total);
               }
           } else if (libraryTab === 'FAVORITES') {
-              // CẬP NHẬT: Lấy từ API FavoriteService
+              // GỌI API YÊU THÍCH TỪ SERVER
               const response = await favoriteService.getFavorites(page, ITEMS_PER_PAGE);
               if (response.code === 1000) {
                   const { content, totalPages: total } = response.result;
+                  // Map dữ liệu từ response Backend (lưu ý trường studySetId)
                   const mappedSets: StudySet[] = content.map((item: any) => ({
-                      id: item.id.toString(),
-                      title: item.title,
-                      description: item.description,
+                      id: (item.studySetId || item.id).toString(),
+                      title: item.title || item.studySetTitle || "Học phần yêu thích",
+                      description: item.description || "",
                       author: item.author || 'Thành viên',
-                      createdAt: new Date(item.createdAt).getTime(),
+                      createdAt: new Date(item.favoritedAt || item.createdAt).getTime(),
                       privacy: item.privacy || 'PUBLIC',
                       subject: item.topic || 'Khác',
-                      isFavorite: true, // Chắc chắn là true vì nằm trong tab này
+                      isFavorite: true,
                       plays: item.plays || 0,
                       cards: []
                   }));
@@ -123,6 +124,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       } finally {
           setIsLoading(false);
           setIsInitialLoading(false);
+          fetchingTaskRef.current = null;
       }
   };
 

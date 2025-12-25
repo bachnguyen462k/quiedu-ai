@@ -3,7 +3,8 @@ import apiClient from './apiClient';
 
 export const favoriteService = {
   /**
-   * Bật/tắt yêu thích quiz qua API POST /favorite/{id}/favorite
+   * Bật/tắt yêu thích quiz
+   * POST /favorite/{id}/favorite
    */
   toggleFavorite: async (id: number | string): Promise<any> => {
     try {
@@ -16,7 +17,8 @@ export const favoriteService = {
   },
 
   /**
-   * Lấy danh sách quiz yêu thích phân trang qua GET /favorite/favorites
+   * Lấy danh sách quiz yêu thích phân trang
+   * GET /favorite/favorites
    */
   getFavorites: async (page: number = 0, size: number = 20): Promise<any> => {
     try {
@@ -31,7 +33,8 @@ export const favoriteService = {
   },
 
   /**
-   * Kiểm tra trạng thái yêu thích của 1 quiz qua GET /favorite/{id}/favorite/status
+   * Kiểm tra trạng thái yêu thích của 1 quiz
+   * GET /favorite/{id}/favorite/status
    */
   isFavorite: async (id: number | string): Promise<any> => {
     try {
