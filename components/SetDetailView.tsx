@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
 import { StudySet } from '../types';
-// Added Loader2 to the list of icons imported from lucide-react to fix a reference error
 import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Languages, Layers, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../contexts/AppContext';
@@ -31,6 +31,8 @@ interface SetPreviewResponse {
   successRate: number;
   hasFlashcards: boolean;
   hasQuiz: boolean;
+  // Cập nhật trường favorited từ API backend
+  favorited: boolean;
 }
 
 const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, onStartFlashcard, onStartQuiz, onToggleFavorite: localToggle }) => {
@@ -60,14 +62,15 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     const fetchPreviewData = async () => {
         setIsLoading(true);
         try {
+            // API preview hiện tại đã trả về trường favorited
             const response = await studySetService.getStudySetPreviewById(metadata.id);
-            // Kiểm tra trạng thái yêu thích từ API
-            const favoriteStatus = await favoriteService.isFavorite(metadata.id);
             
             if (!ignore) {
                 if (response.code === 1000) {
-                    setPreview(response.result);
-                    setIsFavorited(favoriteStatus.result || false);
+                    const data = response.result;
+                    setPreview(data);
+                    // Lấy trạng thái yêu thích trực tiếp từ dữ liệu preview
+                    setIsFavorited(data.favorited || false);
                 } else {
                     addNotification("Học phần không tồn tại hoặc đã bị xóa", "error");
                     onBack();

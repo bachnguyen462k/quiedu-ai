@@ -70,12 +70,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   setTotalPages(total);
               }
           } else if (libraryTab === 'FAVORITES') {
-              // GỌI API YÊU THÍCH TỪ SERVER VỚI CẤU TRÚC MỚI
               const response = await favoriteService.getFavorites(page, ITEMS_PER_PAGE);
               if (response.code === 1000) {
                   const { content, totalPages: total } = response.result;
-                  
-                  // Map dữ liệu từ đối tượng studySet lồng bên trong
                   const mappedSets: StudySet[] = content.map((item: any) => {
                       const s = item.studySet;
                       return {
@@ -86,7 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                           createdAt: new Date(s.createdAt).getTime(),
                           privacy: s.privacy || 'PUBLIC',
                           subject: s.topic || 'Khác',
-                          isFavorite: true,
+                          isFavorite: true, // Vì đây là tab yêu thích
                           type: s.type,
                           status: s.status,
                           plays: s.plays || 0,
@@ -108,11 +105,13 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   const mappedSets: StudySet[] = content.map((item: any) => ({
                       id: item.id.toString(),
                       title: item.title,
-                      description: item.description,
+                      // Cập nhật: Trường description và favorited từ API backend mới
+                      description: item.description || "",
                       author: item.author || 'Thành viên',
                       createdAt: new Date(item.createdAt).getTime(),
                       privacy: item.privacy || 'PUBLIC',
                       subject: item.topic || 'Khác',
+                      isFavorite: item.favorited || false,
                       type: item.type,
                       status: item.status,
                       plays: item.plays || 0,
@@ -204,14 +203,11 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   }
 
   const handleDashboardToggleFavorite = async (setId: string) => {
-    // Gọi hàm từ App.tsx thông qua props
     await onToggleFavorite(setId);
     
-    // Nếu đang ở tab yêu thích, xóa học phần đó khỏi danh sách hiển thị ngay lập tức để mượt mà
     if (libraryTab === 'FAVORITES') {
         setDisplaySets(prev => prev.filter(s => s.id !== setId));
     } else {
-        // Cập nhật trái tim trong danh sách hiện tại
         setDisplaySets(prev => prev.map(s => s.id === setId ? { ...s, isFavorite: !s.isFavorite } : s));
     }
   };
