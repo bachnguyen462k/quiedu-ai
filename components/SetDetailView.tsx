@@ -130,31 +130,39 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     }
   };
 
-  const handleLoadMoreComments = () => {
+  const handleLoadMoreComments = (e?: React.MouseEvent) => {
+      e?.preventDefault();
+      if (commentsLoading) return;
       const nextPage = commentsPage + 1;
       setCommentsPage(nextPage);
       fetchComments(nextPage);
   };
 
-  const handlePostComment = async () => {
+  const handlePostComment = async (e?: React.MouseEvent | React.KeyboardEvent) => {
+    e?.preventDefault();
     if (!newComment.trim() || isSubmittingComment) return;
     
     setIsSubmittingComment(true);
     try {
         const response = await quizService.addComment(metadata.id, newComment);
         if (response.code === 1000) {
-            addNotification("Đã gửi bình luận!", "success");
             setNewComment('');
-            // Thêm bình luận mới vào danh sách và cuộn xuống cuối nếu cần
+            // Thêm bình luận mới vào danh sách mà không load lại trang
+            // Bình luận mới sẽ được thêm vào cuối danh sách (theo thứ tự hiển thị load more)
             setComments(prev => [...prev, response.result]);
             setTotalComments(prev => prev + 1);
             
-            // Scroll list to bottom to see new comment
+            // Cuộn danh sách xuống cuối để thấy bình luận vừa đăng
             setTimeout(() => {
                 if (commentListRef.current) {
-                    commentListRef.current.scrollTop = commentListRef.current.scrollHeight;
+                    commentListRef.current.scrollTo({
+                        top: commentListRef.current.scrollHeight,
+                        behavior: 'smooth'
+                    });
                 }
             }, 100);
+            
+            addNotification("Đã đăng bình luận!", "success");
         }
     } catch (error) {
         addNotification("Không thể gửi bình luận", "error");
@@ -205,20 +213,21 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       {/* Floating Bottom Bar for Mobile */}
       <div className={`fixed bottom-0 left-0 right-0 z-[110] p-4 lg:hidden transition-all duration-500 transform ${showFloatingActions ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-full opacity-0 scale-95 pointer-events-none'}`}>
           <div className="bg-white/95 dark:bg-gray-855 border border-brand-blue/20 dark:border-gray-800 shadow-2xl rounded-[32px] p-3 flex gap-3 backdrop-blur-md">
-              <button onClick={onStartFlashcard} className="flex-1 py-4 px-2 rounded-2xl font-black text-xs text-gray-900 dark:text-white border-2 border-gray-100 dark:border-gray-800 active:scale-95 transition-transform flex items-center justify-center gap-2">
+              <button type="button" onClick={onStartFlashcard} className="flex-1 py-4 px-2 rounded-2xl font-black text-xs text-gray-900 dark:text-white border-2 border-gray-100 dark:border-gray-800 active:scale-95 transition-transform flex items-center justify-center gap-2">
                   <BookOpen size={16} /> Flashcard
               </button>
-              <button onClick={onStartQuiz} className="flex-[1.5] py-4 px-2 bg-brand-blue text-white rounded-2xl font-black text-xs shadow-lg shadow-brand-blue/25 active:scale-95 transition-transform flex items-center justify-center gap-2">
+              <button type="button" onClick={onStartQuiz} className="flex-[1.5] py-4 px-2 bg-brand-blue text-white rounded-2xl font-black text-xs shadow-lg shadow-brand-blue/25 active:scale-95 transition-transform flex items-center justify-center gap-2">
                   <BarChart3 size={16} /> Kiểm tra ngay
               </button>
           </div>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-brand-blue dark:text-gray-400 dark:hover:text-blue-400 transition-colors font-black uppercase text-[10px] md:text-xs tracking-widest"><ArrowLeft size={18} /> {t('set_detail.back_library')}</button>
+        <button type="button" onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-brand-blue dark:text-gray-400 dark:hover:text-blue-400 transition-colors font-black uppercase text-[10px] md:text-xs tracking-widest"><ArrowLeft size={18} /> {t('set_detail.back_library')}</button>
         <div className="flex gap-2 md:gap-3 w-full sm:w-auto">
-            <button className="p-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-red-600 dark:bg-gray-800 dark:border-gray-700 transition-colors" title={t('set_detail.report_btn')}><Flag size={20} /></button>
+            <button type="button" className="p-2.5 rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-red-600 dark:bg-gray-800 dark:border-gray-700 transition-colors" title={t('set_detail.report_btn')}><Flag size={20} /></button>
             <button
+                type="button"
                 onClick={handleFavoriteClick}
                 disabled={isTogglingFavorite}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 font-black text-sm transition-all ${
@@ -252,6 +261,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
             </div>
           </div>
 
+          {/* Info Section */}
           <div className="bg-indigo-50 dark:bg-indigo-900/10 p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-indigo-100 dark:border-indigo-900/30 transition-colors">
             <h3 className="font-black text-indigo-900 dark:text-indigo-300 mb-6 flex items-center gap-3 uppercase tracking-tighter text-base md:text-lg"><Info size={24} /> {t('set_detail.info_title')}</h3>
             <div className="grid md:grid-cols-2 gap-4 md:gap-6">
@@ -267,7 +277,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
           </div>
 
           {/* Comments Section with scrollable list and sticky input */}
-          <div className="bg-white dark:bg-gray-855 rounded-[32px] md:rounded-[40px] border border-gray-100 dark:border-gray-800 transition-colors flex flex-col relative max-h-[800px] overflow-hidden">
+          <div className="bg-white dark:bg-gray-855 rounded-[32px] md:rounded-[40px] border border-gray-100 dark:border-gray-800 transition-colors flex flex-col relative max-h-[700px] overflow-hidden">
               {/* Header */}
               <div className="p-6 md:p-10 pb-4 border-b border-gray-50 dark:border-gray-800 bg-white dark:bg-gray-855 shrink-0 z-10">
                   <div className="flex justify-between items-center">
@@ -306,8 +316,8 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4 mt-1.5 ml-3">
-                                            <button className="text-[11px] font-black text-gray-500 hover:text-brand-blue transition-colors">Thích</button>
-                                            <button className="text-[11px] font-black text-gray-500 hover:text-brand-blue transition-colors">Phản hồi</button>
+                                            <button type="button" className="text-[11px] font-black text-gray-500 hover:text-brand-blue transition-colors">Thích</button>
+                                            <button type="button" className="text-[11px] font-black text-gray-500 hover:text-brand-blue transition-colors">Phản hồi</button>
                                             <span className="text-[10px] font-medium text-gray-400">{formattedDate(comment.createdAt)}</span>
                                         </div>
                                     </div>
@@ -317,6 +327,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                         
                         {!isLastCommentsPage && (
                             <button 
+                                type="button"
                                 onClick={handleLoadMoreComments}
                                 disabled={commentsLoading}
                                 className="w-full py-4 text-gray-500 font-black text-[11px] uppercase tracking-wider hover:text-brand-blue flex items-center justify-center gap-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-800 rounded-2xl"
@@ -336,7 +347,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                         <div className="w-9 h-9 rounded-full bg-brand-blue text-white flex items-center justify-center font-black text-xs shrink-0 shadow-md mb-1 border border-brand-blue/20">
                             {user?.name?.charAt(0).toUpperCase() || '?'}
                         </div>
-                        <div className="flex-1 bg-gray-100 dark:bg-gray-800/80 rounded-[24px] px-4 py-2 flex flex-col focus-within:ring-2 focus-within:ring-brand-blue/20 focus-within:bg-white dark:focus-within:bg-gray-750 transition-all border border-transparent focus-within:border-brand-blue/10">
+                        <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-[24px] px-4 py-2 flex flex-col focus-within:ring-2 focus-within:ring-brand-blue/20 focus-within:bg-white dark:focus-within:bg-gray-750 transition-all border border-transparent focus-within:border-brand-blue/10">
                             <textarea 
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
@@ -346,10 +357,11 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                             />
                             <div className="flex justify-between items-center mt-1 pt-1 pb-0.5">
                                 <div className="flex gap-0.5">
-                                    <button className="p-1.5 text-gray-400 hover:text-brand-blue transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><ImageIcon size={18}/></button>
-                                    <button className="p-1.5 text-gray-400 hover:text-brand-blue transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><Smile size={18}/></button>
+                                    <button type="button" className="p-1.5 text-gray-400 hover:text-brand-blue transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><ImageIcon size={18}/></button>
+                                    <button type="button" className="p-1.5 text-gray-400 hover:text-brand-blue transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><Smile size={18}/></button>
                                 </div>
                                 <button 
+                                    type="button"
                                     onClick={handlePostComment}
                                     disabled={!newComment.trim() || isSubmittingComment}
                                     className={`p-1.5 rounded-full transition-all ${newComment.trim() ? 'text-brand-blue hover:bg-blue-50 dark:hover:bg-blue-900/30 active:scale-90' : 'text-gray-300 dark:text-gray-600'}`}
@@ -364,19 +376,19 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
           </div>
         </div>
 
-        {/* Action Sidebar */}
+        {/* Sidebar Actions */}
         <div className="space-y-6">
             <div className="bg-white dark:bg-gray-855 p-6 md:p-8 rounded-[32px] md:rounded-[40px] shadow-xl md:shadow-2xl border border-brand-blue/10 dark:border-gray-800 sticky top-20 md:top-24 transition-colors">
                 <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white mb-6 md:mb-8 flex items-center gap-2"><Play className="text-brand-blue fill-brand-blue" size={20} /> Sẵn sàng chưa?</h3>
                 <div className="space-y-4 md:space-y-5">
-                    <button onClick={onStartFlashcard} className="w-full group p-4 md:p-5 rounded-2xl md:rounded-3xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all flex items-center gap-4 md:gap-5 text-left active:scale-95">
+                    <button type="button" onClick={onStartFlashcard} className="w-full group p-4 md:p-5 rounded-2xl md:rounded-3xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all flex items-center gap-4 md:gap-5 text-left active:scale-95">
                         <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:bg-brand-blue group-hover:text-white transition-colors flex items-center justify-center shrink-0"><BookOpen size={24} /></div>
                         <div className="min-w-0">
                             <span className="block font-black text-gray-900 dark:text-white text-base md:text-lg group-hover:text-brand-blue truncate">{t('set_detail.mode_flashcard')}</span>
                             <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter line-clamp-1">{t('set_detail.mode_flashcard_desc')}</span>
                         </div>
                     </button>
-                    <button onClick={onStartQuiz} className="w-full group p-4 md:p-5 rounded-2xl md:rounded-3xl bg-brand-blue text-white shadow-xl shadow-brand-blue/25 hover:bg-blue-700 transition-all flex items-center gap-4 md:gap-5 text-left transform hover:-translate-y-1 active:scale-95">
+                    <button type="button" onClick={onStartQuiz} className="w-full group p-4 md:p-5 rounded-2xl md:rounded-3xl bg-brand-blue text-white shadow-xl shadow-brand-blue/25 hover:bg-blue-700 transition-all flex items-center gap-4 md:gap-5 text-left transform hover:-translate-y-1 active:scale-95">
                         <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white/20 flex items-center justify-center shrink-0"><BarChart3 size={24} /></div>
                         <div className="min-w-0">
                             <span className="block font-black text-lg md:text-xl truncate">{t('set_detail.mode_quiz')}</span>
@@ -392,7 +404,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                             <span className="font-black text-xs text-brand-blue tracking-widest uppercase">{shareCode}</span>
                             {copiedType === 'CODE' && <div className="absolute inset-0 bg-brand-blue rounded-2xl flex items-center justify-center text-[10px] text-white font-black animate-fade-in">ĐÃ COPY!</div>}
                         </div>
-                        <button onClick={() => setShowQrModal(true)} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-transparent hover:border-brand-blue text-gray-400 hover:text-brand-blue transition-all"><QrCode size={24} /></button>
+                        <button type="button" onClick={() => setShowQrModal(true)} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-transparent hover:border-brand-blue text-gray-400 hover:text-brand-blue transition-all"><QrCode size={24} /></button>
                     </div>
                 </div>
             </div>
@@ -402,7 +414,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       {showQrModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowQrModal(false)}>
             <div className="bg-white dark:bg-gray-800 p-8 rounded-[32px] shadow-2xl max-w-sm w-full flex flex-col items-center relative" onClick={e => e.stopPropagation()}>
-                <button onClick={() => setShowQrModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"><X size={24} /></button>
+                <button type="button" onClick={() => setShowQrModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"><X size={24} /></button>
                 <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">Quét mã QR</h3>
                 <div className="bg-white p-4 rounded-3xl border-4 border-brand-blue/5 my-6 overflow-hidden"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shareUrl)}`} alt="QR" className="w-48 h-48" /></div>
                 <div className="w-full bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-4 text-center">
