@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { StudySet } from '../types';
-import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Languages, Layers, Loader2, MessageSquare, MessageCircle, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Languages, Layers, Loader2, MessageSquare, MessageCircle, ChevronDown, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import { studySetService } from '../services/studySetService';
 import { quizService } from '../services/quizService';
 import { favoriteService } from '../services/favoriteService';
@@ -47,6 +48,7 @@ interface Comment {
 const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, onStartFlashcard, onStartQuiz, onToggleFavorite: localToggle }) => {
   const { t } = useTranslation();
   const { addNotification } = useApp();
+  const { user } = useAuth();
   
   const [preview, setPreview] = useState<SetPreviewResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,6 +64,8 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [commentsPage, setCommentsPage] = useState(0);
   const [totalComments, setTotalComments] = useState(0);
   const [isLastCommentsPage, setIsLastCommentsPage] = useState(true);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -128,6 +132,26 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       const nextPage = commentsPage + 1;
       setCommentsPage(nextPage);
       fetchComments(nextPage);
+  };
+
+  const handlePostComment = async () => {
+    if (!newComment.trim() || isSubmittingComment) return;
+    
+    setIsSubmittingComment(true);
+    try {
+        const response = await quizService.addComment(metadata.id, newComment);
+        if (response.code === 1000) {
+            addNotification("Đã gửi bình luận!", "success");
+            setNewComment('');
+            // Thêm bình luận mới vào đầu danh sách để người dùng thấy ngay
+            setComments(prev => [response.result, ...prev]);
+            setTotalComments(prev => prev + 1);
+        }
+    } catch (error) {
+        addNotification("Không thể gửi bình luận", "error");
+    } finally {
+        setIsSubmittingComment(false);
+    }
   };
 
   const handleFavoriteClick = async () => {
@@ -244,6 +268,33 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                     </h3>
                   </div>
 
+                  {/* Add Comment Input */}
+                  <div className="mb-10 bg-gray-50 dark:bg-gray-800/40 p-5 rounded-[24px] border border-gray-100 dark:border-gray-700">
+                        <div className="flex gap-4">
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black text-sm shrink-0">
+                                {user?.name?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-3">
+                                <textarea 
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    placeholder="Chia sẻ ý kiến của bạn về học phần này..."
+                                    className="w-full bg-transparent border-none outline-none text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 resize-none min-h-[60px] custom-scrollbar"
+                                />
+                                <div className="flex justify-end pt-2 border-t border-gray-200/50 dark:border-gray-700/50">
+                                    <button 
+                                        onClick={handlePostComment}
+                                        disabled={!newComment.trim() || isSubmittingComment}
+                                        className="bg-brand-blue text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-brand-blue/20 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:scale-100 active:scale-95"
+                                    >
+                                        {isSubmittingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                                        {isSubmittingComment ? 'Đang gửi...' : 'Gửi bình luận'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                  </div>
+
                   <div className="space-y-6">
                       {comments.length === 0 && !commentsLoading ? (
                           <div className="text-center py-10">
@@ -253,7 +304,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                       ) : (
                           <>
                             {comments.map((comment) => (
-                                <div key={comment.id} className="flex gap-4 group">
+                                <div key={comment.id} className="flex gap-4 group animate-fade-in">
                                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-blue to-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg">
                                         {comment.userId.charAt(0).toUpperCase()}
                                     </div>

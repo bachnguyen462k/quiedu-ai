@@ -54,7 +54,6 @@ export const quizService = {
 
   /**
    * Lưu đáp án và nhận kết quả đúng/sai ngay lập tức.
-   * DTO trả về: { attemptId, correct, correctAnswer, explanation, ... }
    */
   saveAnswer: async (attemptId: number, studyCardId: number, selectedAnswer: string): Promise<AnswerResponse> => {
     try {
@@ -128,6 +127,24 @@ export const quizService = {
     } catch (error) {
       console.error("QuizService: getComments failed", error);
       throw error;
+    }
+  },
+
+  /**
+   * Thêm bình luận mới.
+   * @RequestBody String content
+   */
+  addComment: async (setId: number | string, content: string): Promise<any> => {
+    try {
+        const response = await apiClient.post(`/quiz/comment/${setId}`, content, {
+            headers: {
+                'Content-Type': 'text/plain'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("QuizService: addComment failed", error);
+        throw error;
     }
   }
 };
