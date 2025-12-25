@@ -234,7 +234,7 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
-                <div className="bg-white dark:bg-gray-855 p-8 rounded-[32px] border border-gray-100 dark:border-gray-800 text-center shadow-xl sticky top-24">
+                <div className="bg-white dark:bg-gray-855 p-8 rounded-[32px] border border-gray-100 dark:border-gray-800 text-center shadow-xl sticky top-24 transition-colors">
                     <div className="h-48 w-full relative flex justify-center items-center mb-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart><Pie data={data} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">{data.map((_, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}</Pie></PieChart>
@@ -252,24 +252,24 @@ const QuizView: React.FC<QuizViewProps> = ({ set, allSets = [], currentUser, onB
             <div className="lg:col-span-2 space-y-4">
                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-2"><List size={16} /> Chi tiết câu hỏi</h3>
                 {reviewItems.map((item, idx) => (
-                    <div key={idx} className={`p-6 rounded-[28px] border-2 transition-all ${item.correct ? 'bg-green-50/20 border-green-100 dark:bg-green-900/5' : 'bg-red-50/20 border-red-100 dark:bg-red-900/5'}`}>
+                    <div key={idx} className={`p-6 rounded-[28px] border-2 transition-all ${item.correct ? 'bg-green-50/30 border-green-100 dark:bg-green-500/10 dark:border-green-900/30' : 'bg-red-50/30 border-red-100 dark:bg-red-500/10 dark:border-red-900/30'}`}>
                         <div className="flex gap-5">
                             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 text-white shadow-sm ${item.correct ? 'bg-green-500' : 'bg-red-500'}`}>{item.correct ? <Check size={20} strokeWidth={4} /> : <X size={20} strokeWidth={4} />}</div>
                             <div className="min-w-0 flex-1">
-                                <h4 className="font-black text-gray-900 dark:text-white text-base mb-3 leading-snug">{item.questionNo}. {item.term}</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                                    <div className={`p-3 rounded-xl border ${item.correct ? 'bg-green-50/50 border-green-200 text-green-800' : 'bg-red-50/50 border-red-200 text-red-800'}`}>
-                                        <span className="block text-[8px] font-black uppercase opacity-60 mb-1">Lựa chọn của bạn</span>
-                                        <span className="font-bold text-sm">{item.selectedAnswer || 'Bỏ trống'}</span>
+                                <h4 className="font-black text-gray-900 dark:text-white text-base mb-4 leading-snug">{item.questionNo}. {item.term}</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                                    <div className={`p-3 rounded-xl border ${item.correct ? 'bg-green-100/50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800/50 dark:text-green-400' : 'bg-red-100/50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400'}`}>
+                                        <span className="block text-[9px] font-black uppercase opacity-60 mb-1">Lựa chọn của bạn</span>
+                                        <span className="font-bold text-sm leading-tight">{item.selectedAnswer || 'Bỏ trống'}</span>
                                     </div>
                                     {!item.correct && (
-                                        <div className="p-3 rounded-xl border bg-white dark:bg-gray-800 border-gray-100 text-green-600">
-                                            <span className="block text-[8px] font-black uppercase text-gray-400 mb-1">Đáp án đúng</span>
-                                            <span className="font-bold text-sm">{item.correctAnswer}</span>
+                                        <div className="p-3 rounded-xl border bg-white border-gray-100 text-green-600 dark:bg-gray-800 dark:border-gray-700 dark:text-green-400">
+                                            <span className="block text-[9px] font-black uppercase text-gray-400 mb-1">Đáp án đúng</span>
+                                            <span className="font-bold text-sm leading-tight">{item.correctAnswer}</span>
                                         </div>
                                     )}
                                 </div>
-                                {item.explanation && <div className="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700 italic text-xs text-gray-500 dark:text-gray-400">{item.explanation}</div>}
+                                {item.explanation && <div className="bg-white/50 dark:bg-gray-800/40 p-4 rounded-xl border border-gray-100 dark:border-gray-700 italic text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{item.explanation}</div>}
                             </div>
                         </div>
                     </div>
