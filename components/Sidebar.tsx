@@ -108,6 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, currentUser, onLogout, o
             {filteredMenuItems.map((item) => (
                 <Link 
                     key={item.id} 
+                    id={`sidebar-${item.id.toLowerCase()}`}
                     to={item.path} 
                     onClick={onClose}
                     className={`w-full flex items-center rounded-2xl font-bold transition-all duration-200 group relative ${
@@ -123,7 +124,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, currentUser, onLogout, o
 
             <div className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-800">
                 {!isCollapsed && <p className="px-4 text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest mb-4">{t('sidebar.personal')}</p>}
-                <button onClick={() => { onStartTour(); onClose?.(); }} className={`w-full flex items-center rounded-2xl font-bold transition-all duration-200 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900/50 hover:text-gray-900 ${isCollapsed ? 'lg:justify-center py-3' : 'gap-4 px-4 py-3.5'}`}>
+                <button 
+                    id="sidebar-help"
+                    onClick={() => { onStartTour(); onClose?.(); }} 
+                    className={`w-full flex items-center rounded-2xl font-bold transition-all duration-200 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900/50 hover:text-gray-900 ${isCollapsed ? 'lg:justify-center py-3' : 'gap-4 px-4 py-3.5'}`}
+                >
                     <HelpCircle size={22} /><span className={isCollapsed ? 'lg:hidden' : ''}>{t('sidebar.help')}</span>
                 </button>
                 <Link to="/settings" onClick={onClose} className={`w-full flex items-center rounded-2xl font-bold transition-all duration-200 ${isActive('/settings') ? 'text-brand-blue' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900/50'} ${isCollapsed ? 'lg:justify-center py-3' : 'gap-4 px-4 py-3.5'}`}>

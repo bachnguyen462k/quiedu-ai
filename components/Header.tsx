@@ -142,12 +142,17 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
 
         {/* RIGHT: ACTIONS */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <button onClick={changeLanguage} className="p-2 rounded-full text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-1">
+            <button 
+                id="header-language"
+                onClick={changeLanguage} 
+                className="p-2 rounded-full text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
+            >
                 <Globe size={20} />
                 <span className="text-[10px] font-black uppercase hidden sm:block">{i18n.language}</span>
             </button>
 
             <button 
+                id="header-effects"
                 onClick={handleToggleEvent}
                 className={`p-2 rounded-full transition-colors ${eventTheme !== 'DEFAULT' ? 'text-brand-orange bg-orange-50 dark:bg-orange-900/20' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
             >
@@ -155,7 +160,11 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
             </button>
 
             <div className="relative" ref={notifRef}>
-                <button onClick={() => setShowNotifications(!showNotifications)} className={`p-2 rounded-full transition-colors relative ${showNotifications ? 'bg-indigo-50 text-indigo-600' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                <button 
+                    id="header-notifications"
+                    onClick={() => setShowNotifications(!showNotifications)} 
+                    className={`p-2 rounded-full transition-colors relative ${showNotifications ? 'bg-indigo-50 text-indigo-600' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                >
                     <Bell size={20} />
                     {notifications.length > 0 && <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>}
                 </button>
@@ -177,7 +186,11 @@ const Header: React.FC<HeaderProps> = ({ sets, history, onSelectSet, onSelectHis
                 )}
             </div>
 
-            <button onClick={toggleTheme} className="p-2 rounded-full text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button 
+                id="header-theme"
+                onClick={toggleTheme} 
+                className="p-2 rounded-full text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
                 {theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}
             </button>
         </div>
