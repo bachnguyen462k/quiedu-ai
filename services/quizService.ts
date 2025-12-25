@@ -114,5 +114,20 @@ export const quizService = {
           console.error("QuizService: getMyQuizHistory failed", error);
           throw error;
       }
+  },
+
+  /**
+   * Lấy bình luận của 1 học phần.
+   */
+  getComments: async (setId: number | string, page: number = 0, size: number = 5): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/quiz/comment/${setId}`, {
+        params: { page, size }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("QuizService: getComments failed", error);
+      throw error;
+    }
   }
 };

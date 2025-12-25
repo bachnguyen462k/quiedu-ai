@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { StudySet } from '../types';
-import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Languages, Layers, Loader2 } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, BarChart3, Star, Lock, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Languages, Layers, Loader2, MessageSquare, MessageCircle, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../contexts/AppContext';
 import { studySetService } from '../services/studySetService';
+import { quizService } from '../services/quizService';
 import { favoriteService } from '../services/favoriteService';
 import ThemeLoader from './ThemeLoader';
 
@@ -31,8 +32,16 @@ interface SetPreviewResponse {
   successRate: number;
   hasFlashcards: boolean;
   hasQuiz: boolean;
-  // Cập nhật trường favorited từ API backend
   favorited: boolean;
+}
+
+interface Comment {
+    id: number;
+    studySetId: number;
+    userId: string;
+    content: string;
+    createdAt: string;
+    updatedAt: string | null;
 }
 
 const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, onStartFlashcard, onStartQuiz, onToggleFavorite: localToggle }) => {
@@ -46,6 +55,13 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showFloatingActions, setShowFloatingActions] = useState(false);
+
+  // State for Comments
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsPage, setCommentsPage] = useState(0);
+  const [totalComments, setTotalComments] = useState(0);
+  const [isLastCommentsPage, setIsLastCommentsPage] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,14 +78,11 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     const fetchPreviewData = async () => {
         setIsLoading(true);
         try {
-            // API preview hiện tại đã trả về trường favorited
             const response = await studySetService.getStudySetPreviewById(metadata.id);
-            
             if (!ignore) {
                 if (response.code === 1000) {
                     const data = response.result;
                     setPreview(data);
-                    // Lấy trạng thái yêu thích trực tiếp từ dữ liệu preview
                     setIsFavorited(data.favorited || false);
                 } else {
                     addNotification("Học phần không tồn tại hoặc đã bị xóa", "error");
@@ -85,9 +98,37 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
             if (!ignore) setIsLoading(false);
         }
     };
+
     fetchPreviewData();
+    fetchComments(0, true);
+
     return () => { ignore = true; };
   }, [metadata.id, onBack, addNotification]); 
+
+  const fetchComments = async (page: number, refresh: boolean = false) => {
+    if (!metadata.id) return;
+    setCommentsLoading(true);
+    try {
+        const response = await quizService.getComments(metadata.id, page, 5);
+        if (response.result) {
+            const { content, last, totalElements } = response.result;
+            if (refresh) setComments(content);
+            else setComments(prev => [...prev, ...content]);
+            setIsLastCommentsPage(last);
+            setTotalComments(totalElements);
+        }
+    } catch (err) {
+        console.error("Failed to load comments", err);
+    } finally {
+        setCommentsLoading(false);
+    }
+  };
+
+  const handleLoadMoreComments = () => {
+      const nextPage = commentsPage + 1;
+      setCommentsPage(nextPage);
+      fetchComments(nextPage);
+  };
 
   const handleFavoriteClick = async () => {
       if (isTogglingFavorite) return;
@@ -116,7 +157,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       );
   }
 
-  const formattedDate = new Date(preview.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' });
+  const formattedDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' });
   const shareUrl = `${window.location.origin}/#/set/${preview.id}`;
   const shareCode = `QZ-${preview.id.toString().toUpperCase()}`;
 
@@ -172,24 +213,77 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 pt-8 border-t border-gray-100 dark:border-gray-800">
                     <div className="flex flex-col gap-1 min-w-0"><span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Người tạo</span><span className="font-bold text-gray-900 dark:text-white truncate text-sm">{preview.createdBy}</span></div>
                     <div className="flex flex-col gap-1"><span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Số câu hỏi</span><div className="flex items-center gap-1.5 font-bold text-gray-700 dark:text-gray-300 text-sm"><Layers size={14} className="text-brand-orange" /> {preview.totalQuestions}</div></div>
-                    <div className="flex flex-col gap-1"><span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Ngày tạo</span><span className="font-bold text-gray-700 dark:text-gray-300 text-sm">{formattedDate}</span></div>
+                    <div className="flex flex-col gap-1"><span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Ngày tạo</span><span className="font-bold text-gray-700 dark:text-gray-300 text-sm">{formattedDate(preview.createdAt)}</span></div>
                     <div className="flex flex-col gap-1"><span className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Lượt thi</span><div className="flex items-center gap-1.5 font-bold text-gray-700 dark:text-gray-300 text-sm"><Users size={14} className="text-brand-blue" /> {preview.totalAttempts || 0}</div></div>
                 </div>
             </div>
           </div>
 
-          <div className="bg-indigo-50 dark:bg-indigo-900/10 p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-indigo-100 dark:border-indigo-900/30 transition-colors">
-            <h3 className="font-black text-indigo-900 dark:text-indigo-300 mb-6 flex items-center gap-3 uppercase tracking-tighter text-base md:text-lg"><Info size={24} /> {t('set_detail.info_title')}</h3>
-            <div className="grid md:grid-cols-2 gap-4 md:gap-6">
-                <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
-                    <div className="flex items-center gap-3 mb-3"><Timer className="text-brand-blue" size={20} /><span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Thời gian</span></div>
-                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{preview.durationMinutes || 15} phút</span> để hoàn thành.</p>
+          {/* Info & Comments Column */}
+          <div className="space-y-6 md:space-y-8">
+              <div className="bg-indigo-50 dark:bg-indigo-900/10 p-6 md:p-8 rounded-[24px] md:rounded-[32px] border border-indigo-100 dark:border-indigo-900/30 transition-colors">
+                <h3 className="font-black text-indigo-900 dark:text-indigo-300 mb-6 flex items-center gap-3 uppercase tracking-tighter text-base md:text-lg"><Info size={24} /> {t('set_detail.info_title')}</h3>
+                <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                    <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
+                        <div className="flex items-center gap-3 mb-3"><Timer className="text-brand-blue" size={20} /><span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Thời gian</span></div>
+                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">Khoảng <span className="text-brand-blue font-black">{preview.durationMinutes || 15} phút</span> để hoàn thành.</p>
+                    </div>
+                    <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
+                        <div className="flex items-center gap-3 mb-3"><ShieldCheck className="text-brand-orange" size={20} /><span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Kiểm duyệt</span></div>
+                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">Nội dung đã được xác thực bởi <span className="text-brand-orange font-black">AI System</span>.</p>
+                    </div>
                 </div>
-                <div className="bg-white/50 dark:bg-gray-800/40 p-5 rounded-2xl border border-white dark:border-gray-700">
-                    <div className="flex items-center gap-3 mb-3"><ShieldCheck className="text-brand-orange" size={20} /><span className="font-black text-sm text-gray-800 dark:text-white uppercase tracking-tight">Kiểm duyệt</span></div>
-                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">Nội dung đã được xác thực bởi <span className="text-brand-orange font-black">AI System</span>.</p>
-                </div>
-            </div>
+              </div>
+
+              {/* Comments Section */}
+              <div className="bg-white dark:bg-gray-855 p-6 md:p-10 rounded-[32px] md:rounded-[40px] border border-gray-100 dark:border-gray-800 transition-colors">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter text-base md:text-lg">
+                        <MessageSquare size={24} className="text-brand-blue" /> {t('set_detail.comments_title')} 
+                        <span className="bg-gray-100 dark:bg-gray-800 text-gray-500 px-2.5 py-0.5 rounded-lg text-xs">{totalComments}</span>
+                    </h3>
+                  </div>
+
+                  <div className="space-y-6">
+                      {comments.length === 0 && !commentsLoading ? (
+                          <div className="text-center py-10">
+                              <MessageCircle size={48} className="mx-auto text-gray-100 dark:text-gray-800 mb-4" />
+                              <p className="text-gray-400 font-medium">{t('set_detail.no_comments')}</p>
+                          </div>
+                      ) : (
+                          <>
+                            {comments.map((comment) => (
+                                <div key={comment.id} className="flex gap-4 group">
+                                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-blue to-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg">
+                                        {comment.userId.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="font-black text-gray-900 dark:text-white text-sm">@{comment.userId}</span>
+                                            <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{formattedDate(comment.createdAt)}</span>
+                                        </div>
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl rounded-tl-none border border-gray-100 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                                            {comment.content}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            {!isLastCommentsPage && (
+                                <button 
+                                    onClick={handleLoadMoreComments}
+                                    disabled={commentsLoading}
+                                    className="w-full py-4 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl text-gray-400 font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 hover:border-brand-blue hover:text-brand-blue transition-all"
+                                >
+                                    {commentsLoading ? <Loader2 size={16} className="animate-spin" /> : <ChevronDown size={16} />}
+                                    Xem thêm bình luận
+                                </button>
+                            )}
+                          </>
+                      )}
+                  </div>
+              </div>
           </div>
         </div>
 
