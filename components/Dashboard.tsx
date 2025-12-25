@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, QuizHistoryItem } from '../types';
-import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2, Timer, Calendar as CalendarIcon, CheckCircle, Megaphone, Users } from 'lucide-react';
+import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2, Timer, Calendar as CalendarIcon, CheckCircle, Megaphone, Users, MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
 import { quizService } from '../services/quizService';
@@ -94,6 +94,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                           status: s.status,
                           plays: s.totalAttempts ?? s.plays ?? 0,
                           totalAttempts: s.totalAttempts ?? 0,
+                          totalComments: s.totalComments ?? 0,
                           cards: []
                       };
                   });
@@ -122,6 +123,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                       status: item.status,
                       plays: item.totalAttempts ?? item.plays ?? 0,
                       totalAttempts: item.totalAttempts ?? 0,
+                      totalComments: item.totalComments ?? 0,
                       cards: []
                   }));
 
@@ -383,9 +385,12 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                             <div className="w-8 h-8 rounded-2xl bg-brand-blue text-white flex items-center justify-center text-[10px] font-black shadow-md shrink-0">{set.author.charAt(0)}</div>
                                             <span className="text-xs font-black text-gray-700 dark:text-gray-300 truncate max-w-[80px]">{set.author}</span>
                                         </div>
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex flex-col gap-1.5">
                                             <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400"><Clock size={14} className="text-brand-blue" /> {new Date(set.createdAt).toLocaleDateString('vi-VN')}</span>
-                                            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-blue"><Play size={14} fill="currentColor" /> {set.totalAttempts || 0} lượt làm</span>
+                                            <div className="flex gap-4">
+                                                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-blue"><Play size={14} fill="currentColor" /> {set.totalAttempts || 0} lượt làm</span>
+                                                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-indigo-500"><MessageSquare size={14} fill="currentColor" className="opacity-20" /> {set.totalComments || 0} bình luận</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

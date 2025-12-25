@@ -30,6 +30,7 @@ export interface StudySet {
   createdAt: number;
   plays?: number;
   totalAttempts?: number; // Số lượng người đã làm quiz
+  totalComments?: number; // Số lượng bình luận
   averageScore?: number; 
   cards: Flashcard[];
   reviews?: Review[]; 
