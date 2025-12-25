@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { StudySet } from '../types';
-import { ArrowLeft, Play, BookOpen, BarChart3, Star, Info, ShieldCheck, Share2, QrCode, X, Heart, Flag, Zap, Timer, Users, Layers, Loader2, MessageSquare, MessageCircle, ChevronDown, Send, Smile } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, BarChart3, Star, Info, ShieldCheck, Share2, QrCode, X, Heart, Zap, Timer, Loader2, MessageSquare, MessageCircle, ChevronDown, Send, Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -56,7 +56,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
-  const [copiedType, setCopiedType] = useState<'LINK' | 'CODE' | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
 
   // State for Comments
@@ -98,7 +97,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     return () => { ignore = true; };
   }, [metadata.id]); 
 
-  // Handle click outside emoji picker
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
         if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
@@ -143,7 +141,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       e.preventDefault();
       e.stopPropagation();
       setNewComment(prev => prev + emoji);
-      // Focus back to textarea
       textareaRef.current?.focus();
   };
 
@@ -273,14 +270,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                 ref={commentListRef}
                 className="flex-1 overflow-y-auto p-6 md:px-10 space-y-8 custom-scrollbar bg-white dark:bg-gray-855"
               >
-                  <div className="bg-indigo-50 dark:bg-indigo-900/10 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-900/30 transition-colors mb-4">
-                        <h4 className="font-black text-indigo-900 dark:text-indigo-300 mb-4 flex items-center gap-2 uppercase text-xs tracking-widest"><Info size={16} /> Ghi chú học tập</h4>
-                        <div className="grid sm:grid-cols-2 gap-4">
-                            <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400"><Timer size={18} className="text-brand-blue"/> {preview.durationMinutes || 15} phút luyện tập</div>
-                            <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400"><ShieldCheck size={18} className="text-green-500"/> Nội dung đã kiểm duyệt</div>
-                        </div>
-                  </div>
-
                   {comments.length === 0 && !commentsLoading ? (
                       <div className="text-center py-16">
                           <MessageCircle size={48} className="mx-auto text-gray-100 dark:text-gray-800 mb-4" />
@@ -348,7 +337,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                                         <Smile size={20}/>
                                     </button>
 
-                                    {/* Custom Emoji Picker Popover */}
                                     {showEmojiPicker && (
                                         <div 
                                             ref={emojiPickerRef}
@@ -388,6 +376,16 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
         <div className="space-y-6 lg:sticky lg:top-24">
             <div className="bg-white dark:bg-gray-855 p-6 md:p-8 rounded-[40px] shadow-xl border border-brand-blue/10 dark:border-gray-800 transition-colors">
                 <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3"><Play className="text-brand-blue fill-brand-blue" size={22} /> Sẵn sàng chưa?</h3>
+                
+                {/* Ghi chú học tập - Moved from Comment Box to here */}
+                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-5 rounded-3xl border border-indigo-100 dark:border-indigo-900/30 transition-colors mb-6">
+                    <h4 className="font-black text-indigo-900 dark:text-indigo-300 mb-4 flex items-center gap-2 uppercase text-[10px] tracking-widest"><Info size={14} /> Ghi chú học tập</h4>
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 font-bold"><Timer size={16} className="text-brand-blue"/> {preview.durationMinutes || 15} phút luyện tập</div>
+                        <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 font-bold"><ShieldCheck size={16} className="text-green-500"/> Nội dung đã kiểm duyệt</div>
+                    </div>
+                </div>
+
                 <div className="space-y-4">
                     <button type="button" onClick={onStartFlashcard} className="w-full group p-5 rounded-[28px] border-2 border-gray-50 dark:border-gray-800 hover:border-brand-blue dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all flex items-center gap-5 text-left active:scale-95">
                         <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:bg-brand-blue group-hover:text-white transition-colors flex items-center justify-center shrink-0"><BookOpen size={28} /></div>
