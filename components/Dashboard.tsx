@@ -44,7 +44,10 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  const fetchingTaskRef = useRef<string | null>(null);
+  // Ref để khóa việc gọi API trùng lặp
+  const isFetchingRef = useRef(false);
+  const lastFetchParamsRef = useRef("");
+
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
@@ -53,10 +56,15 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   }, [displaySets]);
 
   const fetchData = async (page: number, refresh: boolean = false) => {
-      const taskKey = `${isLibrary ? 'LIB' : 'HOME'}-${libraryTab}-${page}`;
-      if (fetchingTaskRef.current === taskKey) return;
+      const paramsKey = `${isLibrary}-${libraryTab}-${page}`;
       
-      fetchingTaskRef.current = taskKey;
+      // Ngăn gọi lại nếu đang fetch hoặc tham số giống hệt lần trước (tránh Strict Mode double call)
+      if (isFetchingRef.current && !refresh) return;
+      if (refresh && lastFetchParamsRef.current === paramsKey && page === 0) return;
+
+      isFetchingRef.current = true;
+      lastFetchParamsRef.current = paramsKey;
+
       if (page === 0) {
           setIsInitialLoading(true);
           if (refresh) {
@@ -134,30 +142,34 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
           }
       } catch (error) {
           console.error("Failed to load data", error);
-          addNotification("Không thể kết nối máy chủ", "error");
       } finally {
           setIsLoading(false);
           setIsInitialLoading(false);
-          fetchingTaskRef.current = null;
+          isFetchingRef.current = false;
       }
   };
 
+  // Reset và fetch trang đầu khi chuyển tab hoặc chuyển trang (Home/Library)
   useEffect(() => {
     setCurrentPage(0);
+    lastFetchParamsRef.current = ""; // Reset khóa để cho phép fetch mới
     fetchData(0, true);
   }, [isLibrary, libraryTab]);
 
+  // Infinite scroll observer
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
+    
+    // Chỉ kích hoạt observer nếu không đang load và còn trang để xem
     const hasMore = currentPage < totalPages - 1;
     
     observerRef.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading && !isInitialLoading) {
+        if (entries[0].isIntersecting && hasMore && !isLoading && !isInitialLoading && !isFetchingRef.current) {
             const nextPage = currentPage + 1;
             setCurrentPage(nextPage);
             fetchData(nextPage);
         }
-    });
+    }, { threshold: 0.1 });
 
     if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
     return () => { if (observerRef.current) observerRef.current.disconnect(); };

@@ -97,17 +97,19 @@ const AppRoutes: React.FC = () => {
   const handleUpdateUser = useCallback((updatedUser: User) => { updateUser(updatedUser); addNotification(t('notifications.profile_updated'), 'success'); }, [updateUser, addNotification, t]);
   const handleSaveSet = useCallback((newSet: StudySet) => { navigate('/library'); addNotification(t('notifications.set_created'), 'success'); }, [navigate, addNotification, t]);
   
-  const handleToggleFavorite = useCallback(async (setId: string) => {
+  const handleToggleFavorite = useCallback(async (setId: string): Promise<boolean | undefined> => {
     try {
         const response = await favoriteService.toggleFavorite(setId);
         if (response.code === 1000) {
             const isFav = response.result;
             addNotification(isFav ? t('notifications.favorite_added') : t('notifications.favorite_removed'), 'success');
             setSets(prev => prev.map(s => s.id === setId ? { ...s, isFavorite: isFav } : s));
+            return isFav;
         }
     } catch (e) {
         addNotification("Lỗi kết nối máy chủ", "error");
     }
+    return undefined;
   }, [addNotification, t]);
 
   const handleAddAiHistory = (record: AiGenerationRecord) => setAiHistory(prev => [record, ...prev]);
@@ -152,7 +154,7 @@ const AppRoutes: React.FC = () => {
 
 // --- Route Wrappers ---
 
-const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggleFavorite: (id: string) => void }) => {
+const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggleFavorite: (id: string) => Promise<boolean | undefined> }) => {
     const { setId } = useParams();
     const navigate = useNavigate();
     const setPlaceholder = useMemo(() => {

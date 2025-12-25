@@ -7,7 +7,6 @@ import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { studySetService } from '../services/studySetService';
 import { quizService } from '../services/quizService';
-import { favoriteService } from '../services/favoriteService';
 import ThemeLoader from './ThemeLoader';
 
 interface SetDetailViewProps {
@@ -15,7 +14,7 @@ interface SetDetailViewProps {
   onBack: () => void;
   onStartFlashcard: () => void;
   onStartQuiz: () => void;
-  onToggleFavorite?: (setId: string) => void;
+  onToggleFavorite?: (setId: string) => Promise<boolean | undefined>;
 }
 
 interface SetPreviewResponse {
@@ -58,6 +57,10 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
 
+  // Biến lock để ngăn fetch trùng
+  const isFetchingPreview = useRef(false);
+  const lastSetIdRef = useRef("");
+
   // State for Comments
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -73,21 +76,30 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!metadata.id) return;
+    if (!metadata.id || metadata.id === "Đang tải...") return;
+    if (lastSetIdRef.current === metadata.id) return; // Đã fetch cho ID này rồi
+    
     let ignore = false;
     
     const fetchPreviewData = async () => {
+        if (isFetchingPreview.current) return;
+        isFetchingPreview.current = true;
         setIsLoading(true);
+        
         try {
             const response = await studySetService.getStudySetPreviewById(metadata.id);
             if (!ignore && response.code === 1000) {
                 setPreview(response.result);
                 setIsFavorited(response.result.favorited || false);
+                lastSetIdRef.current = metadata.id;
             }
         } catch (error) {
             console.error("Fetch preview error", error);
         } finally {
-            if (!ignore) setIsLoading(false);
+            if (!ignore) {
+                setIsLoading(false);
+                isFetchingPreview.current = false;
+            }
         }
     };
 
@@ -185,16 +197,15 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const handleFavoriteClick = async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (isTogglingFavorite) return;
+      if (isTogglingFavorite || !localToggle) return;
+      
       setIsTogglingFavorite(true);
       try {
-          const response = await favoriteService.toggleFavorite(metadata.id);
-          if (response.code === 1000) {
-              setIsFavorited(response.result);
-              if (localToggle) localToggle(metadata.id);
+          // Gọi hàm từ App.tsx và nhận kết quả Boolean trả về từ API
+          const newStatus = await localToggle(metadata.id);
+          if (newStatus !== undefined) {
+              setIsFavorited(newStatus);
           }
-      } catch (err) {
-          addNotification("Lỗi cập nhật yêu thích", "error");
       } finally {
           setIsTogglingFavorite(false);
       }
