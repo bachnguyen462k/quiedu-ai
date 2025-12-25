@@ -45,6 +45,8 @@ interface Comment {
     updatedAt: string | null;
 }
 
+const COMMON_EMOJIS = ['😊', '😂', '🤣', '❤️', '👍', '🔥', '✨', '🙌', '😮', '😢', '👏', '🤔', '💯', '✅', '📚', '💡', '🎓', '🎯', '🚀', '🌟'];
+
 const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, onStartFlashcard, onStartQuiz, onToggleFavorite: localToggle }) => {
   const { t } = useTranslation();
   const { addNotification } = useApp();
@@ -65,8 +67,11 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [isLastCommentsPage, setIsLastCommentsPage] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   
   const commentListRef = useRef<HTMLDivElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!metadata.id) return;
@@ -92,6 +97,17 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
     return () => { ignore = true; };
   }, [metadata.id]); 
+
+  // Handle click outside emoji picker
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+            setShowEmojiPicker(false);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchComments = async (page: number, refresh: boolean = false) => {
     if (!metadata.id || (commentsLoading && !refresh)) return;
@@ -123,8 +139,15 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       fetchComments(commentsPage + 1);
   };
 
+  const addEmoji = (emoji: string, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setNewComment(prev => prev + emoji);
+      // Focus back to textarea
+      textareaRef.current?.focus();
+  };
+
   const handlePostComment = async (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
-    // Ngăn chặn triệt để hành vi mặc định (load trang)
     if (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -133,17 +156,17 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     if (!newComment.trim() || isSubmittingComment) return;
     
     setIsSubmittingComment(true);
+    setShowEmojiPicker(false);
+    
     try {
         const response = await quizService.addComment(metadata.id, newComment);
         if (response.code === 1000) {
             const postedComment = response.result;
             setNewComment('');
             
-            // Cập nhật danh sách local để hiển thị ngay mà không load lại trang
             setComments(prev => [...prev, postedComment]);
             setTotalComments(prev => prev + 1);
             
-            // Cuộn mượt xuống cuối danh sách (trong ô cuộn)
             setTimeout(() => {
                 if (commentListRef.current) {
                     commentListRef.current.scrollTo({
@@ -302,12 +325,13 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
               {/* Sticky Footer Input - Internal */}
               <div className="sticky bottom-0 bg-white dark:bg-gray-855 border-t border-gray-100 dark:border-gray-800 p-6 md:px-10 transition-all z-30 shrink-0 shadow-[0_-10px_25px_rgba(0,0,0,0.03)]">
-                    <div className="flex gap-3 items-end">
+                    <div className="flex gap-3 items-end relative">
                         <div className="w-10 h-10 rounded-full bg-brand-blue text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md mb-1 border-2 border-white dark:border-gray-700">
                             {user?.name?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-[28px] px-5 py-2.5 flex flex-col focus-within:ring-2 focus-within:ring-brand-blue/20 focus-within:bg-white dark:focus-within:bg-gray-750 transition-all border border-transparent">
                             <textarea 
+                                ref={textareaRef}
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
                                 placeholder="Viết bình luận của bạn..."
@@ -315,9 +339,34 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                                 onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { handlePostComment(e); } }}
                             />
                             <div className="flex justify-between items-center mt-2 border-t border-gray-200/30 dark:border-gray-700/30 pt-2 pb-0.5">
-                                <div className="flex gap-1">
-                                    {/* Chỉ giữ lại nút chọn icon, bỏ nút ảnh */}
-                                    <button type="button" className="p-2 text-gray-400 hover:text-brand-orange transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><Smile size={20}/></button>
+                                <div className="flex gap-1 relative">
+                                    <button 
+                                        type="button" 
+                                        onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(!showEmojiPicker); }}
+                                        className={`p-2 transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 ${showEmojiPicker ? 'text-brand-orange bg-orange-50 dark:bg-orange-900/20' : 'text-gray-400'}`}
+                                    >
+                                        <Smile size={20}/>
+                                    </button>
+
+                                    {/* Custom Emoji Picker Popover */}
+                                    {showEmojiPicker && (
+                                        <div 
+                                            ref={emojiPickerRef}
+                                            className="absolute bottom-full left-0 mb-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-2xl rounded-2xl p-4 w-64 z-[100] animate-fade-in grid grid-cols-5 gap-2"
+                                        >
+                                            {COMMON_EMOJIS.map((emoji) => (
+                                                <button 
+                                                    key={emoji}
+                                                    type="button"
+                                                    onClick={(e) => addEmoji(emoji, e)}
+                                                    className="text-xl p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all active:scale-90"
+                                                >
+                                                    {emoji}
+                                                </button>
+                                            ))}
+                                            <div className="absolute top-full left-4 -mt-1 w-3 h-3 bg-white dark:bg-gray-800 border-b border-r border-gray-100 dark:border-gray-700 rotate-45"></div>
+                                        </div>
+                                    )}
                                 </div>
                                 <button 
                                     type="button"
@@ -359,7 +408,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                 <div className="mt-10 pt-8 border-t border-gray-50 dark:border-gray-800">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-5 flex items-center gap-2"><Share2 size={14} /> Chia sẻ liên kết</p>
                     <div className="flex gap-2">
-                        {/* Fix: Changed div with type="button" to a button element to fix TypeScript error and improve accessibility. */}
                         <button type="button" onClick={() => { navigator.clipboard.writeText(shareCode); addNotification("Đã copy mã!", "success"); }} className="flex-1 bg-gray-50 dark:bg-gray-800 p-3 rounded-2xl text-center cursor-pointer border border-transparent hover:border-brand-blue transition-all group active:scale-95">
                             <span className="text-[8px] text-gray-400 font-black block mb-0.5 tracking-tighter uppercase">MÃ THAM GIA</span>
                             <span className="font-black text-xs text-brand-blue tracking-[0.2em] uppercase">{shareCode}</span>
