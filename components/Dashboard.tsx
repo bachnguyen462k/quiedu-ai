@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StudySet, AiGenerationRecord, User, QuizHistoryItem } from '../types';
-import { Plus, Search, Book, Clock, Flame, Play, Loader2, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, CheckCircle2, Timer, Calendar as CalendarIcon, CheckCircle, Megaphone, Users, MessageSquare } from 'lucide-react';
+import { Search, Book, Clock, Flame, Play, Heart, AlertCircle, Sparkles, Keyboard, ScanLine, BookOpen, Trophy, Medal, Crown, History, ChevronRight, Timer, Calendar as CalendarIcon, Megaphone, MessageSquare, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { studySetService } from '../services/studySetService';
 import { quizService } from '../services/quizService';
@@ -44,9 +44,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Ref để khóa việc gọi API trùng lặp
+  // Ref để khóa việc gọi API trùng lặp và ghi nhớ tham số cuối
   const isFetchingRef = useRef(false);
-  const lastFetchParamsRef = useRef("");
+  const lastFetchKeyRef = useRef("");
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -55,15 +55,15 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
     return [...displaySets].slice(0, 3);
   }, [displaySets]);
 
-  const fetchData = async (page: number, refresh: boolean = false) => {
-      const paramsKey = `${isLibrary}-${libraryTab}-${page}`;
+  const fetchData = async (page: number, refresh: boolean = false, abortSignal?: { ignored: boolean }) => {
+      const fetchKey = `${isLibrary}-${libraryTab}-${page}-${refresh}`;
       
-      // Ngăn gọi lại nếu đang fetch hoặc tham số giống hệt lần trước (tránh Strict Mode double call)
+      // Chống gọi trùng lặp cùng một tham số trong thời gian ngắn (đặc biệt cho StrictMode)
       if (isFetchingRef.current && !refresh) return;
-      if (refresh && lastFetchParamsRef.current === paramsKey && page === 0) return;
+      if (lastFetchKeyRef.current === fetchKey && !refresh) return;
 
       isFetchingRef.current = true;
-      lastFetchParamsRef.current = paramsKey;
+      lastFetchKeyRef.current = fetchKey;
 
       if (page === 0) {
           setIsInitialLoading(true);
@@ -75,50 +75,46 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       setIsLoading(true);
       
       try {
+          let response: any;
           if (libraryTab === 'HISTORY') {
-              const response = await quizService.getMyQuizHistory(page, ITEMS_PER_PAGE);
-              if (response.code === 1000) {
+              response = await quizService.getMyQuizHistory(page, ITEMS_PER_PAGE);
+              if (response.code === 1000 && !abortSignal?.ignored) {
                   const { content, totalPages: total } = response.result;
                   if (refresh) setQuizHistory(content);
                   else setQuizHistory(prev => [...prev, ...content]);
                   setTotalPages(total);
               }
           } else if (libraryTab === 'FAVORITES') {
-              const response = await favoriteService.getFavorites(page, ITEMS_PER_PAGE);
-              if (response.code === 1000) {
+              response = await favoriteService.getFavorites(page, ITEMS_PER_PAGE);
+              if (response.code === 1000 && !abortSignal?.ignored) {
                   const { content, totalPages: total } = response.result;
-                  const mappedSets: StudySet[] = content.map((item: any) => {
-                      const s = item.studySet;
-                      return {
-                          id: s.id.toString(),
-                          title: s.title,
-                          description: s.description || "",
-                          author: s.author || 'Thành viên',
-                          createdAt: new Date(s.createdAt).getTime(),
-                          privacy: s.privacy || 'PUBLIC',
-                          subject: s.topic || 'Khác',
-                          isFavorite: true,
-                          type: s.type,
-                          status: s.status,
-                          plays: s.totalAttempts ?? s.plays ?? 0,
-                          totalAttempts: s.totalAttempts ?? 0,
-                          totalComments: s.totalComments ?? 0,
-                          cards: []
-                      };
-                  });
-
+                  const mappedSets = content.map((item: any) => ({
+                      id: item.studySet.id.toString(),
+                      title: item.studySet.title,
+                      description: item.studySet.description || "",
+                      author: item.studySet.author || 'Thành viên',
+                      createdAt: new Date(item.studySet.createdAt).getTime(),
+                      privacy: item.studySet.privacy || 'PUBLIC',
+                      subject: item.studySet.topic || 'Khác',
+                      isFavorite: true,
+                      type: item.studySet.type,
+                      status: item.studySet.status,
+                      totalAttempts: item.studySet.totalAttempts ?? 0,
+                      totalComments: item.studySet.totalComments ?? 0,
+                      cards: []
+                  }));
                   if (refresh) setDisplaySets(mappedSets);
                   else setDisplaySets(prev => [...prev, ...mappedSets]);
                   setTotalPages(total);
               }
           } else {
-              const response = isLibrary && libraryTab === 'SETS' 
+              response = isLibrary && libraryTab === 'SETS' 
                 ? await studySetService.getMyStudySets(page, ITEMS_PER_PAGE)
                 : await studySetService.getPublicStudySets(page, ITEMS_PER_PAGE);
 
-              if (response.code === 1000) {
+              if (response.code === 1000 && !abortSignal?.ignored) {
                   const { content, totalPages: total } = response.result;
-                  const mappedSets: StudySet[] = content.map((item: any) => ({
+                  const mappedSets = content.map((item: any) => ({
                       id: item.id.toString(),
                       title: item.title,
                       description: item.description || "",
@@ -129,42 +125,38 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                       isFavorite: item.favorited || false,
                       type: item.type,
                       status: item.status,
-                      plays: item.totalAttempts ?? item.plays ?? 0,
                       totalAttempts: item.totalAttempts ?? 0,
                       totalComments: item.totalComments ?? 0,
                       cards: []
                   }));
-
                   if (refresh) setDisplaySets(mappedSets);
                   else setDisplaySets(prev => [...prev, ...mappedSets]);
                   setTotalPages(total);
               }
           }
       } catch (error) {
-          console.error("Failed to load data", error);
+          console.error("Dashboard fetch error:", error);
       } finally {
-          setIsLoading(false);
-          setIsInitialLoading(false);
+          if (!abortSignal?.ignored) {
+              setIsLoading(false);
+              setIsInitialLoading(false);
+          }
           isFetchingRef.current = false;
       }
   };
 
-  // Reset và fetch trang đầu khi chuyển tab hoặc chuyển trang (Home/Library)
   useEffect(() => {
+    const signal = { ignored: false };
     setCurrentPage(0);
-    lastFetchParamsRef.current = ""; // Reset khóa để cho phép fetch mới
-    fetchData(0, true);
+    fetchData(0, true, signal);
+    return () => { signal.ignored = true; };
   }, [isLibrary, libraryTab]);
 
-  // Infinite scroll observer
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
     
-    // Chỉ kích hoạt observer nếu không đang load và còn trang để xem
-    const hasMore = currentPage < totalPages - 1;
-    
     observerRef.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading && !isInitialLoading && !isFetchingRef.current) {
+        if (entries[0].isIntersecting && currentPage < totalPages - 1 && !isLoading && !isInitialLoading) {
             const nextPage = currentPage + 1;
             setCurrentPage(nextPage);
             fetchData(nextPage);
@@ -173,14 +165,14 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
 
     if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
     return () => { if (observerRef.current) observerRef.current.disconnect(); };
-  }, [currentPage, totalPages, isLoading, isInitialLoading, libraryTab]);
+  }, [currentPage, totalPages, isLoading, isInitialLoading]);
 
   const filteredSets = useMemo(() => {
-    return displaySets.filter(s => {
-        const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()));
-        return matchesSearch;
-    });
+    if (!searchQuery.trim()) return displaySets;
+    return displaySets.filter(s => 
+        s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
   }, [displaySets, searchQuery]);
 
   const formatTime = (totalSeconds: number) => {
@@ -216,16 +208,15 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
 
   if (isInitialLoading) {
       return (
-          <div className="flex flex-col items-center justify-center py-32 animate-pulse">
+          <div className="flex flex-col items-center justify-center py-32">
               <ThemeLoader size={48} className="mb-4" />
-              <p className="text-gray-500 font-black uppercase tracking-widest text-[10px]">Đang kết nối thư viện...</p>
+              <p className="text-gray-400 font-black uppercase tracking-widest text-[10px] animate-pulse">Đang kết nối thư viện...</p>
           </div>
       );
   }
 
   const handleDashboardToggleFavorite = async (setId: string) => {
     await onToggleFavorite(setId);
-    
     if (libraryTab === 'FAVORITES') {
         setDisplaySets(prev => prev.filter(s => s.id !== setId));
     } else {
@@ -248,16 +239,13 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                     <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1">Top 3 học phần bùng nổ nhất tuần qua.</p>
                 </div>
 
-                {/* News Ticker */}
                 <div className="flex-1 min-w-0 max-w-2xl bg-gray-100 dark:bg-gray-800/50 rounded-2xl h-12 flex items-center px-4 relative overflow-hidden group">
                     <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-gray-100 dark:from-gray-800 to-transparent z-10"></div>
                     <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-gray-100 dark:from-gray-800 to-transparent z-10"></div>
-                    
                     <div className="shrink-0 mr-3 text-brand-blue flex items-center gap-2 z-20">
                         <Megaphone size={18} className="animate-bounce" />
                         <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Tin mới:</span>
                     </div>
-                    
                     <div className="overflow-hidden flex-1 relative h-full flex items-center">
                         <div className="animate-marquee whitespace-nowrap flex gap-12 items-center">
                             {FAKE_NOTIFICATIONS.map((note, i) => (
@@ -272,7 +260,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {trendingSets.length > 0 ? trendingSets.map((set, idx) => {
+                {trendingSets.length > 0 && trendingSets.map((set, idx) => {
                     const isTop1 = idx === 0;
                     const isTop2 = idx === 1;
                     const cardTheme = isTop1 
@@ -285,19 +273,16 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                         <div 
                             key={set.id} 
                             onClick={() => onSelectSet(set)} 
-                            className={`group relative overflow-hidden rounded-[32px] md:rounded-[36px] p-6 md:p-7 cursor-pointer transition-all duration-500 shadow-xl hover:shadow-2xl border-transparent transform hover:-translate-y-2 flex flex-col justify-between min-h-[280px] md:min-h-[300px] text-white ${cardTheme}`}
+                            className={`group relative overflow-hidden rounded-[32px] md:rounded-[36px] p-6 md:p-7 cursor-pointer transition-all duration-500 shadow-xl hover:shadow-2xl transform hover:-translate-y-2 flex flex-col justify-between min-h-[280px] md:min-h-[300px] text-white ${cardTheme}`}
                         >
                             <div className="absolute -top-10 -right-10 opacity-10 group-hover:scale-125 transition-transform duration-700">
                                 {isTop1 ? <Crown size={220} /> : isTop2 ? <Trophy size={200} /> : <Medal size={180} />}
                             </div>
-
                             <div className="relative z-10">
                                 <div className="flex items-center justify-between mb-5">
-                                    <div className="flex items-center gap-2">
-                                        <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
-                                            {isTop1 ? <Crown size={12} className="text-yellow-200" /> : isTop2 ? <Trophy size={12} /> : <Medal size={12} />}
-                                            RANK {idx + 1}
-                                        </div>
+                                    <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5">
+                                        {isTop1 ? <Crown size={12} className="text-yellow-200" /> : isTop2 ? <Trophy size={12} /> : <Medal size={12} />}
+                                        RANK {idx + 1}
                                     </div>
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); handleDashboardToggleFavorite(set.id); }} 
@@ -306,11 +291,9 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                         <Heart size={20} fill={set.isFavorite ? "white" : "none"} className={set.isFavorite ? 'text-white' : 'text-white/70'} />
                                     </button>
                                 </div>
-
                                 <h3 className="text-xl md:text-2xl font-black mb-3 line-clamp-2 leading-tight drop-shadow-sm">{set.title}</h3>
                                 <p className="text-xs line-clamp-2 font-medium text-white/80 mb-6 leading-relaxed">{set.description}</p>
                             </div>
-
                             <div className="relative z-10 pt-5 border-t border-white/10 flex items-center justify-between">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                     <div className="w-9 h-9 rounded-2xl bg-white text-brand-blue flex items-center justify-center text-xs font-black shadow-lg shrink-0">{set.author.charAt(0)}</div>
@@ -320,19 +303,19 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-brand-blue rounded-xl font-black text-[10px] shadow-lg shrink-0">
-                                    <Play size={12} fill="currentColor" /> {set.plays}
+                                    <Play size={12} fill="currentColor" /> {set.totalAttempts || 0}
                                 </div>
                             </div>
                         </div>
                     );
-                }) : null}
+                })}
             </div>
         </section>
       )}
 
       {isLibrary && (
           <div className="mb-10 flex flex-col lg:flex-row gap-6 items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-8 transition-colors">
-              <div className="flex p-1.5 bg-gray-100 dark:bg-gray-800 rounded-[22px] w-full lg:w-auto overflow-x-auto custom-scrollbar scrollbar-hide">
+              <div className="flex p-1.5 bg-gray-100 dark:bg-gray-800 rounded-[22px] w-full lg:w-auto overflow-x-auto scrollbar-hide">
                   <button onClick={() => setLibraryTab('SETS')} className={`flex-1 lg:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${libraryTab === 'SETS' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_sets')}</button>
                   <button onClick={() => setLibraryTab('FAVORITES')} className={`flex-1 lg:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap ${libraryTab === 'FAVORITES' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}>{t('dashboard.tab_favorites')}</button>
                   <button onClick={() => setLibraryTab('HISTORY')} className={`flex-1 lg:flex-none px-6 py-3 rounded-2xl text-sm font-black transition-all whitespace-nowrap flex items-center gap-2 ${libraryTab === 'HISTORY' ? 'bg-white dark:bg-gray-700 text-brand-blue dark:text-blue-400 shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}`}><History size={16}/> Lịch sử Quiz</button>
@@ -376,7 +359,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                         {filteredSets.map(set => (
-                            <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-[32px] shadow-sm hover:shadow-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
+                            <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-[32px] shadow-sm hover:shadow-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden">
                                 <button onClick={(e) => { e.stopPropagation(); handleDashboardToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-3 rounded-2xl z-10 transition-all ${set.isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20 scale-110 shadow-lg' : 'text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-800'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
                                 <div className="p-6 md:p-7 flex-1">
                                     <div className="flex flex-wrap gap-2 mb-5">
@@ -414,13 +397,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                         {isLoading && <ThemeLoader size={32} />}
                         {!isLoading && currentPage >= totalPages - 1 && filteredSets.length > 0 && (
                             <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">Bạn đã xem hết thư viện</p>
-                        )}
-                        {filteredSets.length === 0 && !isLoading && (
-                            <div className="text-center py-24 w-full bg-white dark:bg-gray-855 rounded-[40px] border-2 border-dashed border-gray-100 dark:border-gray-800">
-                                <AlertCircle size={64} className="mx-auto text-gray-100 dark:text-gray-800 mb-6" />
-                                <p className="text-gray-500 font-black text-lg">{t('dashboard.no_results')}</p>
-                                <button onClick={onCreateNew} className="mt-6 bg-brand-blue text-white px-8 py-4 rounded-[20px] font-black hover:scale-105 active:scale-95 transition-all shadow-xl shadow-brand-blue/20">{t('dashboard.upload_now')}</button>
-                            </div>
                         )}
                     </div>
                 </div>

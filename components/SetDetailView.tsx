@@ -57,9 +57,8 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
 
-  // Biến lock để ngăn fetch trùng
-  const isFetchingPreview = useRef(false);
-  const lastSetIdRef = useRef("");
+  // Ghi nhận ID cuối cùng đã tải thành công để tránh re-fetch vô nghĩa
+  const loadedIdRef = useRef("");
 
   // State for Comments
   const [comments, setComments] = useState<Comment[]>([]);
@@ -76,37 +75,37 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!metadata.id || metadata.id === "Đang tải...") return;
-    if (lastSetIdRef.current === metadata.id) return; // Đã fetch cho ID này rồi
+    const isIdValid = metadata.id && metadata.id !== "Đang tải...";
+    if (!isIdValid) return;
     
-    let ignore = false;
+    // Nếu đã tải xong ID này rồi thì bỏ qua (tránh re-fetch khi re-render)
+    if (loadedIdRef.current === metadata.id) {
+        setIsLoading(false);
+        return;
+    }
+    
+    const signal = { ignored: false };
     
     const fetchPreviewData = async () => {
-        if (isFetchingPreview.current) return;
-        isFetchingPreview.current = true;
         setIsLoading(true);
-        
         try {
             const response = await studySetService.getStudySetPreviewById(metadata.id);
-            if (!ignore && response.code === 1000) {
+            if (!signal.ignored && response.code === 1000) {
                 setPreview(response.result);
                 setIsFavorited(response.result.favorited || false);
-                lastSetIdRef.current = metadata.id;
+                loadedIdRef.current = metadata.id;
             }
         } catch (error) {
-            console.error("Fetch preview error", error);
+            console.error("Fetch preview error:", error);
         } finally {
-            if (!ignore) {
-                setIsLoading(false);
-                isFetchingPreview.current = false;
-            }
+            if (!signal.ignored) setIsLoading(false);
         }
     };
 
     fetchPreviewData();
-    fetchComments(0, true);
+    fetchComments(0, true, signal);
 
-    return () => { ignore = true; };
+    return () => { signal.ignored = true; };
   }, [metadata.id]); 
 
   useEffect(() => {
@@ -119,12 +118,12 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchComments = async (page: number, refresh: boolean = false) => {
+  const fetchComments = async (page: number, refresh: boolean = false, abortSignal?: { ignored: boolean }) => {
     if (!metadata.id || (commentsLoading && !refresh)) return;
     setCommentsLoading(true);
     try {
         const response = await quizService.getComments(metadata.id, page, 5);
-        if (response.result) {
+        if (response.result && !abortSignal?.ignored) {
             const { content, last, totalElements } = response.result;
             if (refresh) {
                 setComments(content);
@@ -138,7 +137,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     } catch (err) {
         console.error("Failed to load comments", err);
     } finally {
-        setCommentsLoading(false);
+        if (!abortSignal?.ignored) setCommentsLoading(false);
     }
   };
 
@@ -172,7 +171,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
         if (response.code === 1000) {
             const postedComment = response.result;
             setNewComment('');
-            
             setComments(prev => [...prev, postedComment]);
             setTotalComments(prev => prev + 1);
             
@@ -201,7 +199,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       
       setIsTogglingFavorite(true);
       try {
-          // Gọi hàm từ App.tsx và nhận kết quả Boolean trả về từ API
           const newStatus = await localToggle(metadata.id);
           if (newStatus !== undefined) {
               setIsFavorited(newStatus);
@@ -215,7 +212,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       return (
           <div className="min-h-[60vh] flex flex-col items-center justify-center py-20">
               <ThemeLoader size={48} className="mb-4" />
-              <p className="text-gray-400 font-black uppercase text-xs tracking-widest">Đang tải học phần...</p>
+              <p className="text-gray-400 font-black uppercase text-xs tracking-widest animate-pulse">Đang tải học phần...</p>
           </div>
       );
   }
@@ -249,7 +246,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 items-start">
         <div className="lg:col-span-2 space-y-8">
-          {/* Main Card */}
           <div className="bg-white dark:bg-gray-855 p-6 md:p-10 rounded-[40px] shadow-sm border border-gray-100 dark:border-gray-800 transition-colors">
                 <div className="flex flex-wrap items-center gap-3 mb-6">
                     <span className="bg-brand-blue/10 text-brand-blue px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">{preview.topic || 'Tổng hợp'}</span>
@@ -266,9 +262,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                 </div>
           </div>
 
-          {/* Comment Box with independent scroll */}
           <div className="bg-white dark:bg-gray-855 rounded-[40px] border border-gray-100 dark:border-gray-800 transition-colors shadow-sm overflow-hidden flex flex-col h-[650px]">
-              {/* Header - Fixed */}
               <div className="p-6 md:p-10 pb-5 border-b border-gray-50 dark:border-gray-800 shrink-0 bg-white dark:bg-gray-855 z-20">
                     <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter text-lg">
                         <MessageSquare size={24} className="text-brand-blue" /> {t('set_detail.comments_title')} 
@@ -276,7 +270,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                     </h3>
               </div>
 
-              {/* Scrollable Content */}
               <div 
                 ref={commentListRef}
                 className="flex-1 overflow-y-auto p-6 md:px-10 space-y-8 custom-scrollbar bg-white dark:bg-gray-855"
@@ -323,7 +316,6 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                   )}
               </div>
 
-              {/* Sticky Footer Input - Internal */}
               <div className="sticky bottom-0 bg-white dark:bg-gray-855 border-t border-gray-100 dark:border-gray-800 p-6 md:px-10 transition-all z-30 shrink-0 shadow-[0_-10px_25px_rgba(0,0,0,0.03)]">
                     <div className="flex gap-3 items-end relative">
                         <div className="w-10 h-10 rounded-full bg-brand-blue text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md mb-1 border-2 border-white dark:border-gray-700">
@@ -383,12 +375,9 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
           </div>
         </div>
 
-        {/* Sidebar Actions */}
         <div className="space-y-6 lg:sticky lg:top-24">
             <div className="bg-white dark:bg-gray-855 p-6 md:p-8 rounded-[40px] shadow-xl border border-brand-blue/10 dark:border-gray-800 transition-colors">
                 <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 flex items-center gap-3"><Play className="text-brand-blue fill-brand-blue" size={22} /> Sẵn sàng chưa?</h3>
-                
-                {/* Ghi chú học tập - Moved from Comment Box to here */}
                 <div className="bg-indigo-50 dark:bg-indigo-900/10 p-5 rounded-3xl border border-indigo-100 dark:border-indigo-900/30 transition-colors mb-6">
                     <h4 className="font-black text-indigo-900 dark:text-indigo-300 mb-4 flex items-center gap-2 uppercase text-[10px] tracking-widest"><Info size={14} /> Ghi chú học tập</h4>
                     <div className="space-y-3">
