@@ -18,7 +18,7 @@ import UserTour from './components/UserTour';
 import ThemeLoader from './components/ThemeLoader';
 import ScheduleView from './components/ScheduleView';
 import { StudySet, User, AiGenerationRecord, Review, EventTheme, QuizAttempt, StudyMode } from './types';
-import { BookOpen, GraduationCap, X, CheckCircle, AlertCircle, Info, AlertTriangle, Snowflake, Leaf, Flower2, Mail, Sparkles, LayoutDashboard, PlusCircle, Library, Users, Calendar as CalendarIcon } from 'lucide-react';
+import { Snowflake, Flower2 } from 'lucide-react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -28,19 +28,19 @@ import { favoriteService } from './services/favoriteService';
 
 // --- Global Event Theme Overlay ---
 const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => {
-    const { isAnimationEnabled, theme: uiTheme } = useApp();
+    const { isAnimationEnabled } = useApp();
     useEffect(() => {
         const favicon = document.getElementById('favicon') as HTMLLinkElement;
         if (!favicon) return;
         let leftColor = '#005EB8';
         let rightColor = '#F37321';
-        let extra = '';
         if (eventType === 'CHRISTMAS') { leftColor = '#D42426'; rightColor = '#165B33'; }
         else if (eventType === 'TET') { leftColor = '#E60000'; rightColor = '#FFD700'; }
         else if (eventType === 'AUTUMN') { leftColor = '#92400E'; rightColor = '#D97706'; }
         const svg = `%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 85C30 85 15 70 15 50C15 35 25 20 45 15V85Z' fill='${leftColor.replace('#', '%23')}'/%3E%3Cpath d='M50 85C70 85 85 70 85 50C85 35 75 20 55 15V85Z' fill='${rightColor.replace('#', '%23')}'/%3E%3C/svg%3E`;
         favicon.href = `data:image/svg+xml,${svg}`;
     }, [eventType]);
+    
     const items = useMemo(() => {
         if (eventType === 'DEFAULT' || !isAnimationEnabled) return [];
         return Array.from({ length: 30 }).map((_, i) => ({
@@ -48,6 +48,7 @@ const EventOverlay: React.FC<{ theme: EventTheme }> = ({ theme: eventType }) => 
             size: `${12 + Math.random() * 18}px`, swayDuration: `${4 + Math.random() * 6}s`, opacity: 0.4 + Math.random() * 0.3
         }));
     }, [eventType, isAnimationEnabled]);
+    
     if (eventType === 'DEFAULT' || !isAnimationEnabled) return null;
     return (
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden select-none">
@@ -65,8 +66,10 @@ const MainLayout: React.FC<{ children: React.ReactNode, sets: StudySet[], aiHist
   const { user, isAuthenticated, isLoading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  
   if (isLoading) return (<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900"><ThemeLoader size={48} /></div>);
   if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
+  
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300 overflow-hidden relative">
       <Sidebar currentPath={location.pathname} currentUser={user} onLogout={handleLogout} onStartTour={() => setRunTour(true)} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
@@ -94,20 +97,20 @@ const AppRoutes: React.FC = () => {
   const handleUpdateUser = useCallback((updatedUser: User) => { updateUser(updatedUser); addNotification(t('notifications.profile_updated'), 'success'); }, [updateUser, addNotification, t]);
   const handleSaveSet = useCallback((newSet: StudySet) => { navigate('/library'); addNotification(t('notifications.set_created'), 'success'); }, [navigate, addNotification, t]);
   
-  // CẬP NHẬT: Logic Toggle Favorite toàn cục gọi API
   const handleToggleFavorite = useCallback(async (setId: string) => {
     try {
         const response = await favoriteService.toggleFavorite(setId);
         if (response.code === 1000) {
             const isFav = response.result;
             addNotification(isFav ? t('notifications.favorite_added') : t('notifications.favorite_removed'), 'success');
-            // Cập nhật trạng thái cục bộ nếu cần
             setSets(prev => prev.map(s => s.id === setId ? { ...s, isFavorite: isFav } : s));
         }
     } catch (e) {
         addNotification("Lỗi kết nối máy chủ", "error");
     }
   }, [addNotification, t]);
+
+  const handleAddAiHistory = (record: AiGenerationRecord) => setAiHistory(prev => [record, ...prev]);
 
   if (isLoading) return (<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900"><ThemeLoader size={48} /></div>);
 
@@ -117,26 +120,99 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage onStart={() => navigate('/login')} onRegister={() => navigate('/login', { state: { mode: 'REGISTER' } })} />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onBack={() => navigate('/')} initialMode={location.state?.mode || 'LOGIN'} />} />
+        
         <Route path="/dashboard" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><Dashboard sets={sets} onCreateNew={() => navigate('/create')} onSelectSet={(s) => navigate(`/set/${s.id}`)} onToggleFavorite={handleToggleFavorite} isLibrary={false} /></MainLayout>} />
         <Route path="/library" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><Dashboard sets={sets} uploads={aiHistory} currentUser={user} onCreateNew={() => navigate('/create')} onSelectSet={(s) => navigate(`/set/${s.id}`)} onSelectUpload={() => navigate('/ai-planner')} onToggleFavorite={handleToggleFavorite} isLibrary={true} /></MainLayout>} />
+        
+        <Route path="/schedule" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><ScheduleView /></MainLayout>} />
+        
+        <Route path="/create" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><CreateSet onSave={handleSaveSet} onCancel={() => navigate(-1)} onGoToAiTextbook={() => navigate('/ai-planner')} history={aiHistory} onSelectHistory={(r) => navigate('/ai-planner')} /></MainLayout>} />
+        
         <Route path="/set/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SetDetailRoute sets={sets} onToggleFavorite={handleToggleFavorite} /></MainLayout>} />
-        {/* ... các route khác giữ nguyên */}
+        
+        <Route path="/study/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><FlashcardRoute sets={sets} /></MainLayout>} />
+        
+        <Route path="/quiz/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><QuizRoute sets={sets} currentUser={user!} /></MainLayout>} />
+        
+        <Route path="/quiz/review/:attemptId/:setId" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><QuizReviewRoute sets={sets} currentUser={user!} /></MainLayout>} />
+        
+        <Route path="/classes" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><ClassManagement currentUser={user!} sets={sets} /></MainLayout>} />
+        
+        <Route path="/ai-planner" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><AiTextbookCreator onSaveToLibrary={handleSaveSet} history={aiHistory} onAddToHistory={handleAddAiHistory} onBack={() => navigate(-1)} /></MainLayout>} />
+        
+        <Route path="/settings" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><SettingsView currentUser={user!} onUpdateUser={handleUpdateUser} /></MainLayout>} />
+        
+        <Route path="/admin/theme" element={<MainLayout sets={sets} aiHistory={aiHistory} handleLogout={handleLogout} runTour={runTour} setRunTour={setRunTour}><AdminThemeSettings /></MainLayout>} />
+        
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </>
   );
 };
 
+// --- Route Wrappers ---
+
 const SetDetailRoute = ({ sets, onToggleFavorite }: { sets: StudySet[], onToggleFavorite: (id: string) => void }) => {
     const { setId } = useParams();
     const navigate = useNavigate();
-    const handleBack = useCallback(() => navigate(-1), [navigate]);
-    const handleStartFlash = useCallback(() => navigate(`/study/${setId}`), [navigate, setId]);
-    const handleStartQuiz = useCallback(() => navigate(`/quiz/${setId}`), [navigate, setId]);
     const setPlaceholder = useMemo(() => {
         const existing = sets.find(s => s.id === setId);
         return existing || { id: setId || '', title: 'Đang tải...', description: '', author: '...', createdAt: Date.now(), cards: [], privacy: 'PUBLIC' } as StudySet;
     }, [sets, setId]);
-    return <SetDetailView set={setPlaceholder} onBack={handleBack} onStartFlashcard={handleStartFlash} onStartQuiz={handleStartQuiz} onToggleFavorite={onToggleFavorite} />;
+    return <SetDetailView set={setPlaceholder} onBack={() => navigate(-1)} onStartFlashcard={() => navigate(`/study/${setId}`)} onStartQuiz={() => navigate(`/quiz/${setId}`)} onToggleFavorite={onToggleFavorite} />;
+};
+
+const FlashcardRoute = ({ sets }: { sets: StudySet[] }) => {
+    const { setId } = useParams();
+    const navigate = useNavigate();
+    const [set, setSet] = useState<StudySet | null>(null);
+    useEffect(() => {
+        if (!setId) return;
+        studySetService.getStudySetById(setId).then(res => {
+            if (res.code === 1000) {
+                const d = res.result;
+                setSet({ id: d.id.toString(), title: d.title, description: d.description, author: d.author || 'AI', createdAt: Date.now(), cards: d.cards, privacy: d.privacy || 'PUBLIC' });
+            }
+        });
+    }, [setId]);
+    if (!set) return <div className="p-20 text-center"><ThemeLoader size={48} /></div>;
+    return <FlashcardView set={set} onBack={() => navigate(-1)} />;
+};
+
+const QuizRoute = ({ sets, currentUser }: { sets: StudySet[], currentUser: User }) => {
+    const { setId } = useParams();
+    const navigate = useNavigate();
+    const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
+    const [setInfo, setSetInfo] = useState<StudySet | null>(null);
+    useEffect(() => {
+        if (!setId) return;
+        quizService.startQuiz(setId).then(res => setAttempt(res)).catch(() => navigate(-1));
+        studySetService.getStudySetById(setId).then(res => {
+            if (res.code === 1000) {
+                const d = res.result;
+                setSetInfo({ id: d.id.toString(), title: d.title, description: d.description, author: d.author || 'AI', createdAt: Date.now(), cards: d.cards, privacy: d.privacy || 'PUBLIC' });
+            }
+        });
+    }, [setId, navigate]);
+    if (!attempt || !setInfo) return <div className="p-20 text-center"><ThemeLoader size={48} /></div>;
+    return <QuizView set={setInfo} currentUser={currentUser} onBack={() => navigate(-1)} onAddReview={() => {}} serverAttempt={attempt} />;
+};
+
+const QuizReviewRoute = ({ sets, currentUser }: { sets: StudySet[], currentUser: User }) => {
+    const { attemptId, setId } = useParams();
+    const navigate = useNavigate();
+    const [setInfo, setSetInfo] = useState<StudySet | null>(null);
+    useEffect(() => {
+        if (!setId) return;
+        studySetService.getStudySetById(setId).then(res => {
+            if (res.code === 1000) {
+                const d = res.result;
+                setSetInfo({ id: d.id.toString(), title: d.title, description: d.description, author: d.author || 'AI', createdAt: Date.now(), cards: d.cards, privacy: d.privacy || 'PUBLIC' });
+            }
+        });
+    }, [setId]);
+    if (!setInfo || !attemptId) return <div className="p-20 text-center"><ThemeLoader size={48} /></div>;
+    return <QuizView set={setInfo} currentUser={currentUser} onBack={() => navigate(-1)} onAddReview={() => {}} reviewAttemptId={attemptId} />;
 };
 
 const App: React.FC = () => {
