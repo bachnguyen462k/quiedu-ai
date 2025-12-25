@@ -59,6 +59,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
 
   // Ghi nhận ID cuối cùng đã tải thành công để tránh re-fetch vô nghĩa
   const loadedIdRef = useRef("");
+  const activeAbortSignalRef = useRef<{ ignored: boolean } | null>(null);
 
   // State for Comments
   const [comments, setComments] = useState<Comment[]>([]);
@@ -78,13 +79,14 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
     const isIdValid = metadata.id && metadata.id !== "Đang tải...";
     if (!isIdValid) return;
     
-    // Nếu đã tải xong ID này rồi thì bỏ qua (tránh re-fetch khi re-render)
+    // Nếu đã tải xong ID này rồi thì bỏ qua
     if (loadedIdRef.current === metadata.id) {
         setIsLoading(false);
         return;
     }
     
     const signal = { ignored: false };
+    activeAbortSignalRef.current = signal;
     
     const fetchPreviewData = async () => {
         setIsLoading(true);
@@ -145,7 +147,7 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
       e.preventDefault();
       e.stopPropagation();
       if (commentsLoading) return;
-      fetchComments(commentsPage + 1);
+      fetchComments(commentsPage + 1, false, activeAbortSignalRef.current || undefined);
   };
 
   const addEmoji = (emoji: string, e: React.MouseEvent) => {
@@ -252,10 +254,11 @@ const SetDetailView: React.FC<SetDetailViewProps> = ({ set: metadata, onBack, on
                     <span className="bg-orange-100 text-brand-orange px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1"><Zap size={10} fill="currentColor" /> {preview.totalQuestions} Câu hỏi</span>
                 </div>
                 <h1 className="text-2xl md:text-5xl font-black text-gray-900 dark:text-white mb-6 leading-tight">{preview.title}</h1>
+                <h2 className="text-sm font-black text-gray-400 uppercase mb-2">Thông tin người tạo: <span className="text-brand-blue">{preview.createdBy || 'AI Assistant'}</span></h2>
                 <p className="text-gray-600 dark:text-gray-400 text-base md:text-xl font-medium leading-relaxed">{preview.description || 'Học phần này hiện chưa có mô tả chi tiết.'}</p>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 mt-10 border-t border-gray-50 dark:border-gray-800">
-                    <div className="flex flex-col"><span className="text-[10px] font-black text-gray-400 uppercase mb-1">Người tạo</span><span className="font-bold text-gray-800 dark:text-gray-200 text-sm truncate">{preview.createdBy}</span></div>
+                    <div className="flex flex-col"><span className="text-[10px] font-black text-gray-400 uppercase mb-1">Người tạo</span><span className="font-bold text-gray-800 dark:text-gray-200 text-sm truncate">{preview.createdBy || 'AI'}</span></div>
                     <div className="flex flex-col"><span className="text-[10px] font-black text-gray-400 uppercase mb-1">Ngày tạo</span><span className="font-bold text-gray-800 dark:text-gray-200 text-sm">{formattedDate(preview.createdAt)}</span></div>
                     <div className="flex flex-col"><span className="text-[10px] font-black text-gray-400 uppercase mb-1">Số lượt thi</span><span className="font-bold text-gray-800 dark:text-gray-200 text-sm">{preview.totalAttempts}</span></div>
                     <div className="flex flex-col"><span className="text-[10px] font-black text-gray-400 uppercase mb-1">Đánh giá</span><div className="flex items-center gap-1 text-brand-orange font-bold text-sm"><Star size={14} fill="currentColor" /> {preview.rating || 5.0}</div></div>

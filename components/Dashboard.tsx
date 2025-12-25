@@ -44,34 +44,20 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Ref để khóa việc gọi API trùng lặp và ghi nhớ tham số cuối
+  // Ref để quản lý trạng thái fetch và ngăn chặn deadlock
   const isFetchingRef = useRef(false);
-  const lastFetchKeyRef = useRef("");
-
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const activeAbortSignalRef = useRef<{ ignored: boolean } | null>(null);
 
   const trendingSets = useMemo(() => {
     return [...displaySets].slice(0, 3);
   }, [displaySets]);
 
   const fetchData = async (page: number, refresh: boolean = false, abortSignal?: { ignored: boolean }) => {
-      const fetchKey = `${isLibrary}-${libraryTab}-${page}-${refresh}`;
-      
-      // Chống gọi trùng lặp cùng một tham số trong thời gian ngắn (đặc biệt cho StrictMode)
+      // Nếu đang fetch và không phải yêu cầu làm mới (refresh), bỏ qua để tránh spam trang tiếp theo
       if (isFetchingRef.current && !refresh) return;
-      if (lastFetchKeyRef.current === fetchKey && !refresh) return;
 
       isFetchingRef.current = true;
-      lastFetchKeyRef.current = fetchKey;
-
-      if (page === 0) {
-          setIsInitialLoading(true);
-          if (refresh) {
-              setDisplaySets([]);
-              setQuizHistory([]);
-          }
-      }
+      if (page === 0) setIsInitialLoading(true);
       setIsLoading(true);
       
       try {
@@ -92,7 +78,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                       id: item.studySet.id.toString(),
                       title: item.studySet.title,
                       description: item.studySet.description || "",
-                      author: item.studySet.author || 'Thành viên',
+                      // Ưu tiên createdBy từ API
+                      author: item.studySet.createdBy || item.studySet.author || 'Thành viên',
                       createdAt: new Date(item.studySet.createdAt).getTime(),
                       privacy: item.studySet.privacy || 'PUBLIC',
                       subject: item.studySet.topic || 'Khác',
@@ -118,7 +105,8 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                       id: item.id.toString(),
                       title: item.title,
                       description: item.description || "",
-                      author: item.author || 'Thành viên',
+                      // Ưu tiên createdBy từ API
+                      author: item.createdBy || item.author || 'Thành viên',
                       createdAt: new Date(item.createdAt).getTime(),
                       privacy: item.privacy || 'PUBLIC',
                       subject: item.topic || 'Khác',
@@ -137,20 +125,29 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       } catch (error) {
           console.error("Dashboard fetch error:", error);
       } finally {
+          isFetchingRef.current = false;
+          // Luôn giải phóng trạng thái loading nếu yêu cầu này là yêu cầu "đang hoạt động" cuối cùng
           if (!abortSignal?.ignored) {
               setIsLoading(false);
               setIsInitialLoading(false);
           }
-          isFetchingRef.current = false;
       }
   };
 
   useEffect(() => {
     const signal = { ignored: false };
+    activeAbortSignalRef.current = signal;
+    
     setCurrentPage(0);
     fetchData(0, true, signal);
-    return () => { signal.ignored = true; };
+    
+    return () => { 
+        signal.ignored = true; 
+    };
   }, [isLibrary, libraryTab]);
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
@@ -159,7 +156,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
         if (entries[0].isIntersecting && currentPage < totalPages - 1 && !isLoading && !isInitialLoading) {
             const nextPage = currentPage + 1;
             setCurrentPage(nextPage);
-            fetchData(nextPage);
+            fetchData(nextPage, false, activeAbortSignalRef.current || undefined);
         }
     }, { threshold: 0.1 });
 
