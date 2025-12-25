@@ -57,7 +57,13 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       if (fetchingTaskRef.current === taskKey) return;
       
       fetchingTaskRef.current = taskKey;
-      if (page === 0) setIsInitialLoading(true);
+      if (page === 0) {
+          setIsInitialLoading(true);
+          if (refresh) {
+              setDisplaySets([]);
+              setQuizHistory([]);
+          }
+      }
       setIsLoading(true);
       
       try {
@@ -83,7 +89,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                           createdAt: new Date(s.createdAt).getTime(),
                           privacy: s.privacy || 'PUBLIC',
                           subject: s.topic || 'Khác',
-                          isFavorite: true, // Vì đây là tab yêu thích
+                          isFavorite: true,
                           type: s.type,
                           status: s.status,
                           plays: s.plays || 0,
@@ -105,7 +111,6 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   const mappedSets: StudySet[] = content.map((item: any) => ({
                       id: item.id.toString(),
                       title: item.title,
-                      // Cập nhật: Trường description và favorited từ API backend mới
                       description: item.description || "",
                       author: item.author || 'Thành viên',
                       createdAt: new Date(item.createdAt).getTime(),
@@ -157,7 +162,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
   const filteredSets = useMemo(() => {
     return displaySets.filter(s => {
         const matchesSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             s.description.toLowerCase().includes(searchQuery.toLowerCase());
+                             (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()));
         return matchesSearch;
     });
   }, [displaySets, searchQuery]);
