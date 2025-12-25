@@ -29,6 +29,7 @@ export interface StudySet {
   author: string;
   createdAt: number;
   plays?: number;
+  totalAttempts?: number; // Số lượng người đã làm quiz
   averageScore?: number; 
   cards: Flashcard[];
   reviews?: Review[]; 
@@ -84,7 +85,6 @@ export interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswer: string; 
-  relatedLink?: string; 
 }
 
 export type ViewState = 'LANDING' | 'LOGIN' | 'DASHBOARD' | 'LIBRARY' | 'CLASSES' | 'CREATE' | 'SET_DETAILS' | 'STUDY' | 'QUIZ' | 'AI_CREATOR' | 'SETTINGS';
