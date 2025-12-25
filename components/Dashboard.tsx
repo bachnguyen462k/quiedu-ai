@@ -70,23 +70,29 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                   setTotalPages(total);
               }
           } else if (libraryTab === 'FAVORITES') {
-              // GỌI API YÊU THÍCH TỪ SERVER
+              // GỌI API YÊU THÍCH TỪ SERVER VỚI CẤU TRÚC MỚI
               const response = await favoriteService.getFavorites(page, ITEMS_PER_PAGE);
               if (response.code === 1000) {
                   const { content, totalPages: total } = response.result;
-                  // Map dữ liệu từ response Backend (lưu ý trường studySetId)
-                  const mappedSets: StudySet[] = content.map((item: any) => ({
-                      id: (item.studySetId || item.id).toString(),
-                      title: item.title || item.studySetTitle || "Học phần yêu thích",
-                      description: item.description || "",
-                      author: item.author || 'Thành viên',
-                      createdAt: new Date(item.favoritedAt || item.createdAt).getTime(),
-                      privacy: item.privacy || 'PUBLIC',
-                      subject: item.topic || 'Khác',
-                      isFavorite: true,
-                      plays: item.plays || 0,
-                      cards: []
-                  }));
+                  
+                  // Map dữ liệu từ đối tượng studySet lồng bên trong
+                  const mappedSets: StudySet[] = content.map((item: any) => {
+                      const s = item.studySet;
+                      return {
+                          id: s.id.toString(),
+                          title: s.title,
+                          description: s.description || "",
+                          author: s.author || 'Thành viên',
+                          createdAt: new Date(s.createdAt).getTime(),
+                          privacy: s.privacy || 'PUBLIC',
+                          subject: s.topic || 'Khác',
+                          isFavorite: true,
+                          type: s.type,
+                          status: s.status,
+                          plays: s.plays || 0,
+                          cards: []
+                      };
+                  });
 
                   if (refresh) setDisplaySets(mappedSets);
                   else setDisplaySets(prev => [...prev, ...mappedSets]);
@@ -197,6 +203,19 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
       );
   }
 
+  const handleDashboardToggleFavorite = async (setId: string) => {
+    // Gọi hàm từ App.tsx thông qua props
+    await onToggleFavorite(setId);
+    
+    // Nếu đang ở tab yêu thích, xóa học phần đó khỏi danh sách hiển thị ngay lập tức để mượt mà
+    if (libraryTab === 'FAVORITES') {
+        setDisplaySets(prev => prev.filter(s => s.id !== setId));
+    } else {
+        // Cập nhật trái tim trong danh sách hiện tại
+        setDisplaySets(prev => prev.map(s => s.id === setId ? { ...s, isFavorite: !s.isFavorite } : s));
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-24 animate-fade-in transition-colors">
       {!isLibrary && (
@@ -264,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                                         </div>
                                     </div>
                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} 
+                                        onClick={(e) => { e.stopPropagation(); handleDashboardToggleFavorite(set.id); }} 
                                         className="p-2.5 bg-white/10 hover:bg-white/20 rounded-2xl transition-all hover:scale-110 active:scale-90"
                                     >
                                         <Heart size={20} fill={set.isFavorite ? "white" : "none"} className={set.isFavorite ? 'text-white' : 'text-white/70'} />
@@ -341,7 +360,7 @@ const Dashboard: React.FC<DashboardProps> = ({ sets: localSets, uploads, current
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                         {filteredSets.map(set => (
                             <div key={set.id} onClick={() => onSelectSet(set)} className="group bg-white dark:bg-gray-855 rounded-[32px] shadow-sm hover:shadow-2xl border-2 border-gray-100 dark:border-gray-800 hover:border-brand-blue transition-all duration-300 flex flex-col h-full relative overflow-hidden transition-colors">
-                                <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-3 rounded-2xl z-10 transition-all ${set.isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20 scale-110 shadow-lg' : 'text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-800'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
+                                <button onClick={(e) => { e.stopPropagation(); handleDashboardToggleFavorite(set.id); }} className={`absolute top-4 right-4 p-3 rounded-2xl z-10 transition-all ${set.isFavorite ? 'text-red-500 bg-red-50 dark:bg-red-900/20 scale-110 shadow-lg' : 'text-gray-300 dark:text-gray-600 hover:text-red-400 bg-gray-50 dark:bg-gray-800'}`}><Heart size={20} fill={set.isFavorite ? "currentColor" : "none"} /></button>
                                 <div className="p-6 md:p-7 flex-1">
                                     <div className="flex flex-wrap gap-2 mb-5">
                                         <span className="px-3 py-1 rounded-xl bg-brand-blue/5 text-brand-blue text-[10px] font-black uppercase tracking-widest border border-brand-blue/10">QUIZ</span>
